@@ -112,6 +112,33 @@
   /* =========================================================================
      IMPRESIÓN TÉRMICA 80MM (DISEÑO SEGÚN FOTO REAL LAVAARTE)
      ========================================================================= */
+
+  .legal-footer {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    padding: 10px 16px 14px;
+    border-top: 1px solid var(--border);
+    background: var(--bg-card);
+  }
+  .legal-footer button {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    padding: 6px 9px;
+    border-radius: 6px;
+    font-size: 11px;
+    cursor: pointer;
+  }
+  .legal-footer button:hover { border-color: var(--accent); color: var(--accent); }
+  .legal-text { color: var(--text); font-size: 13px; line-height: 1.55; }
+  .legal-text h4 { color: var(--accent); margin: 14px 0 6px; }
+  .legal-text p { margin: 7px 0; }
+  .legal-text ul { margin: 7px 0 7px 20px; }
+  .legal-note { background: rgba(245,158,11,.10); border: 1px solid var(--warning); padding: 10px; border-radius: 8px; }
+
   @media print {
     @page {
       size: 80mm auto;
@@ -297,7 +324,7 @@
       </svg>
       <h1 class="home-title">LAVA <span>ARTE</span></h1>
       <div class="home-slogan">El Arte de Lavar</div>
-      <p class="home-sub">Servicio textil profesional para hogares, huéspedes y grandes cadenas hoteleras en Bogotá.</p>
+      <p class="home-sub">Lavandería profesional para hogares, huéspedes y grandes cadenas hoteleras en Bogotá.</p>
     </div>
 
     <div class="portal-grid">
@@ -418,20 +445,25 @@
         <div id="badge-loyalty" class="loyalty-badge"></div>
 
         <div class="input-group">
-          <input type="text" id="busc-cliente" class="input-text" placeholder="Buscar cliente por nombre o celular..." oninput="filtrarCliente(this.value)">
+          <input type="text" id="busc-cliente" class="input-text" placeholder="Buscar cliente por nombre o celular (opcional)..." oninput="filtrarCliente(this.value)">
           <div id="drop-clientes" class="autocomplete-box"></div>
         </div>
 
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px;">
           <div class="input-group">
-            <label class="label-sm">Teléfono Celular *</label>
+            <label class="label-sm">Teléfono Celular (Opcional)</label>
             <input type="text" id="pos-cli-tel" class="input-text" placeholder="315...">
           </div>
           <div class="input-group">
-            <label class="label-sm">Nombre Cliente *</label>
+            <label class="label-sm">Nombre Cliente (Opcional)</label>
             <input type="text" id="pos-cli-nom" class="input-text" placeholder="Nombre completo">
           </div>
         </div>
+
+        <label style="display:flex; gap:8px; align-items:flex-start; font-size:11px; color:var(--text-muted); line-height:1.35; margin-top:6px;">
+          <input type="checkbox" id="pos-autoriza-datos" style="margin-top:2px;">
+          <span>Opcional: autorizar registro de estos datos para próximas visitas, WhatsApp y Lavaarte Loyalty. Si no se marca, la orden puede guardarse como cliente particular sin crear un registro permanente.</span>
+        </label>
 
         <div class="ticket-list" id="ticket-items">
           <div style="text-align: center; color: var(--text-muted); font-size: 13px; margin-top: 30px;">
@@ -854,6 +886,11 @@
       <input type="text" id="m-cli-direccion" class="input-text" placeholder="Ej: Calle 45 # 12-34 Apto 201">
     </div>
 
+    <label style="display:flex; gap:8px; align-items:flex-start; font-size:12px; color:var(--text-muted); line-height:1.4;">
+      <input type="checkbox" id="m-cli-autoriza-datos" style="margin-top:2px;">
+      <span>Autorizo el tratamiento de mis datos personales para la gestión del servicio, contacto por WhatsApp y beneficios de fidelización, conforme a la Política de Privacidad.</span>
+    </label>
+
     <button class="btn-success" onclick="guardarNuevoClienteDesdeModal()">💾 GUARDAR CLIENTE Y SELECCIONAR</button>
     <button class="nav-btn" onclick="cerrarModal('modal-nuevo-cliente')">Cancelar</button>
   </div>
@@ -1056,8 +1093,9 @@
         <h4 style="color: var(--success);">👥 Padrón de Clientes</h4>
         <div style="display: flex; gap: 8px;">
           <input type="file" id="adm-file-clientes" accept=".xlsx, .xls, .csv" style="display: none;" onchange="adminImportarClientesExcel(event)">
-          <button class="btn-success" style="padding: 6px 12px; font-size: 12px;" onclick="document.getElementById('adm-file-clientes').click()">📥 Importar Clientes (.XLSX)</button>
+          <button class="btn-success" style="padding: 6px 12px; font-size: 12px;" onclick="document.getElementById('adm-file-clientes').click()">📥 Migrar Clientes (.XLSX / .CSV)</button>
           <input type="text" id="adm-busc-clientes-bd" class="input-text" style="max-width: 200px; padding: 6px 10px; font-size: 12px;" placeholder="🔍 Buscar cliente..." oninput="adminFiltrarClientesBD(this.value)">
+          <span style="font-size: 10px; color: var(--text-muted); width: 100%;">No sobrescribe clientes existentes. Se requiere nombre + celular; los teléfonos se normalizan automáticamente.</span>
         </div>
       </div>
       <div style="max-height: 160px; overflow-y: auto; border: 1px solid var(--border); border-radius: 6px;">
@@ -1114,7 +1152,7 @@
       NIT: 901.344.335<br>
       Diagonal 47 No.77C-80 Bogotá<br>
       Tels: 314-263-6787 / 315-333-0502<br>
-      <strong>lavaarte.onrender.com</strong>
+      <strong>lavarte-software.onrender.com</strong>
     </div>
 
     <!-- Rectángulo con número de ticket exacto a la foto -->
@@ -1164,7 +1202,7 @@
 
     <div class="p-footer">
       🔍 Rastree el avance de su ropa con su <strong>número de ticket</strong> en:<br>
-      <strong>lavaarte.onrender.com</strong><br>
+      <strong>lavarte-software.onrender.com</strong><br>
       ¡Gracias por escogernos!
     </div>
   </div>
@@ -1227,13 +1265,72 @@
 
 </div>
 
+
+<!-- ==================== INFORMACIÓN LEGAL ==================== -->
+<div class="modal" id="modal-legal">
+  <div class="modal-content" style="width: 850px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
+      <h3 id="legal-titulo" style="color:var(--accent);">Información legal</h3>
+      <button class="nav-btn" onclick="cerrarModal('modal-legal')">✕ Cerrar</button>
+    </div>
+    <div id="legal-contenido" class="legal-text"></div>
+  </div>
+</div>
 <script>
   const BOT_WHATSAPP_URL = "https://bot-lavaarte-whatsapp.onrender.com";
-  const APP_WEB_URL = "https://lavaarte.onrender.com";
+  const APP_WEB_URL = "https://lavarte-software.onrender.com";
 
   const SUPABASE_URL = "https://biumkyjjavpfgfishvzp.supabase.co";
   const SUPABASE_KEY = "sb_publishable_vUntLk7lDbQ3DXROxTDCLg_NjgC6IIT";
   const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  const TEXTOS_LEGALES = {
+    privacidad: { titulo: "Política de Privacidad y Tratamiento de Datos Personales", html: `
+      <p><strong>LAVAARTE LAVANDERÍA SAS</strong>, con domicilio en Bogotá D.C., Colombia, adopta esta política para informar cómo trata los datos personales utilizados por el sistema.</p>
+      <h4>1. Datos que podemos tratar</h4>
+      <p>Nombre o razón social, número de celular/WhatsApp y, cuando el servicio lo requiera, dirección. También pueden existir datos asociados a órdenes, tickets, domicilios, pagos y comunicaciones del servicio.</p>
+      <h4>2. Finalidades</h4>
+      <p>Gestionar órdenes y domicilios, identificar tickets, coordinar entregas, enviar comunicaciones operativas por WhatsApp, administrar fidelización, atención al cliente, facturación, contabilidad, seguridad y cumplimiento de obligaciones legales.</p>
+      <h4>3. Datos opcionales</h4>
+      <p>El cliente puede solicitar el servicio sin registrarse como cliente permanente. En ese caso, cuando técnicamente sea posible, la orden podrá quedar asociada sin <em>cliente_id</em>; los datos que no sean necesarios para ejecutar el servicio no deben exigirse.</p>
+      <h4>4. Derechos</h4>
+      <p>El titular puede conocer, actualizar, rectificar y solicitar la supresión o revocatoria cuando proceda, mediante los canales de atención de LAVAARTE. Para eliminar o desvincular un registro de cliente se podrá solicitar atención presencial en la sede y verificación de identidad. La supresión puede estar limitada por obligaciones legales, contables, contractuales o probatorias de conservación.</p>
+      <h4>5. Encargados, APIs y terceros</h4>
+      <p>El sistema puede apoyarse en proveedores tecnológicos para base de datos, infraestructura, mensajería, alojamiento y librerías/API de terceros. Estos servicios se utilizan para operar las funciones solicitadas y pueden implicar tratamiento o transmisión de información conforme a sus condiciones y a las obligaciones aplicables.</p>
+      <h4>6. Componentes asistidos por IA</h4>
+      <p>Algunas funciones, como reconocimiento o interpretación de voz y automatizaciones operativas, pueden incorporar componentes asistidos por inteligencia artificial. La IA no modifica por sí sola las condiciones comerciales ni sustituye la decisión del personal sobre una orden.</p>
+      <h4>7. Seguridad</h4>
+      <p>LAVAARTE aplica medidas razonables de control, acceso y protección. Ningún servicio conectado a Internet puede garantizar seguridad absoluta; por ello se recomienda no ingresar información innecesaria o especialmente sensible.</p>
+      <div class="legal-note"><strong>Importante:</strong> esta política no autoriza a exigir datos que no sean necesarios para el servicio y no sustituye los procedimientos internos de seguridad, gestión de incidentes, conservación y atención de solicitudes de titulares.</div>
+      <p><strong>Versión:</strong> 28 de septiembre de 2026.</p>
+    `},
+    terminos: { titulo: "Términos y Condiciones", html: `
+      <p>El uso de LAVAARTE implica la aceptación de estas condiciones en lo aplicable al servicio solicitado.</p>
+      <h4>1. Servicio y órdenes</h4><p>El cliente entrega prendas para los servicios seleccionados y debe informar características relevantes que puedan afectar el tratamiento de la prenda. Los precios son los mostrados o acordados en el sistema al momento de la orden.</p>
+      <h4>2. Lavaarte Loyalty</h4><p>En el ciclo correspondiente a la quinta visita puede existir un beneficio. Su aplicación es <strong>opcional</strong> y requiere decisión en el momento de liquidar la orden. Solo puede aplicarse a <strong>una unidad</strong> de una prenda elegible cuyo precio unitario sea de hasta <strong>$8.000 COP</strong>. No se multiplica por cantidad, no se acumula, no se convierte en efectivo y no se divide entre varias prendas.</p>
+      <h4>3. Domicilios y comunicaciones</h4><p>Las solicitudes de recogida o entrega están sujetas a cobertura, horarios y disponibilidad. Cuando se suministra un celular, puede utilizarse WhatsApp para comunicaciones operativas relacionadas con la orden.</p>
+      <h4>4. Proveedores tecnológicos</h4><p>El funcionamiento puede depender de Supabase, infraestructura de alojamiento, WhatsApp y otras APIs o librerías. Una interrupción de un proveedor puede afectar temporalmente funciones digitales sin alterar los registros que ya hayan sido guardados correctamente.</p>
+      <h4>5. Inteligencia artificial</h4><p>Algunas herramientas internas pueden utilizar IA para apoyo en voz o automatización. Las decisiones comerciales y operativas finales corresponden a LAVAARTE y al personal autorizado.</p>
+      <h4>6. Consumidor y comercio electrónico</h4><p>Las relaciones de consumo se rigen por las normas colombianas aplicables, incluyendo las obligaciones que correspondan según la naturaleza del servicio y del canal utilizado.</p>
+      <h4>7. Datos personales</h4><p>El tratamiento de datos se rige por la Política de Privacidad publicada en este sitio.</p>
+      <p><strong>Versión:</strong> 28 de septiembre de 2026.</p>
+    `},
+    cookies: { titulo: "Política de Cookies y Almacenamiento Local", html: `
+      <h4>1. Tecnologías utilizadas</h4><p>El sitio puede utilizar almacenamiento local del navegador para conservar preferencias operativas, por ejemplo el estado del modo de impresora en el equipo autorizado.</p>
+      <h4>2. Terceros</h4><p>Las librerías, APIs y proveedores integrados pueden utilizar mecanismos técnicos propios necesarios para prestar sus servicios. LAVAARTE no utiliza actualmente estas tecnologías para publicidad personalizada desde este sistema.</p>
+      <h4>3. Control del usuario</h4><p>El usuario puede administrar o eliminar almacenamiento local desde la configuración del navegador. Borrar estos datos puede restablecer preferencias del dispositivo, como el modo de impresora.</p>
+      <h4>4. Cambios</h4><p>Si en el futuro se incorporan cookies no esenciales con finalidades de analítica, publicidad o personalización que requieran autorización, se actualizará esta política y se implementarán los mecanismos de información y consentimiento que correspondan.</p>
+      <p><strong>Versión:</strong> 28 de septiembre de 2026.</p>
+    `}
+  };
+
+  function abrirLegal(tipo) {
+    const info = TEXTOS_LEGALES[tipo];
+    if (!info) return;
+    document.getElementById("legal-titulo").textContent = info.titulo;
+    document.getElementById("legal-contenido").innerHTML = info.html;
+    abrirModal("modal-legal");
+  }
 
   const CATALOGO_DEFAULT = [
     {codigo: 1, nombre: "Camisa", precio: 5500}, {codigo: 2, nombre: "Camiseta", precio: 6800}, {codigo: 3, nombre: "Pantalón", precio: 7500},
@@ -1274,6 +1371,8 @@
   let ordenAlistarActiva = null;
   let destinoPinAdmin = "";
   let modoImpresoraHP = false;
+  const ordenesImpresionLocal = new Set();
+  const CLAVE_MODO_IMPRESORA = "lavaarte_modo_impresora_hp";
   let clienteVisitasHistorial = 0;
   let itemSeleccionadoQuickBar = null;
 
@@ -1284,6 +1383,7 @@
     precargarClientes();
     precargarHotelesBD();
     chequearCentinela60h();
+    restaurarModoImpresoraHP();
     activarSuscripcionesRealtime();
   };
 
@@ -1327,7 +1427,7 @@
         if (document.getElementById("vista-busquedas").classList.contains("view-active")) {
           ejecutarBusquedaAuditoria(document.getElementById("busc-auditoria-input").value);
         }
-        if (modoImpresoraHP && payload.eventType === 'INSERT' && !payload.new.impresa) {
+        if (modoImpresoraHP && payload.eventType === 'INSERT' && !payload.new.impresa && !ordenesImpresionLocal.has(payload.new.id)) {
           imprimirOrdenRemota(payload.new.id);
         }
       })
@@ -1368,17 +1468,29 @@
       .subscribe();
   }
 
-  function toggleModoImpresoraHP() {
-    modoImpresoraHP = !modoImpresoraHP;
+  function actualizarBotonModoImpresora() {
     const btn = document.getElementById("btn-modo-impresora");
+    if (!btn) return;
     if (modoImpresoraHP) {
       btn.style.background = "var(--success)";
-      btn.textContent = "🖨️ Modo Impresora HP: ACTIVO (24/7)";
-      alert("✅ Impresora lista para imprimir órdenes remotas automáticamente.");
+      btn.textContent = "🖨️ Modo Impresora HP: ACTIVO";
     } else {
       btn.style.background = "var(--bg-input)";
       btn.textContent = "🖨️ Modo Impresora HP: OFF";
     }
+  }
+
+  function restaurarModoImpresoraHP() {
+    try { modoImpresoraHP = localStorage.getItem(CLAVE_MODO_IMPRESORA) === "1"; }
+    catch (e) { modoImpresoraHP = false; }
+    actualizarBotonModoImpresora();
+  }
+
+  function toggleModoImpresoraHP() {
+    modoImpresoraHP = !modoImpresoraHP;
+    try { localStorage.setItem(CLAVE_MODO_IMPRESORA, modoImpresoraHP ? "1" : "0"); } catch (e) {}
+    actualizarBotonModoImpresora();
+    if (modoImpresoraHP) alert("✅ Impresora lista. Este dispositivo conservará el modo activo después de recargar la página. Debe permanecer abierto y conectado para recibir e imprimir órdenes remotas.");
   }
 
   function poblarPlantillaImpresion(ticketNum, fechaStr, clienteNom, clienteTel, codigoRastreo, itemsArray, obsTexto, totalNum, abonoNum, saldoNum, textoLoyalty) {
@@ -1416,9 +1528,11 @@
     try {
       const { data: o } = await db.from("ordenes").select("*, clientes(*), orden_items(*)").eq("id", ordenId).single();
       if (!o) return;
-      poblarPlantillaImpresion(o.consecutivo_ticket, new Date(o.created_at).toLocaleString("es-CO"), o.clientes?.nombre_o_razon || "Particular", o.clientes?.telefono || "-", o.codigo_rastreo, o.orden_items || [], o.observaciones_estado_prendas, o.total_neto, o.abono_inicial || 0, o.saldo_pendiente, "");
+      poblarPlantillaImpresion(o.consecutivo_ticket, new Date(o.created_at).toLocaleString("es-CO"), o.clientes?.nombre_o_razon || "Particular", o.clientes?.telefono || "-", o.codigo_rastreo, o.orden_items || [], o.observaciones_estado_prendas, o.total_neto, o.abono_inicial || 0, o.saldo_pendiente, o.loyalty_beneficio_aplicado ? "⭐ Beneficio Lavaarte Loyalty aplicado: 1 unidad, máximo $8.000 COP." : "");
+      ordenesImpresionLocal.add(ordenId);
       window.print();
       await db.from("ordenes").update({ impresa: true }).eq("id", ordenId);
+      setTimeout(() => ordenesImpresionLocal.delete(ordenId), 10000);
     } catch (e) { console.error("Error imprimiendo:", e); }
   }
 
@@ -1626,31 +1740,38 @@
   }
 
   // Clientes
+  function normalizarBusquedaCliente(txt) {
+    return String(txt || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, "");
+  }
+
+  function normalizarTelefonoCliente(txt) {
+    return String(txt || "").replace(/\D/g, "");
+  }
+
   async function precargarClientes() {
     try {
-      const { data } = await db.from("clientes").select("id, nombre_o_razon, telefono, direccion").order("nombre_o_razon", { ascending: true });
+      const { data } = await db.from("clientes").select("id, nombre_o_razon, telefono, direccion, loyalty_beneficio_pendiente").order("nombre_o_razon", { ascending: true });
       listaClientes = data || [];
     } catch (e) { console.error(e); }
   }
 
   function filtrarCliente(val) {
     const box = document.getElementById("drop-clientes");
-    const q = val.toLowerCase().trim();
+    const q = normalizarBusquedaCliente(val);
     if (!q) { box.style.display = "none"; return; }
 
-    const matches = listaClientes.filter(c => (c.nombre_o_razon || "").toLowerCase().includes(q) || (c.telefono || "").includes(q));
-    
-    let html = "";
-    html += `<div class="autocomplete-item" style="color: var(--accent); font-weight: bold; background: #0f172a;" onclick="abrirModalCrearCliente('${val.replace(/'/g, "")}')">
-      ➕ REGISTRAR NUEVO CLIENTE: "${val}"
-    </div>`;
+    const matches = listaClientes.filter(c => {
+      const nom = normalizarBusquedaCliente(c.nombre_o_razon);
+      const tel = normalizarTelefonoCliente(c.telefono);
+      return nom.includes(q) || tel.includes(normalizarTelefonoCliente(val));
+    });
 
+    let html = `<div class="autocomplete-item" style="color: var(--accent); font-weight: bold; background: #0f172a;" onclick="abrirModalCrearCliente('${String(val).replace(/'/g, "") }')">➕ REGISTRAR NUEVO CLIENTE: "${String(val).replace(/</g,'&lt;').replace(/>/g,'&gt;')}"</div>`;
     if (matches.length > 0) {
-      html += matches.map(c => `
-        <div class="autocomplete-item" onclick="cargarCliente('${c.nombre_o_razon.replace(/'/g, "")}', '${c.telefono}', '${c.id}', '${(c.direccion || "").replace(/'/g, "")}')">
-          👤 ${c.nombre_o_razon} | 📞 ${c.telefono} ${c.direccion ? '(' + c.direccion + ')' : ''}
-        </div>
-      `).join("");
+      html += matches.map(c => {
+        const payload = JSON.stringify({id:c.id,nombre:c.nombre_o_razon,telefono:c.telefono,direccion:c.direccion||""}).replace(/'/g,"&#39;");
+        return `<div class="autocomplete-item" onclick='cargarClienteDesdeObjeto(${payload})'>👤 ${String(c.nombre_o_razon).replace(/</g,'&lt;')} | 📞 ${String(c.telefono).replace(/</g,'&lt;')} ${c.direccion ? '(' + String(c.direccion).replace(/</g,'&lt;') + ')' : ''}</div>`;
+      }).join("");
     }
     box.innerHTML = html;
     box.style.display = "block";
@@ -1661,74 +1782,109 @@
     document.getElementById("m-cli-nombre").value = nombreSugerido || "";
     document.getElementById("m-cli-telefono").value = "";
     document.getElementById("m-cli-direccion").value = "";
+    const cb = document.getElementById("m-cli-autoriza-datos");
+    if (cb) cb.checked = false;
     abrirModal("modal-nuevo-cliente");
     document.getElementById("m-cli-telefono").focus();
   }
 
-  async function guardarNuevoClienteDesdeModal() {
-    const nom = document.getElementById("m-cli-nombre").value.trim();
-    const tel = document.getElementById("m-cli-telefono").value.replace(/\D/g, '').trim();
-    const dir = document.getElementById("m-cli-direccion").value.trim();
+  function cargarClienteDesdeObjeto(c) {
+    cargarCliente(c.nombre, c.telefono, c.id, c.direccion);
+  }
 
-    if (!nom || !tel) {
-      return alert("El nombre y el número de celular son estrictamente obligatorios.");
-    }
+  async function guardarNuevoClienteDesdeModal() {
+    const nom = document.getElementById("m-cli-nombre").value.trim().replace(/\s+/g, " ");
+    const tel = normalizarTelefonoCliente(document.getElementById("m-cli-telefono").value);
+    const dir = document.getElementById("m-cli-direccion").value.trim();
+    const autoriza = !!document.getElementById("m-cli-autoriza-datos")?.checked;
+
+    if (!nom || !tel) return alert("Para registrar un cliente en la base de datos se necesitan nombre y celular. La dirección es opcional.");
+    if (!autoriza) return alert("Para guardar un nuevo cliente y usar beneficios de fidelización, el cliente debe autorizar el tratamiento de sus datos. Si no desea registrarse, puede cerrar esta ventana y crear la orden como cliente particular.");
 
     try {
       let clienteGuardado = null;
-      const { data: ex } = await db.from("clientes").select("id").eq("telefono", tel).maybeSingle();
+      const { data: ex, error: exErr } = await db.from("clientes").select("id").eq("telefono", tel).maybeSingle();
+      if (exErr) throw exErr;
       if (ex) {
-        const { data: upd } = await db.from("clientes").update({ nombre_o_razon: nom, direccion: dir }).eq("id", ex.id).select().single();
+        const { data: upd, error } = await db.from("clientes").update({ nombre_o_razon: nom, direccion: dir, autorizacion_datos_at: new Date().toISOString(), autorizacion_datos_version: "2026-09-28-v2" }).eq("id", ex.id).select().single();
+        if (error) throw error;
         clienteGuardado = upd;
       } else {
         const { data: ins, error: errIns } = await db.from("clientes").insert({
-          empresa_id: 'a0000000-0000-0000-0000-000000000001',
-          nombre_o_razon: nom,
-          telefono: tel,
-          direccion: dir
+          empresa_id: 'a0000000-0000-0000-0000-000000000001', nombre_o_razon: nom, telefono: tel, direccion: dir,
+          autorizacion_datos_at: new Date().toISOString(), autorizacion_datos_version: "2026-09-28-v2"
         }).select().single();
-        if (errIns) throw errIns;
+        if (errIns) {
+          if (errIns.code === "23505") throw new Error("Ese número de celular ya está registrado. Búscalo por nombre o celular para seleccionarlo.");
+          throw errIns;
+        }
         clienteGuardado = ins;
       }
-
       await precargarClientes();
       cerrarModal("modal-nuevo-cliente");
-      cargarCliente(clienteGuardado.nombre_o_razon, clienteGuardado.telefono, clienteGuardado.id, clienteGuardado.direccion);
+      await cargarCliente(clienteGuardado.nombre_o_razon, clienteGuardado.telefono, clienteGuardado.id, clienteGuardado.direccion);
       alert(`✅ Cliente "${clienteGuardado.nombre_o_razon}" registrado y seleccionado con éxito.`);
-    } catch (e) {
-      alert("Error guardando cliente: " + e.message);
-    }
+    } catch (e) { alert("Error guardando cliente: " + e.message); }
   }
 
   async function cargarCliente(nom, tel, cliId, dir) {
-    document.getElementById("pos-cli-nom").value = nom;
-    document.getElementById("pos-cli-tel").value = tel;
-    document.getElementById("busc-cliente").value = nom + " (" + tel + ")";
+    document.getElementById("pos-cli-nom").value = nom || "";
+    document.getElementById("pos-cli-tel").value = normalizarTelefonoCliente(tel);
+    document.getElementById("busc-cliente").value = (nom || "") + (tel ? " (" + normalizarTelefonoCliente(tel) + ")" : "");
     document.getElementById("drop-clientes").style.display = "none";
     await verificarFidelizacionCliente(cliId);
   }
 
+  let loyaltyBeneficioAplicado = false;
+  let loyaltyBeneficioPendiente = false;
+  let loyaltyBeneficioMonto = 0;
+
   async function verificarFidelizacionCliente(cliId) {
-    if (!cliId) return;
+    loyaltyBeneficioAplicado = false;
+    loyaltyBeneficioPendiente = false;
+    clienteVisitasHistorial = 0;
+    const badge = document.getElementById("badge-loyalty");
+    if (!cliId) { badge.style.display = "none"; return; }
     try {
-      const { count } = await db.from("ordenes").select("id", { count: 'exact', head: true }).eq("cliente_id", cliId).neq("estado", "ANULADO");
+      const { data: cliente, error: cErr } = await db.from("clientes").select("loyalty_beneficio_pendiente").eq("id", cliId).maybeSingle();
+      if (cErr) throw cErr;
+      const { count, error } = await db.from("ordenes").select("id", { count: 'exact', head: true }).eq("cliente_id", cliId).neq("estado", "ANULADO");
+      if (error) throw error;
       clienteVisitasHistorial = count || 0;
-      const badge = document.getElementById("badge-loyalty");
+      loyaltyBeneficioPendiente = !!cliente?.loyalty_beneficio_pendiente || (clienteVisitasHistorial % 5 === 4);
       const visitasCiclo = (clienteVisitasHistorial % 5) + 1;
 
-      if (visitasCiclo === 5) {
-        badge.innerHTML = `⭐ <strong>¡LAVAARTE LOYALTY (VISITA #5)!</strong> Este cliente tiene derecho a 1 prenda GRATIS o descuento especial.`;
-        badge.style.display = "block";
-        const aplicar = confirm("⭐ ¡Este cliente cumple 5 visitas!\n¿Deseas aplicar el beneficio Lavaarte Loyalty (1 prenda gratis en esta orden)?");
-        if (aplicar && ticket.length > 0) {
-          ticket[0].pre = 0;
-          renderTicket();
-        }
+      if (loyaltyBeneficioPendiente) {
+        badge.innerHTML = `⭐ <strong>LAVAARTE LOYALTY:</strong> beneficio disponible. Es opcional y cubre <strong>1 sola unidad</strong> de una prenda elegible de hasta <strong>$8.000 COP</strong>.`;
       } else {
-        badge.innerHTML = `🎖️ <strong>Lavaarte Loyalty:</strong> Visita #${visitasCiclo} de 5 para su próxima prenda gratis.`;
-        badge.style.display = "block";
+        badge.innerHTML = `🎖️ <strong>Lavaarte Loyalty:</strong> Visita #${visitasCiclo} de 5.`;
       }
+      badge.style.display = "block";
     } catch (e) { console.error(e); }
+  }
+
+  function aplicarBeneficioLoyaltyOpcional() {
+    if (!loyaltyBeneficioPendiente || loyaltyBeneficioAplicado || ticket.length === 0) return false;
+    const elegibles = ticket.filter(t => Number(t.pre) > 0 && Number(t.pre) <= 8000 && Number(t.cant) >= 1 && ![67,68,69,71,99].includes(Number(t.cod)));
+    if (elegibles.length === 0) return false;
+    const lista = elegibles.map((t,i) => `${i+1}. ${t.nom} — $${Number(t.pre).toLocaleString("es-CO")}`).join("\n");
+    const respuesta = prompt(`⭐ BENEFICIO LAVAARTE LOYALTY\n\nEs opcional. Puedes aplicar GRATIS una sola unidad de una prenda de hasta $8.000 COP.\n\n${lista}\n\nEscribe el número de la prenda o CANCELA para no usarlo:`);
+    if (respuesta === null || String(respuesta).trim().toLowerCase() === "cancela") return false;
+    const idx = parseInt(respuesta, 10) - 1;
+    if (isNaN(idx) || !elegibles[idx]) return alert("Selección no válida.");
+    const elegida = elegibles[idx];
+    const ticketIdx = ticket.indexOf(elegida);
+    if (elegida.cant > 1) {
+      elegida.cant -= 1;
+      ticket.splice(ticketIdx + 1, 0, { cod:elegida.cod, nom:elegida.nom + " (Loyalty)", pre:0, cant:1 });
+    } else {
+      elegida.pre = 0;
+      elegida.nom = elegida.nom.replace(/ \(Loyalty\)$/i, "") + " (Loyalty)";
+    }
+    loyaltyBeneficioAplicado = true;
+    loyaltyBeneficioMonto = Number(elegida.pre) || 0;
+    renderTicket();
+    return true;
   }
 
   // Hoteles
@@ -1852,81 +2008,90 @@
   // Guardar Orden Mostrador
   async function confirmarGenerarOrden() {
     if (ticket.length === 0) return alert("El ticket está vacío.");
-    const nom = document.getElementById("pos-cli-nom").value.trim();
-    const tel = document.getElementById("pos-cli-tel").value.trim();
+    const nom = document.getElementById("pos-cli-nom").value.trim().replace(/\s+/g, " ");
+    const tel = normalizarTelefonoCliente(document.getElementById("pos-cli-tel").value);
     let obs = document.getElementById("pos-obs-prendas").value.trim();
     const kiloDetalle = document.getElementById("pos-kilo-detalle").value.trim();
 
-    if (!nom || !tel) {
-      alert("⚠️ REQUISITO OBLIGATORIO: Se necesita nombre y número de celular del cliente para enviar su copia digital.");
-      document.getElementById("pos-cli-tel").focus();
-      return;
-    }
+    if (kiloDetalle) obs = obs ? `${obs} | 📦 Desglose Kilos: [${kiloDetalle}]` : `📦 Desglose Kilos: [${kiloDetalle}]`;
 
-    if (kiloDetalle) {
-      obs = obs ? `${obs} | 📦 Desglose Kilos: [${kiloDetalle}]` : `📦 Desglose Kilos: [${kiloDetalle}]`;
-    }
+    // En la quinta visita el beneficio nunca se aplica solo: el empleado decide.
+    if (!loyaltyBeneficioAplicado && loyaltyBeneficioPendiente) aplicarBeneficioLoyaltyOpcional();
 
-    const total = Math.round(ticket.reduce((a, b) => a + (b.pre * b.cant), 0));
-    const abono = Number(document.getElementById("pos-abono").value) || 0;
+    const total = Math.round(ticket.reduce((a, b) => a + (Number(b.pre) * Number(b.cant)), 0));
+    const abono = Math.max(0, Number(document.getElementById("pos-abono").value) || 0);
     const saldo = Math.max(0, total - abono);
 
     try {
-      let cliId;
-      const { data: exCli } = await db.from("clientes").select("id").eq("telefono", tel).maybeSingle();
-      if (exCli) cliId = exCli.id;
-      else {
-        const { data: nCli, error: nErr } = await db.from("clientes").insert({
-          empresa_id: 'a0000000-0000-0000-0000-000000000001',
-          nombre_o_razon: nom,
-          telefono: tel
-        }).select("id").single();
-        if (nErr) throw nErr;
-        cliId = nCli.id;
+      let cliId = null;
+      // Solo se registra en clientes cuando hay nombre + celular y autorización expresa.
+      // Si faltan datos o el cliente no autoriza el registro, la orden sigue siendo válida como Particular.
+      const autorizaDatosPOS = !!document.getElementById("pos-autoriza-datos")?.checked;
+      if (nom && tel) {
+        const { data: exCli, error: exErr } = await db.from("clientes").select("id").eq("telefono", tel).maybeSingle();
+        if (exErr) throw exErr;
+        if (exCli) {
+          cliId = exCli.id;
+        } else if (autorizaDatosPOS) {
+          const { data: nCli, error: nErr } = await db.from("clientes").insert({
+            empresa_id: 'a0000000-0000-0000-0000-000000000001', nombre_o_razon: nom, telefono: tel,
+            autorizacion_datos_at: new Date().toISOString(), autorizacion_datos_version: "2026-09-28-v2"
+          }).select("id").single();
+          if (nErr) {
+            if (nErr.code === "23505") {
+              const { data: retryCli } = await db.from("clientes").select("id").eq("telefono", tel).maybeSingle();
+              cliId = retryCli?.id || null;
+            } else throw nErr;
+          } else cliId = nCli.id;
+        }
       }
 
       const codigoRastreo = "LAV-" + Math.random().toString(36).substring(2, 8).toUpperCase();
-
-      const objetoOrden = {
-        cliente_id: cliId,
-        codigo_rastreo: codigoRastreo,
-        total_bruto: total,
-        total_neto: total,
-        saldo_pendiente: saldo,
-        estado: 'INGRESADO',
-        impresa: false
-      };
-
+      const objetoOrden = { cliente_id: cliId, codigo_rastreo: codigoRastreo, total_bruto: total, total_neto: total, saldo_pendiente: saldo, estado: 'INGRESADO', impresa: false };
       if (abono > 0) objetoOrden.abono_inicial = abono;
       if (obs) objetoOrden.observaciones_estado_prendas = obs;
+      if (loyaltyBeneficioAplicado) {
+        objetoOrden.loyalty_beneficio_aplicado = true;
+        objetoOrden.loyalty_beneficio_monto = Math.min(8000, loyaltyBeneficioMonto);
+        objetoOrden.loyalty_beneficio_detalle = "1 unidad de prenda elegible, máximo $8.000 COP";
+      }
 
-      let ordRes = await db.from("ordenes").insert(objetoOrden).select("id, consecutivo_ticket").single();
+      const ordRes = await db.from("ordenes").insert(objetoOrden).select("id, consecutivo_ticket").single();
       if (ordRes.error) throw ordRes.error;
       const ord = ordRes.data;
 
-      const items = ticket.map(t => ({
-        orden_id: ord.id,
-        prenda_codigo: t.cod,
-        descripcion_prenda: t.nom,
-        cantidad: t.cant,
-        precio_unitario: t.pre,
-        subtotal: Math.round(t.pre * t.cant)
-      }));
-      await db.from("orden_items").insert(items);
+      const items = ticket.map(t => ({ orden_id: ord.id, prenda_codigo: t.cod, descripcion_prenda: t.nom, cantidad: t.cant, precio_unitario: t.pre, subtotal: Math.round(t.pre * t.cant) }));
+      const itemsRes = await db.from("orden_items").insert(items);
+      if (itemsRes.error) throw itemsRes.error;
 
-      const cicloVisita = ((clienteVisitasHistorial) % 5) + 1;
-      const textoLoyalty = cicloVisita === 5 
-        ? "⭐ Beneficio Lavaarte Loyalty: ¡Prenda Gratis Aplicada!" 
-        : `🎖️ Lavaarte Loyalty: Visita ${cicloVisita} de 5 para premio`;
+      if (cliId) {
+        const cambiosLoyalty = {};
+        if (loyaltyBeneficioAplicado) {
+          cambiosLoyalty.loyalty_beneficio_pendiente = false;
+          cambiosLoyalty.loyalty_beneficio_aplicado_at = new Date().toISOString();
+        } else if (loyaltyBeneficioPendiente) {
+          // Si en la quinta visita no lo usa, queda pendiente para una visita posterior.
+          cambiosLoyalty.loyalty_beneficio_pendiente = true;
+          cambiosLoyalty.loyalty_beneficio_generado_visita = clienteVisitasHistorial + 1;
+        }
+        if (Object.keys(cambiosLoyalty).length) {
+          const { error: loyErr } = await db.from("clientes").update(cambiosLoyalty).eq("id", cliId);
+          if (loyErr) console.warn("No se pudo actualizar Loyalty:", loyErr);
+        }
+      }
 
-      const detallePrendasWA = items.map(i => `• ${i.cantidad}x ${i.descripcion_prenda} ($${(i.subtotal).toLocaleString("es-CO")})`).join("\n");
+      const textoLoyalty = loyaltyBeneficioAplicado
+        ? "⭐ Beneficio Lavaarte Loyalty aplicado: 1 unidad, máximo $8.000 COP."
+        : (loyaltyBeneficioPendiente ? "⭐ Beneficio Lavaarte Loyalty disponible (no aplicado)." : `🎖️ Lavaarte Loyalty: visita ${((clienteVisitasHistorial || 0) % 5) + 1} de 5.`);
+
+      const detallePrendasWA = items.map(i => `• ${i.cantidad}x ${i.descripcion_prenda} ($${Number(i.subtotal).toLocaleString("es-CO")})`).join("\n");
       const notaObsWA = obs ? `\n⚠️ *Detalle / Estado de recepción:* _${obs}_\n` : "";
-
-      const mensajeTexto = 
+      const nombreWA = nom || "cliente";
+      const mensajeTexto =
         `*LAVAARTE LAVANDERÍA SAS*\n` +
         `NIT: 901.344.335\n` +
         `Sede: Diagonal 47 No.77C-80 Bogotá | Tels: 314-263-6787 / 315-333-0502\n\n` +
-        `Hola *${nom}*, hemos recibido tus prendas conforme:\n` +
+        `Hola *${nombreWA}*, hemos recibido tus prendas conforme:\n` +
         `📋 *Ticket / Orden #:* ${ord.consecutivo_ticket}\n` +
         `🏷️ *Código Rastreo Web:* ${codigoRastreo}\n\n` +
         `*PRENDAS REGISTRADAS:*\n${detallePrendasWA}\n` +
@@ -1935,15 +2100,19 @@
         `💵 *Abono inicial:* $${abono.toLocaleString("es-CO")}\n` +
         `📌 *Saldo por pagar:* $${saldo.toLocaleString("es-CO")}\n\n` +
         `${textoLoyalty}\n` +
-        `🔍 Recuerda que con tu *Ticket #${ord.consecutivo_ticket}* puedes rastrear el avance de tu ropa en:\n${APP_WEB_URL}\n` +
+        `🔍 Rastreo: ${APP_WEB_URL}\n` +
         `¡Gracias por escogernos!`;
 
-      despacharWhatsApp(tel, mensajeTexto);
+      if (tel) await despacharWhatsApp(tel, mensajeTexto);
 
-      // Impresión Doble con corte
-      poblarPlantillaImpresion(ord.consecutivo_ticket, new Date().toLocaleString("es-CO"), nom, tel, codigoRastreo, items, obs, total, abono, saldo, textoLoyalty);
-      window.print();
-      await db.from("ordenes").update({ impresa: true }).eq("id", ord.id);
+      poblarPlantillaImpresion(ord.consecutivo_ticket, new Date().toLocaleString("es-CO"), nombreWA, tel || "-", codigoRastreo, items, obs, total, abono, saldo, textoLoyalty);
+
+      if (modoImpresoraHP) {
+        ordenesImpresionLocal.add(ord.id);
+        await db.from("ordenes").update({ impresa: true }).eq("id", ord.id);
+        window.print();
+        setTimeout(() => ordenesImpresionLocal.delete(ord.id), 10000);
+      }
 
       ticket = [];
       document.getElementById("pos-cli-nom").value = "";
@@ -1953,10 +2122,12 @@
       document.getElementById("pos-obs-prendas").value = "";
       document.getElementById("pos-kilo-detalle").value = "";
       document.getElementById("badge-loyalty").style.display = "none";
+      clienteVisitasHistorial = 0; loyaltyBeneficioPendiente = false; loyaltyBeneficioAplicado = false; loyaltyBeneficioMonto = 0;
+      if (document.getElementById("pos-autoriza-datos")) document.getElementById("pos-autoriza-datos").checked = false;
       renderTicket();
       precargarClientes();
       chequearCentinela60h();
-
+      alert(`✅ Orden #${ord.consecutivo_ticket} guardada correctamente.${modoImpresoraHP ? " Impresión enviada al equipo activo." : ""}${tel ? " WhatsApp enviado." : " Sin WhatsApp: no se registró celular."}`);
     } catch (e) {
       alert("Error guardando orden: " + e.message);
     }
@@ -2694,9 +2865,10 @@
   }
 
   function adminFiltrarClientesBD(val) {
-    const q = val.toLowerCase().trim();
+    const q = normalizarBusquedaCliente(val);
+    const qTel = normalizarTelefonoCliente(val);
     if (!q) return adminRenderClientesBD(listaClientes);
-    const filtrados = listaClientes.filter(c => (c.nombre_o_razon || "").toLowerCase().includes(q) || (c.telefono || "").includes(q));
+    const filtrados = listaClientes.filter(c => normalizarBusquedaCliente(c.nombre_o_razon).includes(q) || normalizarTelefonoCliente(c.telefono).includes(qTel));
     adminRenderClientesBD(filtrados);
   }
 
@@ -2706,9 +2878,14 @@
     const nuevoTel = prompt("Teléfono del cliente:", telAct);
     if (!nuevoTel) return;
     const nuevaDir = prompt("Dirección del cliente:", dirAct);
+    const telNormalizado = normalizarTelefonoCliente(nuevoTel);
 
     try {
-      await db.from("clientes").update({ nombre_o_razon: nuevoNom, telefono: nuevoTel, direccion: nuevaDir }).eq("id", id);
+      const { error } = await db.from("clientes").update({ nombre_o_razon: nuevoNom.trim().replace(/\s+/g," "), telefono: telNormalizado, direccion: nuevaDir || "" }).eq("id", id);
+      if (error) {
+        if (error.code === "23505") throw new Error("Ese celular ya pertenece a otro cliente.");
+        throw error;
+      }
       alert("✅ Datos del cliente actualizados.");
       await precargarClientes();
       adminRenderClientesBD(listaClientes);
@@ -2719,43 +2896,188 @@
     const file = event.target.files[0];
     if (!file) return;
 
+    const inputFile = document.getElementById("adm-file-clientes");
+
+    const normalizarEncabezadoImportacion = (txt) =>
+      normalizarBusquedaCliente(String(txt || "")).replace(/_/g, "");
+
+    const obtenerCampoImportacion = (fila, candidatos) => {
+      const claves = Object.keys(fila || {});
+      const mapa = {};
+      claves.forEach(k => {
+        mapa[normalizarEncabezadoImportacion(k)] = k;
+      });
+
+      for (const candidato of candidatos) {
+        const claveNormalizada = normalizarEncabezadoImportacion(candidato);
+        if (Object.prototype.hasOwnProperty.call(mapa, claveNormalizada)) {
+          return fila[mapa[claveNormalizada]];
+        }
+      }
+      return "";
+    };
+
+    const normalizarTelefonoImportacion = (valor) => {
+      if (valor === null || valor === undefined || valor === "") return "";
+
+      // Excel puede convertir teléfonos numéricos grandes a notación científica.
+      if (typeof valor === "number" && Number.isFinite(valor)) {
+        return String(Math.trunc(valor));
+      }
+
+      let texto = String(valor).trim();
+
+      if (/^[+-]?\d+(?:[.,]\d+)?e[+-]?\d+$/i.test(texto)) {
+        const numero = Number(texto.replace(",", "."));
+        if (Number.isFinite(numero)) texto = String(Math.trunc(numero));
+      }
+
+      if (/^\d+\.0+$/.test(texto)) {
+        texto = texto.replace(/\.0+$/, "");
+      }
+
+      return texto.replace(/\D/g, "");
+    };
+
+    const mostrarResultadoImportacion = (r) => {
+      const detalle =
+        `\n\nNuevos: ${r.importados}` +
+        `\nYa existentes: ${r.yaExistian}` +
+        `\nDuplicados dentro del archivo: ${r.duplicadosArchivo}` +
+        `\nDatos incompletos/ inválidos: ${r.invalidos}` +
+        `\nErrores de inserción: ${r.errores}`;
+
+      alert(`✅ Migración de clientes finalizada.${detalle}\n\nNo se modificaron clientes existentes.`);
+    };
+
     const reader = new FileReader();
+
     reader.onload = async (e) => {
       try {
         const data = new Uint8Array(e.target.result);
-        const workbook = XLSX.read(data, { type: 'array' });
-        const sheet = workbook.Sheets[workbook.SheetNames[0]];
-        const filas = XLSX.utils.sheet_to_json(sheet);
+        const workbook = XLSX.read(data, { type: "array", cellDates: true });
+        const nombreHoja = workbook.SheetNames[0];
 
-        if (!filas || filas.length === 0) return alert("El archivo Excel está vacío.");
+        if (!nombreHoja) throw new Error("El archivo no contiene ninguna hoja.");
 
-        let importados = 0;
-        for (const f of filas) {
-          const nom = f.Nombre || f.nombre || f.Cliente || f.cliente || f.RAZON_SOCIAL;
-          const tel = String(f.Telefono || f.telefono || f.Celular || f.celular || f.TEL || "").replace(/\D/g, '');
-          const dir = f.Direccion || f.direccion || f.Dir || "";
+        const sheet = workbook.Sheets[nombreHoja];
+        const filas = XLSX.utils.sheet_to_json(sheet, { defval: "" });
 
-          if (nom && tel) {
-            const { data: ex } = await db.from("clientes").select("id").eq("telefono", tel).maybeSingle();
-            if (!ex) {
-              await db.from("clientes").insert({
-                empresa_id: 'a0000000-0000-0000-0000-000000000001',
-                nombre_o_razon: nom,
-                telefono: tel,
-                direccion: dir
-              });
-              importados++;
+        if (!filas || filas.length === 0) {
+          throw new Error("El archivo Excel/CSV está vacío.");
+        }
+
+        const resultado = {
+          importados: 0,
+          yaExistian: 0,
+          duplicadosArchivo: 0,
+          invalidos: 0,
+          errores: 0
+        };
+
+        // Cargamos la base actual una sola vez para evitar consultas repetidas.
+        await precargarClientes();
+
+        const telefonosExistentes = new Set(
+          (listaClientes || []).map(c => normalizarTelefonoCliente(c.telefono)).filter(Boolean)
+        );
+
+        const telefonosArchivo = new Set();
+        const registrosValidos = [];
+
+        for (const fila of filas) {
+          const nom = String(obtenerCampoImportacion(fila, [
+            "Nombre", "Nombre completo", "Cliente", "Nombre cliente",
+            "Razon social", "Razón social", "Nombres"
+          ]) || "").trim().replace(/\s+/g, " ");
+
+          const tel = normalizarTelefonoImportacion(obtenerCampoImportacion(fila, [
+            "Telefono", "Teléfono", "Celular", "Celular WhatsApp",
+            "WhatsApp", "Movil", "Móvil", "Tel", "Contacto"
+          ]));
+
+          const dir = String(obtenerCampoImportacion(fila, [
+            "Direccion", "Dirección", "Domicilio", "Dirección de entrega", "Dir"
+          ]) || "").trim().replace(/\s+/g, " ");
+
+          // Para una migración de clientes se exige nombre + celular.
+          if (!nom || !tel || tel.length < 7) {
+            resultado.invalidos++;
+            continue;
+          }
+
+          if (telefonosArchivo.has(tel)) {
+            resultado.duplicadosArchivo++;
+            continue;
+          }
+
+          telefonosArchivo.add(tel);
+
+          if (telefonosExistentes.has(tel)) {
+            resultado.yaExistian++;
+            continue;
+          }
+
+          registrosValidos.push({
+            empresa_id: "a0000000-0000-0000-0000-000000000001",
+            nombre_o_razon: nom,
+            telefono: tel,
+            direccion: dir
+          });
+
+          // También evita duplicados entre lotes de la misma importación.
+          telefonosExistentes.add(tel);
+        }
+
+        // Insertamos por bloques. Si un bloque falla, se intenta fila por fila
+        // para no perder toda la migración por un solo registro problemático.
+        const TAMANO_BLOQUE = 100;
+
+        for (let i = 0; i < registrosValidos.length; i += TAMANO_BLOQUE) {
+          const bloque = registrosValidos.slice(i, i + TAMANO_BLOQUE);
+
+          const { data: insertados, error } = await db
+            .from("clientes")
+            .insert(bloque)
+            .select("id, telefono");
+
+          if (!error) {
+            resultado.importados += insertados?.length || bloque.length;
+            continue;
+          }
+
+          console.warn("Bloque de importación con error; se reintentará individualmente.", error);
+
+          for (const registro of bloque) {
+            const { error: errFila } = await db.from("clientes").insert(registro);
+
+            if (!errFila) {
+              resultado.importados++;
+            } else if (errFila.code === "23505") {
+              resultado.yaExistian++;
+            } else {
+              resultado.errores++;
+              console.error("Error importando cliente:", registro, errFila);
             }
           }
         }
 
-        alert(`✅ Importación finalizada: ${importados} clientes nuevos agregados a la base de datos.`);
         await precargarClientes();
         adminRenderClientesBD(listaClientes);
+        mostrarResultadoImportacion(resultado);
+
       } catch (err) {
-        alert("Error procesando Excel: " + err.message);
+        alert("❌ Error procesando la migración: " + err.message);
+      } finally {
+        if (inputFile) inputFile.value = "";
       }
     };
+
+    reader.onerror = () => {
+      if (inputFile) inputFile.value = "";
+      alert("❌ No fue posible leer el archivo seleccionado.");
+    };
+
     reader.readAsArrayBuffer(file);
   }
 
@@ -2964,11 +3286,13 @@
   };
 
   async function procesarVozIntegral(textoCompleto) {
-    let t = textoCompleto.toLowerCase().trim();
+    let t = String(textoCompleto || "").toLowerCase().trim();
+    const tNorm = () => normalizarBusquedaCliente(t);
 
     let clienteDetectado = null;
+    const textoNorm = normalizarBusquedaCliente(t);
     for (const c of listaClientes) {
-      if (t.includes(c.nombre_o_razon.toLowerCase())) {
+      if (textoNorm.includes(normalizarBusquedaCliente(c.nombre_o_razon))) {
         clienteDetectado = c;
         break;
       }
@@ -2981,9 +3305,7 @@
       const palabras = t.split(/\s+/);
       const nombresProbables = [];
       for (const p of palabras) {
-        if (PALABRAS_A_NUMEROS[p] || /^\d+$/.test(p) || CATALOGO_CENTRAL.some(item => item.nombre.toLowerCase().includes(p))) {
-          break;
-        }
+        if (PALABRAS_A_NUMEROS[p] || /^\d+$/.test(p) || CATALOGO_CENTRAL.some(item => normalizarBusquedaCliente(item.nombre).includes(normalizarBusquedaCliente(p)))) break;
         nombresProbables.push(p);
       }
       if (nombresProbables.length > 0) {
@@ -2993,36 +3315,53 @@
       }
     }
 
-    CATALOGO_CENTRAL.forEach(p => {
+    // Variantes: si el cliente no dice "doble", "sencilla" o "sencillo", se intenta primero la variante sencilla.
+    const variantesExplicitas = /\b(doble|sencilla|sencillo)\b/i.test(t);
+    const catalogoPorNorma = CATALOGO_CENTRAL.map(p => ({...p, _norm: normalizarBusquedaCliente(p.nombre)}));
+
+    if (!variantesExplicitas) {
+      const grupos = new Map();
+      catalogoPorNorma.forEach(p => {
+        const base = p._norm.replace(/sencilla|sencillo|doble/g, "").replace(/\d+/g, "").trim();
+        if (!grupos.has(base)) grupos.set(base, []);
+        grupos.get(base).push(p);
+      });
+      for (const grupo of grupos.values()) {
+        const simples = grupo.filter(p => /sencilla|sencillo/.test(p._norm));
+        const elegidoSimple = simples[0];
+        if (!elegidoSimple) continue;
+        const nombreBase = elegidoSimple._norm.replace(/sencilla|sencillo/g, "").trim();
+        if (!nombreBase || !tNorm().includes(nombreBase)) continue;
+        const ex = ticket.find(item => item.cod === elegidoSimple.codigo);
+        if (ex) ex.cant += 1;
+        else ticket.push({ cod:elegidoSimple.codigo, nom:elegidoSimple.nombre, pre:Number(elegidoSimple.precio), cant:1 });
+      }
+    }
+
+    // Coincidencia normal del catálogo para prendas explícitas.
+    catalogoPorNorma.forEach(p => {
       const nombrePrenda = p.nombre.toLowerCase();
-      const regex = new RegExp(`(\\d+|un|una|uno|dos|tres|cuatro|cinco|seis|siete|ocho|nueve|diez)?\\s*(${nombrePrenda}[s|es]?)`, 'g');
+      const regex = new RegExp(`(\\d+|un|una|uno|dos|tres|cuatro|cinco|seis|siete|ocho|nueve|diez)?\\s*(${nombrePrenda.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}[s|es]?)`, 'gi');
       let match;
       while ((match = regex.exec(t)) !== null) {
+        // Si existen variantes y no fueron pronunciadas, no tomar la variante doble.
+        if (!variantesExplicitas && /\b(doble)\b/i.test(nombrePrenda)) continue;
         let cant = 1;
-        if (match[1]) {
-          cant = PALABRAS_A_NUMEROS[match[1]] || parseInt(match[1], 10) || 1;
-        }
+        if (match[1]) cant = PALABRAS_A_NUMEROS[match[1].toLowerCase()] || parseInt(match[1], 10) || 1;
         const ex = ticket.find(item => item.cod === p.codigo);
         if (ex) ex.cant += cant;
-        else ticket.push({ cod: p.codigo, nom: p.nombre, pre: Number(p.precio), cant: cant });
+        else ticket.push({ cod:p.codigo, nom:p.nombre, pre:Number(p.precio), cant:cant });
       }
     });
 
     const palabrasClaveDanio = ['manchad', 'rot', 'sin boton', 'descosid', 'quemad', 'sucio', 'desgastad', 'desteñid', 'capota', 'cuello', 'cremallera'];
     const frasesObs = [];
-
-    t.split(/,| y |\./).forEach(frase => {
-      if (palabrasClaveDanio.some(k => frase.includes(k))) {
-        frasesObs.push(frase.trim());
-      }
-    });
-
+    t.split(/,| y |\./).forEach(frase => { if (palabrasClaveDanio.some(k => frase.includes(k))) frasesObs.push(frase.trim()); });
     if (frasesObs.length > 0) {
       const obsActual = document.getElementById("pos-obs-prendas").value.trim();
       const nuevaObs = frasesObs.join(" | ");
       document.getElementById("pos-obs-prendas").value = obsActual ? `${obsActual} | ${nuevaObs}` : nuevaObs;
     }
-
     renderTicket();
   }
 
@@ -3062,5 +3401,12 @@
     recognition.start();
   }
 </script>
+
+<footer class="legal-footer">
+  <button onclick="abrirLegal('privacidad')">Política de Privacidad</button>
+  <button onclick="abrirLegal('terminos')">Términos y Condiciones</button>
+  <button onclick="abrirLegal('cookies')">Política de Cookies</button>
+  <button onclick="window.open('https://www.sic.gov.co/', '_blank', 'noopener,noreferrer')">SIC</button>
+</footer>
 </body>
 </html>
