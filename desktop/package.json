@@ -1,0 +1,64 @@
+{
+  "name": "lavaarte-os-desktop",
+  "productName": "LAVAARTE OS",
+  "version": "1.1.0",
+  "description": "LAVAARTE OS Desktop - Sistema integral de lavandería",
+  "main": "main.js",
+  "author": "LAVAARTE S.A.S.",
+  "scripts": {
+    "start": "electron .",
+    "check": "node --check main.js && node --check preload.js",
+    "dist": "electron-builder --win nsis",
+    "dist:publish": "electron-builder --win nsis --publish always"
+  },
+  "dependencies": {
+    "electron-updater": "^6.6.2"
+  },
+  "devDependencies": {
+    "electron": "44.4.5",
+    "electron-builder": "26.0.12"
+  },
+  "build": {
+    "appId": "com.lavaarte.os",
+    "productName": "LAVAARTE OS",
+    "asar": true,
+    "files": [
+      "main.js",
+      "preload.js",
+      "printer-settings.html",
+      "app/**/*",
+      "build/**/*"
+    ],
+    "directories": {
+      "output": "release",
+      "buildResources": "build"
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "build/lavaarte-icon.ico",
+      "artifactName": "LAVAARTE_OS_Setup_${version}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "perMachine": false,
+      "deleteAppDataOnUninstall": false,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "LAVAARTE OS"
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "AndrekingsOP",
+        "repo": "lavaarte",
+        "releaseType": "release"
+      }
+    ]
+  }
+}

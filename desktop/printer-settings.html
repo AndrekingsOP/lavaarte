@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>LAVAARTE OS - Impresora</title>
+<style>
+body{margin:0;padding:24px;background:#0b1120;color:#f8fafc;font-family:Segoe UI,Arial,sans-serif}h2{color:#38bdf8}p{color:#94a3b8;font-size:13px}select,button{width:100%;padding:12px;border-radius:8px;border:1px solid #334155;background:#1e293b;color:#fff;margin-top:8px}button{background:#0284c7;border:0;font-weight:700;cursor:pointer}.row{margin:18px 0}.status{padding:10px;border-radius:8px;background:#111827;border:1px solid #334155;font-size:13px}.ok{color:#10b981}.warn{color:#f59e0b}</style>
+</head>
+<body>
+<h2>🖨️ Configuración de LAVAARTE OS</h2>
+<p>Selecciona la impresora térmica que utilizará el programa para imprimir los tickets automáticamente.</p>
+<div class="row"><label>Impresora</label><select id="printer"></select></div>
+<div class="row"><button onclick="guardar()">Guardar impresora</button></div>
+<div class="row"><button onclick="probar()">Imprimir prueba</button></div>
+<div class="row"><button onclick="guardarAutostart()" id="autostartBtn">Guardar inicio automático</button></div>
+<div id="status" class="status">Cargando...</div>
+<script>
+let printers=[];let autostart=true;
+async function cargar(){const s=await window.electronAPI.getPrinterStatus();printers=s.printers||[];autostart=s.autostart!==false;const sel=document.getElementById('printer');sel.innerHTML='';for(const p of printers){const o=document.createElement('option');o.value=p.name;o.textContent=(p.isDefault?'⭐ ':'')+(p.displayName||p.name);if(p.name===s.selected)o.selected=true;sel.appendChild(o)}document.getElementById('autostartBtn').textContent=autostart?'🟢 Inicio automático: ACTIVADO':'⚪ Inicio automático: DESACTIVADO';estado(s.selected?'Impresora configurada.':'Selecciona una impresora.');}
+function estado(t,ok=true){const e=document.getElementById('status');e.textContent=t;e.className='status '+(ok?'ok':'warn');}
+async function guardar(){const v=document.getElementById('printer').value;const r=await window.electronAPI.savePrinter(v);estado(r.ok?'✅ Impresora guardada.':'❌ '+r.error,!r.ok?false:true);}
+async function probar(){const r=await window.electronAPI.printTicket();estado(r.ok?'✅ Trabajo enviado a la impresora.':'❌ '+(r.error||'Error de impresión'),r.ok);}
+async function guardarAutostart(){autostart=!autostart;const r=await window.electronAPI.saveAutostart(autostart);document.getElementById('autostartBtn').textContent=autostart?'🟢 Inicio automático: ACTIVADO':'⚪ Inicio automático: DESACTIVADO';estado(r.ok?'Configuración de inicio guardada.':'Error guardando inicio.',r.ok);}
+cargar();
+</script>
+</body></html>

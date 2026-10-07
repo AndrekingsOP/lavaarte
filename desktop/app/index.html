@@ -1,0 +1,3422 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Lavaarte - El Arte de Lavar</title>
+<meta name="theme-color" content="#0284c7">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<style>
+  :root {
+    --bg-main: #0b0f19;
+    --bg-card: #111827;
+    --bg-input: #1e293b;
+    --border: #334155;
+    --primary: #0284c7;
+    --primary-hover: #0369a1;
+    --accent: #38bdf8;
+    --success: #10b981;
+    --danger: #ef4444;
+    --warning: #f59e0b;
+    --text: #f8fafc;
+    --text-muted: #94a3b8;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+  body { background: var(--bg-main); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; }
+
+  .topbar { background: var(--bg-card); padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); flex-wrap: wrap; gap: 8px; }
+  .brand { font-size: 18px; font-weight: 800; color: var(--accent); display: flex; align-items: center; gap: 8px; cursor: pointer; }
+  .nav-btn { background: var(--bg-input); border: 1px solid var(--border); color: var(--text); padding: 8px 14px; border-radius: 6px; font-size: 13px; font-weight: bold; cursor: pointer; }
+  .nav-btn:hover { border-color: var(--accent); }
+
+  .container { max-width: 1280px; width: 100%; margin: 0 auto; padding: 16px; flex: 1; display: flex; flex-direction: column; }
+  .view-section { display: none; flex-direction: column; gap: 16px; flex: 1; }
+  .view-active { display: flex; }
+
+  /* Home */
+  .home-hero { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 40px 16px 20px 16px; gap: 12px; }
+  .home-logo-svg { width: 120px; height: 120px; filter: drop-shadow(0 4px 15px rgba(2, 132, 199, 0.4)); }
+  .home-title { font-size: 34px; font-weight: 900; letter-spacing: 1.5px; color: #fff; }
+  .home-title span { color: var(--accent); }
+  .home-slogan { font-style: italic; color: #f87171; font-size: 19px; font-weight: 600; margin-top: -6px; }
+  .home-sub { font-size: 14px; color: var(--text-muted); max-width: 500px; margin-top: 4px; }
+  
+  .portal-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-top: 25px; width: 100%; max-width: 1000px; margin-left: auto; margin-right: auto; }
+  .portal-card { background: var(--bg-card); border: 1.5px solid var(--border); border-radius: 16px; padding: 32px 24px; text-align: center; cursor: pointer; transition: all 0.25s ease; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; }
+  .portal-card:hover { transform: translateY(-5px); border-color: var(--accent); box-shadow: 0 10px 25px rgba(2, 132, 199, 0.2); }
+  .portal-icon { font-size: 42px; }
+  .portal-title { font-size: 20px; font-weight: 800; color: #fff; }
+  .portal-desc { font-size: 13px; color: var(--text-muted); line-height: 1.5; }
+
+  /* Dashboard */
+  .dash-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin-top: 15px; }
+  .dash-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 22px; text-align: center; cursor: pointer; transition: all 0.2s ease; display: flex; flex-direction: column; gap: 8px; align-items: center; justify-content: center; }
+  .dash-card:hover { transform: translateY(-3px); border-color: var(--accent); box-shadow: 0 4px 15px rgba(56, 189, 248, 0.15); }
+  .dash-card h3 { font-size: 16px; font-weight: 700; color: var(--text); }
+  .dash-card p { font-size: 12px; color: var(--text-muted); }
+
+  .input-group { display: flex; flex-direction: column; gap: 4px; position: relative; }
+  .label-sm { font-size: 12px; font-weight: bold; color: var(--text-muted); }
+  .input-text { width: 100%; background: var(--bg-input); border: 1px solid var(--border); color: white; padding: 12px 14px; border-radius: 8px; font-size: 15px; outline: none; }
+  .input-text:focus { border-color: var(--accent); }
+
+  .autocomplete-box { position: absolute; top: 100%; left: 0; right: 0; background: var(--bg-card); border: 1px solid var(--accent); border-radius: 8px; max-height: 200px; overflow-y: auto; z-index: 50; display: none; }
+  .autocomplete-item { padding: 12px; border-bottom: 1px solid var(--border); cursor: pointer; font-size: 13px; }
+  .autocomplete-item:hover { background: var(--bg-input); color: var(--accent); }
+
+  .pos-layout { display: flex; gap: 16px; min-height: calc(100vh - 130px); }
+  .pos-sidebar { width: 420px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; display: flex; flex-direction: column; padding: 14px; }
+  .pos-catalog { flex: 1; background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; display: flex; flex-direction: column; padding: 14px; }
+
+  .quick-bar-card { background: #0f172a; border: 1px solid var(--border); border-radius: 10px; padding: 12px; margin-bottom: 14px; display: flex; flex-direction: column; gap: 8px; }
+  .quick-bar-inputs { display: grid; grid-template-columns: 85px 1fr 130px; gap: 8px; align-items: flex-end; }
+
+  .catalog-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(135px, 1fr)); gap: 10px; overflow-y: auto; flex: 1; align-content: start; }
+  .prenda-btn { background: var(--bg-input); border: 1px solid var(--border); border-radius: 8px; padding: 14px 10px; text-align: center; cursor: pointer; transition: all 0.15s; }
+  .prenda-btn:hover { border-color: var(--accent); background: #334155; }
+  .prenda-name { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+  .prenda-price { font-size: 14px; font-weight: bold; color: var(--accent); }
+
+  .ticket-list { flex: 1; overflow-y: auto; margin: 10px 0; display: flex; flex-direction: column; gap: 8px; min-height: 120px; }
+  .ticket-item { background: var(--bg-input); padding: 10px 12px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; font-size: 13px; }
+  .btn-qty { background: #334155; border: none; color: white; width: 32px; height: 32px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 16px; }
+  .btn-del { background: none; border: none; color: var(--danger); font-size: 18px; cursor: pointer; margin-left: 8px; }
+
+  .btn-voice { background: #0284c7; color: white; border: none; padding: 10px 14px; border-radius: 8px; font-size: 13px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 6px; justify-content: center; }
+  .btn-voice.recording { background: var(--danger); animation: pulse 1s infinite; }
+  @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+
+  .loyalty-badge { background: rgba(245, 158, 11, 0.15); border: 1px solid var(--warning); border-radius: 8px; padding: 8px 12px; font-size: 12px; color: var(--warning); margin-bottom: 8px; display: none; }
+
+  .btn-primary { background: var(--primary); color: white; border: none; padding: 12px; border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer; text-align: center; }
+  .btn-primary:hover { background: var(--primary-hover); }
+  .btn-success { background: var(--success); color: white; border: none; padding: 12px; border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer; text-align: center; }
+  .btn-danger { background: var(--danger); color: white; border: none; padding: 12px; border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer; text-align: center; }
+
+  .payment-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 8px; margin: 10px 0; }
+  .btn-payment { background: var(--bg-input); border: 2px solid var(--border); color: white; padding: 12px 8px; border-radius: 8px; font-weight: bold; font-size: 13px; cursor: pointer; text-align: center; transition: all 0.2s; }
+  .btn-payment.selected { border-color: var(--accent); background: rgba(2, 132, 199, 0.25); color: var(--accent); }
+
+  .data-table { width: 100%; border-collapse: collapse; font-size: 13px; text-align: left; }
+  .data-table th { background: var(--bg-input); padding: 10px; color: var(--accent); border-bottom: 1px solid var(--border); }
+  .data-table td { padding: 10px; border-bottom: 1px solid var(--border); }
+
+  .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.75); display: none; align-items: center; justify-content: center; z-index: 100; }
+  .modal-content { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; width: 650px; max-width: 92vw; padding: 20px; display: flex; flex-direction: column; gap: 14px; max-height: 85vh; overflow-y: auto; }
+  .centinela-box { background: rgba(239, 68, 68, 0.12); border: 1px solid var(--danger); border-radius: 8px; padding: 12px; }
+
+  #ticket-termico-print { display: none; }
+
+  /* =========================================================================
+     IMPRESIÓN TÉRMICA 80MM (DISEÑO SEGÚN FOTO REAL LAVAARTE)
+     ========================================================================= */
+
+  .legal-footer {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    padding: 10px 16px 14px;
+    border-top: 1px solid var(--border);
+    background: var(--bg-card);
+  }
+  .legal-footer button {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    padding: 6px 9px;
+    border-radius: 6px;
+    font-size: 11px;
+    cursor: pointer;
+  }
+  .legal-footer button:hover { border-color: var(--accent); color: var(--accent); }
+  .legal-text { color: var(--text); font-size: 13px; line-height: 1.55; }
+  .legal-text h4 { color: var(--accent); margin: 14px 0 6px; }
+  .legal-text p { margin: 7px 0; }
+  .legal-text ul { margin: 7px 0 7px 20px; }
+  .legal-note { background: rgba(245,158,11,.10); border: 1px solid var(--warning); padding: 10px; border-radius: 8px; }
+
+  @media print {
+    @page {
+      size: 80mm auto;
+      margin: 0;
+    }
+    html, body {
+      margin: 0 !important;
+      padding: 0 !important;
+      background: #fff !important;
+      color: #000 !important;
+      height: auto !important;
+    }
+    body * { visibility: hidden; }
+    #ticket-termico-print, #ticket-termico-print * { visibility: visible; }
+    #ticket-termico-print {
+      display: block !important;
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 68mm;
+      margin-left: 2mm;
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 11.5px;
+      color: #000 !important;
+      background: #fff !important;
+      line-height: 1.3;
+    }
+    .ticket-copia {
+      page-break-after: always;
+      break-after: page;
+      padding-bottom: 8mm;
+      margin-bottom: 0;
+    }
+    .ticket-copia:last-child {
+      page-break-after: avoid;
+      break-after: avoid;
+      padding-bottom: 3mm;
+    }
+
+    /* Encabezado Logo Fiel a la Foto Real */
+    .p-header-box {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 4px;
+    }
+    .p-icon-svg {
+      width: 48px;
+      height: 48px;
+    }
+    .p-brand-text {
+      font-size: 22px;
+      font-weight: 900;
+      letter-spacing: 1px;
+      font-family: Impact, "Arial Black", sans-serif;
+      color: #000 !important;
+      text-transform: uppercase;
+    }
+    .p-brand-slogan {
+      font-size: 14px;
+      font-style: italic;
+      font-weight: bold;
+      font-family: "Brush Script MT", "Segoe Script", cursive, sans-serif;
+      color: #000 !important;
+      margin-top: -2px;
+    }
+
+    .p-subtext {
+      font-size: 10px;
+      text-align: center;
+      line-height: 1.3;
+      color: #000 !important;
+      margin: 4px 0;
+    }
+
+    /* Rectángulo Grande de Número (Como en la foto) */
+    .p-box-ticket-hero {
+      border: 2.5px solid #000 !important;
+      border-radius: 8px;
+      padding: 6px 4px;
+      margin: 6px 0;
+      text-align: center;
+      font-size: 36px;
+      font-weight: 900;
+      letter-spacing: 2px;
+      color: #000 !important;
+    }
+
+    .p-meta-cliente {
+      text-align: center;
+      margin: 4px 0 6px 0;
+    }
+    .p-lbl-cliente {
+      font-size: 10.5px;
+      font-weight: 900;
+      color: #000 !important;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .p-val-cliente {
+      font-size: 14.5px;
+      font-weight: 900;
+      color: #000 !important;
+      text-transform: uppercase;
+      margin-top: 1px;
+    }
+    .p-val-telefono {
+      font-size: 11.5px;
+      font-weight: bold;
+      color: #000 !important;
+    }
+
+    .p-table { width: 100%; border-collapse: collapse; font-size: 11px; margin: 6px 0; }
+    .p-table th {
+      border-top: 1.5px solid #000 !important;
+      border-bottom: 1.5px solid #000 !important;
+      padding: 3px 0;
+      text-align: left;
+      font-size: 10px;
+      font-weight: 900;
+      color: #000 !important;
+    }
+    .p-table td { padding: 3px 0; vertical-align: top; border-bottom: 1px dotted #888; color: #000 !important; }
+    
+    .p-totals-box { border-top: 1.5px solid #000 !important; padding-top: 4px; margin-top: 4px; }
+    .p-saldo-destacado {
+      border: 1.5px solid #000 !important;
+      padding: 4px 6px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 14px;
+      font-weight: 900;
+      margin-top: 4px;
+      color: #000 !important;
+    }
+    .p-footer {
+      text-align: center;
+      font-size: 10px;
+      margin-top: 8px;
+      line-height: 1.35;
+      border-top: 1px dashed #000;
+      padding-top: 6px;
+      color: #000 !important;
+    }
+  }
+
+  @media (max-width: 900px) {
+    .pos-layout { flex-direction: column; height: auto; }
+    .pos-sidebar { width: 100%; }
+    .catalog-grid { grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); }
+    .quick-bar-inputs { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand" onclick="mostrarVista('vista-home')">
+    🧺 Lavaarte <span>| Sistema Integral</span>
+  </div>
+  <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+    <button class="nav-btn" id="btn-modo-impresora" onclick="toggleModoImpresoraHP()">🖨️ Modo Impresora HP: OFF</button>
+    <button class="nav-btn" onclick="mostrarVista('vista-portal-hoteles')">🏨 Servicios Hoteles</button>
+    <button class="nav-btn" onclick="mostrarVista('vista-portal-cliente')">🌐 Servicios Clientes</button>
+    <button class="nav-btn" style="background: #0284c7; border: none;" onclick="solicitarAccesoEmpleados('vista-dashboard')">🔐 Lavaarte</button>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- ==================== VISTA 0: PORTAL DE BIENVENIDA ==================== -->
+  <div class="view-section view-active" id="vista-home">
+    <div class="home-hero">
+      <svg class="home-logo-svg" viewBox="0 0 100 100">
+        <path d="M15 50 C15 28 35 15 55 15 C78 15 88 32 88 50 C88 72 70 85 50 85 C30 85 15 72 15 50 Z" fill="#0284c7" />
+        <path d="M25 50 C25 36 38 25 55 25 C70 25 78 35 78 50 C78 65 65 75 50 75 C38 75 25 64 25 50 Z" fill="#38bdf8" />
+        <path d="M35 50 C35 42 42 35 55 35 C64 35 70 42 70 50 C70 58 60 65 50 65 C40 65 35 58 35 50 Z" fill="#0b0f19" />
+        <circle cx="58" cy="46" r="4.5" fill="#fff" />
+        <circle cx="64" cy="38" r="3" fill="#fff" />
+        <circle cx="52" cy="38" r="2.5" fill="#fff" />
+      </svg>
+      <h1 class="home-title">LAVA <span>ARTE</span></h1>
+      <div class="home-slogan">El Arte de Lavar</div>
+      <p class="home-sub">Lavandería profesional para hogares, huéspedes y grandes cadenas hoteleras en Bogotá.</p>
+    </div>
+
+    <div class="portal-grid">
+      <div class="portal-card" onclick="mostrarVista('vista-portal-cliente')">
+        <div class="portal-icon">👕</div>
+        <div class="portal-title">Servicios para Clientes</div>
+        <div class="portal-desc">Rastreo de prendas en tiempo real con tu número de ticket y solicitud de recogida o entrega a domicilio.</div>
+        <button class="btn-primary" style="width: 100%; margin-top: 6px;">Consultar o Pedir Domicilio</button>
+      </div>
+
+      <div class="portal-card" onclick="mostrarVista('vista-portal-hoteles')">
+        <div class="portal-icon">🏨</div>
+        <div class="portal-title">Servicios para Hoteles</div>
+        <div class="portal-desc">Portal logístico privado para ama de llaves, lencería de habitaciones, prendas de huéspedes y dotaciones.</div>
+        <button class="btn-primary" style="width: 100%; margin-top: 6px;">Solicitar Ruta Inmediata</button>
+      </div>
+
+      <div class="portal-card" style="border-color: var(--primary);" onclick="solicitarAccesoEmpleados('vista-dashboard')">
+        <div class="portal-icon">🔐</div>
+        <div class="portal-title">Lavaarte</div>
+        <div class="portal-desc">Módulo operativo protegido: mostrador, recepción por voz, alistamiento, arqueo e inventario.</div>
+        <button class="btn-success" style="width: 100%; margin-top: 6px;">Acceso Colaboradores</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== VISTA 1: DASHBOARD EMPLEADOS ==================== -->
+  <div class="view-section" id="vista-dashboard">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+      <h2>Panel Operativo Lavaarte SAS</h2>
+      <div style="display: flex; gap: 10px; align-items: center;">
+        <span id="hora-actual" style="font-size: 13px; color: var(--accent); font-weight: bold;"></span>
+        <button class="nav-btn" onclick="mostrarVista('vista-home')">🏠 Salir a Recepción</button>
+      </div>
+    </div>
+
+    <div id="box-centinela-alerta" class="centinela-box" style="display: none;">
+      <h4 style="color: var(--danger);">🚨 CENTINELA OPERATIVO: Órdenes con más de 60 Horas en Planta (Sin Alistar)</h4>
+      <div id="centinela-resumen" style="font-size: 12px; margin-top: 6px; line-height: 1.5;"></div>
+    </div>
+
+    <div class="dash-grid">
+      <div class="dash-card" onclick="mostrarVista('vista-pos')">
+        <span style="font-size: 32px;">📥</span>
+        <h3>1. Ingreso de Prendas</h3>
+        <p>Búsqueda rápida para PC, voz inteligente, kilos y fidelización</p>
+      </div>
+
+      <div class="dash-card" onclick="mostrarVista('vista-alistar')">
+        <span style="font-size: 32px;">🧺</span>
+        <h3>2. Alistar Ropa (Planta)</h3>
+        <p>Marcar listo manualmente o dictando "Orden [Número] lista"</p>
+      </div>
+
+      <div class="dash-card" onclick="mostrarVista('vista-entrega')">
+        <span style="font-size: 32px;">🤝</span>
+        <h3>3. Entregar Prendas</h3>
+        <p>Liquidación interactiva (Efectivo, Nequi, Daviplata, Datáfono)</p>
+      </div>
+
+      <div class="dash-card" onclick="mostrarVista('vista-egresos')">
+        <span style="font-size: 32px;">💸</span>
+        <h3>4. Salidas de Efectivo</h3>
+        <p>Gastos de caja menor (Responsable obligatorio)</p>
+      </div>
+
+      <div class="dash-card" onclick="pedirClaveSegura('modal-arqueo')">
+        <span style="font-size: 32px;">📊</span>
+        <h3>5. Arqueo Diario de Caja 🔒</h3>
+        <p>Cierre diario desglosado con diseño profesional</p>
+      </div>
+
+      <div class="dash-card" onclick="pedirClaveSegura('modal-admin-panel')">
+        <span style="font-size: 32px;">🔒</span>
+        <h3>6. Anulación Rápida 🔒</h3>
+        <p>Control administrativo para anular en tiempo real</p>
+      </div>
+
+      <div class="dash-card" onclick="mostrarVista('vista-domicilios-admin')">
+        <span style="font-size: 32px;">🛵</span>
+        <h3>7. Domicilios y Rutas</h3>
+        <p>Pedidos en tiempo real de clientes y hoteles</p>
+      </div>
+
+      <div class="dash-card" onclick="abrirVistaBusquedas()">
+        <span style="font-size: 32px;">🔍</span>
+        <h3>8. Búsquedas y Auditoría</h3>
+        <p>Consultar órdenes por ticket, teléfono o cliente e historial completo</p>
+      </div>
+
+      <div class="dash-card" style="border-color: var(--warning);" onclick="pedirClaveSegura('modal-admin-master')">
+        <span style="font-size: 32px;">⚡</span>
+        <h3 style="color: var(--warning);">9. Panel Maestro Administrador 🔒</h3>
+        <p>Precios globales en Supabase, Base de Datos y Borrado Físico</p>
+      </div>
+
+      <div class="dash-card" style="border-color: var(--success);" onclick="pedirClaveSegura('vista-inventario')">
+        <span style="font-size: 32px;">📦</span>
+        <h3 style="color: var(--success);">10. Control de Inventario 🔒</h3>
+        <p>Registro de insumos, compras de jabón/ganchos y exportación</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== VISTA 2: INGRESO DE PRENDAS (POS) ==================== -->
+  <div class="view-section" id="vista-pos">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+      <h3>📥 Ingreso de Prendas al Mostrador</h3>
+      <button class="nav-btn" onclick="mostrarVista('vista-dashboard')">⬅️ Volver al Menú</button>
+    </div>
+
+    <div class="pos-layout">
+      <div class="pos-sidebar">
+        <button id="btn-voz-pos" class="btn-voice" style="margin-bottom: 8px;" onclick="iniciarVozPOSInteligente()">
+          🎙️ Dictar Orden Completa (Cliente + Prendas + Estado)
+        </button>
+
+        <div id="badge-loyalty" class="loyalty-badge"></div>
+
+        <div class="input-group">
+          <input type="text" id="busc-cliente" class="input-text" placeholder="Buscar cliente por nombre o celular (opcional)..." oninput="filtrarCliente(this.value)">
+          <div id="drop-clientes" class="autocomplete-box"></div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px;">
+          <div class="input-group">
+            <label class="label-sm">Teléfono Celular (Opcional)</label>
+            <input type="text" id="pos-cli-tel" class="input-text" placeholder="315...">
+          </div>
+          <div class="input-group">
+            <label class="label-sm">Nombre Cliente (Opcional)</label>
+            <input type="text" id="pos-cli-nom" class="input-text" placeholder="Nombre completo">
+          </div>
+        </div>
+
+        <label style="display:flex; gap:8px; align-items:flex-start; font-size:11px; color:var(--text-muted); line-height:1.35; margin-top:6px;">
+          <input type="checkbox" id="pos-autoriza-datos" style="margin-top:2px;">
+          <span>Opcional: autorizar registro de estos datos para próximas visitas, WhatsApp y Lavaarte Loyalty. Si no se marca, la orden puede guardarse como cliente particular sin crear un registro permanente.</span>
+        </label>
+
+        <div class="ticket-list" id="ticket-items">
+          <div style="text-align: center; color: var(--text-muted); font-size: 13px; margin-top: 30px;">
+            Selecciona prendas del catálogo o utiliza la barra rápida de teclado.
+          </div>
+        </div>
+
+        <div class="input-group" id="group-detalle-kilos" style="display: none; margin-bottom: 8px;">
+          <label class="label-sm" style="color: var(--accent);">🧺 Desglose Ropa por Kilo (Prendas que componen el peso)</label>
+          <textarea id="pos-kilo-detalle" class="input-text" style="height: 55px; resize: none; font-size: 12px;" placeholder="Ej: 3 pantalones, 5 medias, 5 bóxer, 2 camisetas"></textarea>
+        </div>
+
+        <div class="input-group" style="margin-bottom: 8px;">
+          <label class="label-sm">Detalles / Estado de las Prendas (Manchas, rotos, color)</label>
+          <textarea id="pos-obs-prendas" class="input-text" style="height: 55px; resize: none; font-size: 12px;" placeholder="Ej: Camisa blanca con mancha de café; pantalón sin botón"></textarea>
+        </div>
+
+        <div style="background: var(--bg-input); padding: 10px; border-radius: 8px; display: flex; flex-direction: column; gap: 6px;">
+          <div style="display: flex; justify-content: space-between; font-size: 13px;">
+            <span>Subtotal Prendas:</span>
+            <strong id="pos-subtotal">$0</strong>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; font-size: 13px;">
+            <span>Abono Inicial (Opcional):</span>
+            <input type="number" id="pos-abono" class="input-text" style="width: 110px; padding: 4px 8px; text-align: right;" value="0" oninput="recalcularSaldo()">
+          </div>
+          <div style="display: flex; justify-content: space-between; font-size: 15px; border-top: 1px dashed var(--border); padding-top: 6px; color: var(--accent);">
+            <span>Saldo a Cobrar:</span>
+            <strong id="pos-saldo">$0</strong>
+          </div>
+        </div>
+
+        <button class="btn-success" style="margin-top: 10px; padding: 14px;" onclick="confirmarGenerarOrden()">💾 GUARDAR, IMPRIMIR Y ENVIAR WHATSAPP</button>
+      </div>
+
+      <div class="pos-catalog">
+        <div class="quick-bar-card">
+          <div style="font-size: 12px; font-weight: bold; color: var(--accent); display: flex; justify-content: space-between;">
+            <span>⌨️ ENTRADA RÁPIDA DE MOSTRADOR (PC)</span>
+            <span style="color: var(--text-muted); font-size: 11px;">[Cantidad] ➔ [Buscar Prenda] ➔ [Editar Precio] ➔ [Enter]</span>
+          </div>
+          <div class="quick-bar-inputs">
+            <div class="input-group">
+              <label class="label-sm">Cantidad</label>
+              <input type="number" id="quick-bar-cant" class="input-text" style="text-align: center; font-weight: bold;" value="1" min="0.1" step="any">
+            </div>
+
+            <div class="input-group">
+              <label class="label-sm">Buscar Prenda / Ítem</label>
+              <input type="text" id="quick-bar-search" class="input-text" placeholder="Escribe prenda o código..." oninput="quickBarFiltrarPrenda(this.value)">
+              <div id="drop-quick-prendas" class="autocomplete-box"></div>
+            </div>
+
+            <div class="input-group">
+              <label class="label-sm">Precio ($COP)</label>
+              <input type="number" id="quick-bar-price" class="input-text" style="text-align: right; font-weight: bold; color: var(--accent);" placeholder="0" onkeydown="if(event.key==='Enter') quickBarAgregarAlTicket()">
+            </div>
+          </div>
+
+          <button class="btn-success" style="padding: 10px; font-size: 13px;" onclick="quickBarAgregarAlTicket()">
+            ➕ AGREGAR PRENDA AL TICKET
+          </button>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; margin-bottom: 10px; gap: 8px;">
+          <input type="text" id="filtro-prenda" class="input-text" style="max-width: 280px;" placeholder="🔍 Filtrar botones del catálogo..." oninput="renderCatalogo(this.value)">
+          <button class="nav-btn" onclick="abrirModalOtroItem()">➕ Ítem "Otros"</button>
+        </div>
+        <div class="catalog-grid" id="grid-catalogo"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== VISTA 3: ALISTAR ROPA ==================== -->
+  <div class="view-section" id="vista-alistar">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+      <h3>🧺 Alistar Ropa (Planta / Control de Calidad)</h3>
+      <button class="nav-btn" onclick="mostrarVista('vista-dashboard')">⬅️ Volver al Menú</button>
+    </div>
+
+    <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; max-width: 600px; margin: 0 auto; width: 100%;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+        <span style="font-size: 13px; color: var(--text-muted);">Escribe el ticket o pulsa dictar:</span>
+        <button id="btn-voz-alistar" class="btn-voice" onclick="iniciarVozAlistar()">🎙️ "Orden [Número] lista"</button>
+      </div>
+
+      <input type="number" id="alistar-ticket-input" class="input-text" style="font-size: 20px; text-align: center;" placeholder="Ticket #" oninput="buscarTicketAlistar(this.value)">
+
+      <div id="alistar-ticket-resumen" style="margin-top: 16px; font-size: 13px; display: none;">
+        <div style="background: var(--bg-input); padding: 14px; border-radius: 8px; line-height: 1.6;">
+          <div style="display: flex; justify-content: space-between;">
+            <strong id="alistar-txt-ticket" style="color: var(--accent); font-size: 16px;"></strong>
+            <span id="alistar-txt-estado" style="font-weight: bold;"></span>
+          </div>
+          <div id="alistar-txt-cliente" style="margin-top: 4px;"></div>
+          <div id="alistar-txt-prendas" style="color: var(--text-muted); margin-top: 4px;"></div>
+          <div id="alistar-txt-obs" style="color: var(--warning); margin-top: 4px; font-size: 12px;"></div>
+        </div>
+
+        <button class="btn-success" style="width: 100%; margin-top: 14px; padding: 14px; font-size: 16px;" onclick="marcarTicketComoListo()">
+          ✅ MARCAR COMO LISTO PARA ENTREGAR
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== VISTA 4: ENTREGAR PRENDAS ==================== -->
+  <div class="view-section" id="vista-entrega">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+      <h3>🤝 Entregar Prendas y Liquidar Saldo</h3>
+      <button class="nav-btn" onclick="mostrarVista('vista-dashboard')">⬅️ Volver al Menú</button>
+    </div>
+
+    <div style="display: flex; gap: 10px; max-width: 600px;">
+      <input type="text" id="busc-entrega" class="input-text" placeholder="Buscar por # Recibo (ej: 100), Nombre o Celular..." oninput="buscarOrdenesEntrega(this.value)">
+    </div>
+
+    <div style="overflow-x: auto; margin-top: 12px;">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Ticket #</th>
+            <th>Cliente</th>
+            <th>Teléfono</th>
+            <th>Prendas</th>
+            <th>Estado</th>
+            <th>Total</th>
+            <th>Saldo</th>
+            <th>Acción</th>
+          </tr>
+        </thead>
+        <tbody id="tabla-entrega-body">
+          <tr><td colspan="8" style="text-align: center; color: var(--text-muted);">Escribe en el buscador para consultar órdenes.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ==================== VISTA 5: SALIDAS DE EFECTIVO ==================== -->
+  <div class="view-section" id="vista-egresos">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+      <h3>💸 Salidas de Efectivo (Caja Menor)</h3>
+      <button class="nav-btn" onclick="mostrarVista('vista-dashboard')">⬅️ Volver al Menú</button>
+    </div>
+
+    <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; max-width: 500px; display: flex; flex-direction: column; gap: 12px;">
+      <div class="input-group">
+        <label class="label-sm">Valor Retirado ($COP) *</label>
+        <input type="number" id="egreso-monto" class="input-text" placeholder="Ej: 25000">
+      </div>
+      <div class="input-group">
+        <label class="label-sm">Concepto / Motivo de Salida *</label>
+        <input type="text" id="egreso-concepto" class="input-text" placeholder="Ej: Jabón líquido, bolsas, ganchos...">
+      </div>
+      <div class="input-group">
+        <label class="label-sm">Responsable del Gasto (Obligatorio tu Nombre) *</label>
+        <input type="text" id="egreso-resp" class="input-text" placeholder="Escribe tu nombre completo...">
+      </div>
+      <button class="btn-danger" onclick="guardarEgresoCaja()">🔴 REGISTRAR SALIDA DE CAJA</button>
+    </div>
+  </div>
+
+  <!-- ==================== VISTA 6: GESTIÓN DE DOMICILIOS Y RUTAS ==================== -->
+  <div class="view-section" id="vista-domicilios-admin">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+      <h3>🛵 Solicitudes de Domicilio y Rutas (En Vivo)</h3>
+      <button class="nav-btn" onclick="mostrarVista('vista-dashboard')">⬅️ Volver al Menú</button>
+    </div>
+    <div style="overflow-x: auto; margin-top: 10px;">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>Origen</th>
+            <th>Servicio</th>
+            <th>Nombre / Hotel</th>
+            <th>Contacto</th>
+            <th>Dirección y Detalles</th>
+            <th>Ticket Ref</th>
+            <th>Detalle</th>
+            <th>Estado / Acción</th>
+          </tr>
+        </thead>
+        <tbody id="tabla-domicilios-body">
+          <tr><td colspan="9" style="text-align: center; color: var(--text-muted);">Sin solicitudes registradas.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ==================== VISTA 7: PORTAL CLIENTES ==================== -->
+  <div class="view-section" id="vista-portal-cliente">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+      <h3>🌐 Servicios para Clientes</h3>
+      <button class="nav-btn" onclick="mostrarVista('vista-home')">🏠 Volver al Inicio</button>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; margin-top: 10px;">
+      <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 18px;">
+        <h4 style="color: var(--accent); margin-bottom: 8px;">🔍 Rastrear Estado de mi Ropa</h4>
+        <div style="display: flex; gap: 8px;">
+          <input type="number" id="cliente-ticket-query" class="input-text" placeholder="Ingresa tu N° de Ticket (Ej: 100)">
+          <button class="btn-primary" onclick="clienteConsultarTicket()">Consultar</button>
+        </div>
+        <div id="cliente-ticket-result" style="margin-top: 14px; font-size: 13px;"></div>
+      </div>
+
+      <!-- Recogida a Domicilio -->
+      <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 18px;">
+        <h4 style="color: var(--success); margin-bottom: 8px;">📦 Pedir Recogida a Domicilio</h4>
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <input type="text" id="dom-rec-nom" class="input-text" placeholder="Nombre Completo *">
+          <input type="text" id="dom-rec-tel" class="input-text" placeholder="Celular / WhatsApp *">
+          <input type="text" id="dom-rec-dir" class="input-text" placeholder="Dirección exacta (Ej: Cra 50 # 34-25) *">
+          <input type="text" id="dom-rec-detalles" class="input-text" placeholder="Detalles de dirección (Ej: Casa azul, Torre 5 Apto 302) *">
+          <div style="display: flex; gap: 8px;">
+            <input type="date" id="dom-rec-fec" class="input-text">
+            <select id="dom-rec-franja" class="input-text">
+              <option value="Mañana (8am - 12pm)">Mañana (8am - 12pm)</option>
+              <option value="Tarde (2pm - 6pm)">Tarde (2pm - 6pm)</option>
+            </select>
+          </div>
+          <input type="text" id="dom-rec-notas" class="input-text" placeholder="Prendas aproximadas o notas adicionales">
+          <button class="btn-success" onclick="clienteCrearSolicitud('RECOGIDA_DOMICILIO')">Solicitar Recogida</button>
+        </div>
+      </div>
+
+      <!-- Entrega a Domicilio -->
+      <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 18px;">
+        <h4 style="color: var(--warning); margin-bottom: 8px;">🚚 Solicitar Entrega de mi Ropa</h4>
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <input type="number" id="dom-ent-ticket" class="input-text" placeholder="Número de Ticket / Recibo *">
+          <input type="text" id="dom-ent-nom" class="input-text" placeholder="Nombre de Quien Recibe *">
+          <input type="text" id="dom-ent-tel" class="input-text" placeholder="Celular de Contacto *">
+          <input type="text" id="dom-ent-dir" class="input-text" placeholder="Dirección de Entrega (Ej: Cra 50 # 34-25) *">
+          <input type="text" id="dom-ent-detalles" class="input-text" placeholder="Detalles de dirección (Ej: Casa azul, Torre 5 Apto 302) *">
+          <div style="display: flex; gap: 8px;">
+            <input type="date" id="dom-ent-fec" class="input-text">
+            <select id="dom-ent-franja" class="input-text">
+              <option value="Mañana (8am - 12pm)">Mañana (8am - 12pm)</option>
+              <option value="Tarde (2pm - 6pm)">Tarde (2pm - 6pm)</option>
+            </select>
+          </div>
+          <button class="btn-primary" onclick="clienteCrearSolicitud('ENTREGA_DOMICILIO')">Solicitar Entrega</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== VISTA 8: PORTAL HOTELES ==================== -->
+  <div class="view-section" id="vista-portal-hoteles">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+      <h3>🏨 Servicios para Hoteles (Portal Logístico Privado)</h3>
+      <button class="nav-btn" onclick="mostrarVista('vista-home')">🏠 Volver al Inicio</button>
+    </div>
+
+    <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 22px; max-width: 580px; margin: 20px auto; width: 100%;">
+      <h4 style="color: var(--accent); margin-bottom: 6px;">Solicitud Inmediata de Ruta y Recogida</h4>
+      <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 14px;">Ingresa el nombre de tu hotel para programar el servicio de lavandería.</p>
+
+      <div style="display: flex; flex-direction: column; gap: 12px;">
+        <div class="input-group">
+          <label class="label-sm">Nombre del Hotel / Establecimiento *</label>
+          <input type="text" id="hotel-busc-input" class="input-text" placeholder="Escribe el nombre de tu hotel..." oninput="hotelFiltrarPrivado(this.value)">
+          <div id="drop-hoteles" class="autocomplete-box"></div>
+        </div>
+
+        <div class="input-group">
+          <label class="label-sm">Servicio Requerido *</label>
+          <select id="hotel-sel-servicio" class="input-text">
+            <option value="Ropa de Huéspedes">Ropa de Huéspedes</option>
+            <option value="Lencería de Habitaciones">Lencería de Habitaciones</option>
+            <option value="Mantelería / Alimentos y Bebidas">Mantelería / Alimentos y Bebidas</option>
+            <option value="Uniformes / Dotaciones">Uniformes / Dotaciones</option>
+          </select>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+          <div class="input-group">
+            <label class="label-sm">Bultos / Piezas Aprox.</label>
+            <input type="text" id="hotel-cant-bultos" class="input-text" placeholder="Ej: 4 bolsas grandes">
+          </div>
+          <div class="input-group">
+            <label class="label-sm">Contacto (Celular o Cargo)</label>
+            <input type="text" id="hotel-contacto" class="input-text" placeholder="Ej: Ama de llaves / Turno">
+          </div>
+        </div>
+
+        <div class="input-group">
+          <label class="label-sm">Dirección / Sede (Opcional)</label>
+          <input type="text" id="hotel-direccion-input" class="input-text" placeholder="Solo si requiere especificar sede...">
+        </div>
+
+        <div class="input-group">
+          <label class="label-sm">Observaciones / Horario Límite</label>
+          <input type="text" id="hotel-notas" class="input-text" placeholder="Ej: Pasar antes de las 11:00 AM">
+        </div>
+
+        <button class="btn-success" style="padding: 14px; font-size: 15px;" onclick="hotelEnviarSolicitudPrivada()">
+          🚚 SOLICITAR RECOGIDA DE RUTA AHORA
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== VISTA 9: BÚSQUEDAS Y AUDITORÍA HISTÓRICA ==================== -->
+  <div class="view-section" id="vista-busquedas">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+      <h3>🔍 Búsquedas y Auditoría Histórica de Órdenes</h3>
+      <button class="nav-btn" onclick="mostrarVista('vista-dashboard')">⬅️ Volver al Menú</button>
+    </div>
+
+    <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 12px;">
+      <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+        <input type="text" id="busc-auditoria-input" class="input-text" style="flex: 1; min-width: 260px;" placeholder="🔍 Buscar por # Ticket (ej: 100), Nombre de cliente o Celular..." oninput="ejecutarBusquedaAuditoria(this.value)">
+      </div>
+
+      <div style="overflow-x: auto; max-height: 520px; border: 1px solid var(--border); border-radius: 8px;">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Ticket</th>
+              <th>Fecha Ingreso</th>
+              <th>Cliente</th>
+              <th>Celular</th>
+              <th>Prendas Registradas</th>
+              <th>Observación / Estado</th>
+              <th>Estado</th>
+              <th>Total</th>
+              <th>Saldo</th>
+              <th>Medio Pago Saldo</th>
+              <th>Fecha Entrega</th>
+            </tr>
+          </thead>
+          <tbody id="tabla-auditoria-body">
+            <tr><td colspan="11" style="text-align: center; color: var(--text-muted); padding: 25px;">Escribe un ticket, teléfono o nombre para consultar órdenes.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; margin-top: 8px;">
+        <button class="btn-primary" style="padding: 10px 18px; font-size: 13px;" onclick="descargarHistoricoOrdenesExcel()">
+          📥 Exportar Base de Datos Completa a Excel (.xlsx)
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== VISTA 10: CONTROL DE INVENTARIO ==================== -->
+  <div class="view-section" id="vista-inventario">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+      <h3>📦 Control de Inventario y Compras de Insumos</h3>
+      <button class="nav-btn" onclick="mostrarVista('vista-dashboard')">⬅️ Volver al Menú</button>
+    </div>
+
+    <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 14px;">
+      <h4 style="color: var(--accent);">➕ Registrar Entrada de Insumo / Producto</h4>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px;">
+        <input type="text" id="inv-producto" class="input-text" placeholder="Producto (Ej: Jabón Líquido Caneca)">
+        <input type="number" id="inv-cantidad" class="input-text" placeholder="Cantidad" value="1">
+        <input type="text" id="inv-unidad" class="input-text" placeholder="Unidad (Caneca, Galón, Bolsas, Kg)">
+        <input type="number" id="inv-costo" class="input-text" placeholder="Costo Total Pagado ($COP)">
+        <input type="text" id="inv-proveedor" class="input-text" placeholder="Proveedor (Opcional)">
+        <input type="text" id="inv-responsable" class="input-text" placeholder="Responsable de Compra *">
+      </div>
+      <button class="btn-success" onclick="guardarEntradaInventario()">💾 REGISTRAR ENTRADA A INVENTARIO</button>
+
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
+        <h4>Historial de Compras de Insumos</h4>
+        <strong id="inv-total-gastado" style="color: var(--warning); font-size: 16px;">Total Invertido: $0</strong>
+      </div>
+
+      <div style="overflow-x: auto; max-height: 380px; border: 1px solid var(--border); border-radius: 8px;">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Producto</th>
+              <th>Cantidad</th>
+              <th>Unidad</th>
+              <th>Costo Total</th>
+              <th>Proveedor</th>
+              <th>Responsable</th>
+            </tr>
+          </thead>
+          <tbody id="tabla-inventario-body">
+            <tr><td colspan="7" style="text-align: center; color: var(--text-muted);">Sin registros aún.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end;">
+        <button class="btn-primary" onclick="exportarExcelInventario()">📥 Exportar Inventario a Excel (.xlsx)</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ==================== MODALES ==================== -->
+
+<!-- Modal: REGISTRAR NUEVO CLIENTE -->
+<div class="modal" id="modal-nuevo-cliente">
+  <div class="modal-content" style="width: 480px;">
+    <h3 style="color: var(--accent);">👤 Registrar Nuevo Cliente</h3>
+    <p style="font-size: 12px; color: var(--text-muted);">Se guardará en la nube de Supabase inmediatamente.</p>
+    
+    <div class="input-group">
+      <label class="label-sm">Nombre Completo *</label>
+      <input type="text" id="m-cli-nombre" class="input-text" placeholder="Ej: Roberto Casas">
+    </div>
+
+    <div class="input-group">
+      <label class="label-sm">Teléfono Celular / WhatsApp (Obligatorio) *</label>
+      <input type="text" id="m-cli-telefono" class="input-text" placeholder="Ej: 3151234567">
+    </div>
+
+    <div class="input-group">
+      <label class="label-sm">Dirección de Residencia / Entrega (Opcional)</label>
+      <input type="text" id="m-cli-direccion" class="input-text" placeholder="Ej: Calle 45 # 12-34 Apto 201">
+    </div>
+
+    <label style="display:flex; gap:8px; align-items:flex-start; font-size:12px; color:var(--text-muted); line-height:1.4;">
+      <input type="checkbox" id="m-cli-autoriza-datos" style="margin-top:2px;">
+      <span>Autorizo el tratamiento de mis datos personales para la gestión del servicio, contacto por WhatsApp y beneficios de fidelización, conforme a la Política de Privacidad.</span>
+    </label>
+
+    <button class="btn-success" onclick="guardarNuevoClienteDesdeModal()">💾 GUARDAR CLIENTE Y SELECCIONAR</button>
+    <button class="nav-btn" onclick="cerrarModal('modal-nuevo-cliente')">Cancelar</button>
+  </div>
+</div>
+
+<!-- Modal: REGISTRAR NUEVO HOTEL -->
+<div class="modal" id="modal-nuevo-hotel">
+  <div class="modal-content" style="width: 480px;">
+    <h3 style="color: var(--accent);">🏨 Registrar Nuevo Hotel</h3>
+    <p style="font-size: 12px; color: var(--text-muted);">Inscribe el establecimiento en la base de datos.</p>
+    
+    <div class="input-group">
+      <label class="label-sm">Nombre del Hotel / Establecimiento *</label>
+      <input type="text" id="m-hotel-nombre" class="input-text" placeholder="Ej: Hotel Hilton Corferias">
+    </div>
+
+    <div class="input-group">
+      <label class="label-sm">Teléfono / Contacto (Opcional)</label>
+      <input type="text" id="m-hotel-telefono" class="input-text" placeholder="Ej: 3101234567 / Recepción">
+    </div>
+
+    <div class="input-group">
+      <label class="label-sm">Dirección / Sede (Opcional)</label>
+      <input type="text" id="m-hotel-direccion" class="input-text" placeholder="Ej: Carrera 37 # 24-29">
+    </div>
+
+    <button class="btn-success" onclick="guardarNuevoHotelDesdeModal()">💾 GUARDAR ESTABLECIMIENTO</button>
+    <button class="nav-btn" onclick="cerrarModal('modal-nuevo-hotel')">Cancelar</button>
+  </div>
+</div>
+
+<!-- Modal: Cobro Entrega con Botones Interactivos -->
+<div class="modal" id="modal-cobro-entrega">
+  <div class="modal-content">
+    <h3 style="color: var(--success);">Finalizar Entrega y Cobro</h3>
+    <div id="info-orden-cobro" style="font-size: 13px; line-height: 1.6;"></div>
+    
+    <div class="input-group" style="margin-top: 4px;">
+      <label class="label-sm">Ajustar Saldo a Cobrar ($COP) (Opcional):</label>
+      <input type="number" id="entrega-saldo-modificable" class="input-text">
+    </div>
+
+    <label class="label-sm" style="margin-top: 8px;">Selecciona la Forma de Pago:</label>
+    <div class="payment-grid">
+      <div class="btn-payment selected" onclick="seleccionarMetodoPago('EFECTIVO', this)">💵 Efectivo</div>
+      <div class="btn-payment" onclick="seleccionarMetodoPago('NEQUI_DAVIPLATA', this)">📱 Nequi / Daviplata</div>
+      <div class="btn-payment" onclick="seleccionarMetodoPago('LLAVE', this)">🔑 Con mi Llave</div>
+      <div class="btn-payment" onclick="seleccionarMetodoPago('DATAFONO', this)">💳 Datáfono</div>
+      <div class="btn-payment" onclick="seleccionarMetodoPago('TRANSFERENCIA', this)">🏦 Transferencia</div>
+    </div>
+
+    <div id="box-alerta-nequi" style="display: none; background: rgba(56, 189, 248, 0.15); border: 1.5px solid var(--accent); padding: 12px; border-radius: 8px; text-align: center;">
+      <div style="font-size: 12px; color: var(--text-muted);">Pagar a la cuenta Nequi / Daviplata Lavaarte:</div>
+      <div style="font-size: 20px; font-weight: 900; color: #fff; letter-spacing: 1px; margin-top: 2px;">317 534 2828</div>
+    </div>
+
+    <button class="btn-success" style="padding: 14px; font-size: 15px; margin-top: 6px;" onclick="ejecutarEntregaFinal()">
+      ✅ CONFIRMAR PAGO Y FINALIZAR ENTREGA
+    </button>
+    <button class="nav-btn" onclick="cerrarModal('modal-cobro-entrega')">Cancelar</button>
+  </div>
+</div>
+
+<!-- Modal: Arqueo Diario Desglosado con Colores Corporativos -->
+<div class="modal" id="modal-arqueo">
+  <div class="modal-content" style="width: 820px;">
+    <h3 style="color: var(--accent);">📊 Arqueo y Cierre Diario Desglosado</h3>
+    <div id="caja-resumen" style="font-size: 13px; line-height: 1.8; background: var(--bg-input); padding: 14px; border-radius: 8px;"></div>
+
+    <h4 style="font-size: 14px; color: var(--accent); margin-top: 10px;">📋 Detalle de Órdenes y Entradas por Forma de Pago</h4>
+    <div style="max-height: 180px; overflow-y: auto; border: 1px solid var(--border); border-radius: 8px;">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Ticket #</th>
+            <th>Cliente</th>
+            <th>Concepto</th>
+            <th>Medio de Pago</th>
+            <th>Monto</th>
+          </tr>
+        </thead>
+        <tbody id="tabla-desglose-arqueo-body"></tbody>
+      </table>
+    </div>
+
+    <h4 style="font-size: 14px; color: var(--danger); margin-top: 10px;">💸 Desglose de Gastos de Caja Menor</h4>
+    <div style="max-height: 120px; overflow-y: auto; border: 1px solid var(--border); border-radius: 8px;">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Hora</th>
+            <th>Concepto</th>
+            <th>Responsable</th>
+            <th>Monto</th>
+          </tr>
+        </thead>
+        <tbody id="tabla-desglose-egresos-body"></tbody>
+      </table>
+    </div>
+
+    <div id="arqueo-centinela-bloque" style="background: rgba(239, 68, 68, 0.1); border: 1px solid var(--danger); border-radius: 8px; padding: 12px; font-size: 12px; max-height: 110px; overflow-y: auto;">
+      <strong style="color: var(--danger);">🚨 Auditoría Centinela 60 Horas:</strong>
+      <div id="arqueo-centinela-list" style="margin-top: 6px;"></div>
+    </div>
+    
+    <div style="display: flex; gap: 10px;">
+      <button class="btn-primary" style="flex: 1;" onclick="exportarExcelArqueo()">📥 EXPORTAR INFORME CORPORATIVO A EXCEL (.XLSX)</button>
+      <button class="nav-btn" onclick="cerrarModal('modal-arqueo')">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Ítem Otros -->
+<div class="modal" id="modal-otros">
+  <div class="modal-content">
+    <h3>➕ Agregar Ítem Personalizado</h3>
+    <div class="input-group">
+      <label class="label-sm">Descripción de la prenda / servicio</label>
+      <input type="text" id="otro-desc" class="input-text" placeholder="Ej: Teñido de pantalón especial">
+    </div>
+    <div class="input-group">
+      <label class="label-sm">Precio acordado ($COP)</label>
+      <input type="number" id="otro-precio" class="input-text" placeholder="Ej: 28000">
+    </div>
+    <button class="btn-primary" onclick="agregarOtroItemAlTicket()">Agregar al Ticket</button>
+    <button class="nav-btn" onclick="cerrarModal('modal-otros')">Cancelar</button>
+  </div>
+</div>
+
+<!-- Modal: Autenticación con PIN -->
+<div class="modal" id="modal-admin-auth">
+  <div class="modal-content" style="width: 380px; text-align: center;">
+    <h3 id="auth-modal-title" style="color: var(--warning);">🔒 Acceso Protegido</h3>
+    <p id="auth-modal-desc" style="font-size: 13px; color: var(--text-muted);">Ingresa tu PIN de seguridad:</p>
+    <input type="password" id="admin-pin" class="input-text" style="font-size: 24px; text-align: center; letter-spacing: 6px;" maxlength="4" placeholder="••••">
+    <button class="btn-primary" onclick="validarPinSeguro()">Entrar</button>
+    <button class="nav-btn" onclick="cerrarModal('modal-admin-auth')">Cancelar</button>
+  </div>
+</div>
+
+<!-- Modal: Anulación Rápida Facturas -->
+<div class="modal" id="modal-admin-panel">
+  <div class="modal-content" style="width: 700px;">
+    <h3 style="color: var(--danger);">⚙️ Control de Facturas (Anular / Corregir)</h3>
+    <div style="display: flex; gap: 8px;">
+      <input type="number" id="admin-ticket-input" class="input-text" placeholder="Número de ticket a modificar...">
+      <button class="btn-primary" onclick="adminCargarTicket()">Buscar</button>
+    </div>
+    <div id="admin-ticket-detalle" style="font-size: 13px;"></div>
+    <button class="nav-btn" onclick="cerrarModal('modal-admin-panel')">Cerrar</button>
+  </div>
+</div>
+
+<!-- Modal 9: PANEL MAESTRO ADMINISTRADOR -->
+<div class="modal" id="modal-admin-master">
+  <div class="modal-content" style="width: 820px;">
+    <h3 style="color: var(--warning);">⚡ Panel Maestro Administrador</h3>
+    <p style="font-size: 12px; color: var(--text-muted);">Los cambios de precio se sincronizan automáticamente en Supabase para todos los celulares y computadores.</p>
+
+    <!-- Sección 1: Catálogo y Precios -->
+    <div style="background: var(--bg-input); padding: 14px; border-radius: 8px; border: 1px solid var(--border);">
+      <h4 style="color: var(--accent); margin-bottom: 8px;">🏷️ Catálogo de Prendas y Precios (Base de Datos)</h4>
+      <div style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 8px; margin-bottom: 10px;">
+        <input type="text" id="adm-nuevo-nom" class="input-text" placeholder="Nueva prenda (Ej: Cobija Térmica)">
+        <input type="number" id="adm-nuevo-pre" class="input-text" placeholder="Precio ($COP)">
+        <button class="btn-success" onclick="adminCrearPrendaCatalogo()">➕ Crear Prenda</button>
+      </div>
+      <div style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 8px;">
+        <select id="adm-edit-prenda-sel" class="input-text"></select>
+        <input type="number" id="adm-edit-prenda-nuevo-precio" class="input-text" placeholder="Nuevo precio">
+        <button class="btn-primary" onclick="adminGuardarPrecioCatalogo()">✏️ Cambiar Precio</button>
+      </div>
+    </div>
+
+    <!-- Sección 2: Base de Datos de Órdenes en Tiempo Real -->
+    <div style="background: var(--bg-input); padding: 14px; border-radius: 8px; border: 1px solid var(--border);">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+        <h4 style="color: var(--accent);">🗄️ Base de Datos de Órdenes en Vivo</h4>
+        <input type="text" id="adm-busc-ordenes-bd" class="input-text" style="max-width: 250px; padding: 6px 10px; font-size: 12px;" placeholder="🔍 Filtrar ticket, cliente..." oninput="adminFiltrarOrdenesBD(this.value)">
+      </div>
+      <div style="max-height: 180px; overflow-y: auto; border: 1px solid var(--border); border-radius: 6px;">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Ticket</th>
+              <th>Cliente</th>
+              <th>Estado</th>
+              <th>Saldo</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="adm-tabla-ordenes-bd-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Sección 3: Gestor de Clientes e Importación Masiva -->
+    <div style="background: var(--bg-input); padding: 14px; border-radius: 8px; border: 1px solid var(--border);">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 8px;">
+        <h4 style="color: var(--success);">👥 Padrón de Clientes</h4>
+        <div style="display: flex; gap: 8px;">
+          <input type="file" id="adm-file-clientes" accept=".xlsx, .xls, .csv" style="display: none;" onchange="adminImportarClientesExcel(event)">
+          <button class="btn-success" style="padding: 6px 12px; font-size: 12px;" onclick="document.getElementById('adm-file-clientes').click()">📥 Migrar Clientes (.XLSX / .CSV)</button>
+          <input type="text" id="adm-busc-clientes-bd" class="input-text" style="max-width: 200px; padding: 6px 10px; font-size: 12px;" placeholder="🔍 Buscar cliente..." oninput="adminFiltrarClientesBD(this.value)">
+          <span style="font-size: 10px; color: var(--text-muted); width: 100%;">No sobrescribe clientes existentes. Se requiere nombre + celular; los teléfonos se normalizan automáticamente.</span>
+        </div>
+      </div>
+      <div style="max-height: 160px; overflow-y: auto; border: 1px solid var(--border); border-radius: 6px;">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Nombre</th>
+              <th>Teléfono</th>
+              <th>Dirección</th>
+              <th>Acción</th>
+            </tr>
+          </thead>
+          <tbody id="adm-tabla-clientes-bd-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Sección 4: Borrado Físico de Órdenes -->
+    <div style="background: rgba(239, 68, 68, 0.1); padding: 14px; border-radius: 8px; border: 1px solid var(--danger);">
+      <h4 style="color: var(--danger); margin-bottom: 4px;">🗑️ Borrado Físico de Orden</h4>
+      <p style="font-size: 11px; color: var(--text-muted); margin-bottom: 8px;">Elimina permanentemente de Supabase el ticket y sus prendas asociadas (no se renumera la secuencia).</p>
+      <div style="display: flex; gap: 8px;">
+        <input type="number" id="adm-delete-ticket-input" class="input-text" placeholder="Ticket # a eliminar (Ej: 100)">
+        <button class="btn-danger" style="white-space: nowrap;" onclick="adminBorrarOrdenFisica()">ELIMINAR DE RAÍZ</button>
+      </div>
+    </div>
+
+    <button class="nav-btn" onclick="cerrarModal('modal-admin-master')">Cerrar Panel Maestro</button>
+  </div>
+</div>
+
+<!-- ==================== PLANTILLA IMPRESIÓN 80MM (COPIA SEGÚN FOTO) ==================== -->
+<div id="ticket-termico-print">
+
+  <!-- COPIA 1: ORIGINAL CLIENTE -->
+  <div class="ticket-copia">
+    <div class="p-header-box">
+      <!-- Logo vectorizado según la foto real de Lavaarte -->
+      <svg class="p-icon-svg" viewBox="0 0 100 100">
+        <path d="M15 50 C15 28 35 15 55 15 C78 15 88 32 88 50 C88 72 70 85 50 85 C30 85 15 72 15 50 Z" fill="#000" />
+        <path d="M25 50 C25 36 38 25 55 25 C70 25 78 35 78 50 C78 65 65 75 50 75 C38 75 25 64 25 50 Z" fill="#fff" />
+        <path d="M35 50 C35 42 42 35 55 35 C64 35 70 42 70 50 C70 58 60 65 50 65 C40 65 35 58 35 50 Z" fill="#000" />
+        <circle cx="58" cy="46" r="4.5" fill="#fff" />
+        <circle cx="64" cy="38" r="3" fill="#fff" />
+        <circle cx="52" cy="38" r="2.5" fill="#fff" />
+      </svg>
+      <div>
+        <div class="p-brand-text">LAVA ARTE</div>
+        <div class="p-brand-slogan">El Arte de Lavar</div>
+      </div>
+    </div>
+
+    <div class="p-subtext">
+      NIT: 901.344.335<br>
+      Diagonal 47 No.77C-80 Bogotá<br>
+      Tels: 314-263-6787 / 315-333-0502<br>
+      <strong>lavarte-software.onrender.com</strong>
+    </div>
+
+    <!-- Rectángulo con número de ticket exacto a la foto -->
+    <div class="p-box-ticket-hero pr-ticket-num">
+      100
+    </div>
+
+    <div class="p-meta-cliente">
+      <div class="p-lbl-cliente">CLIENTE</div>
+      <div class="p-val-cliente"><span class="pr-cliente">---</span></div>
+      <div class="p-val-telefono">Teléfono: <span class="pr-telefono">---</span></div>
+      <div style="font-size: 10px; margin-top: 2px;">FECHA: <span class="pr-fecha">--/--/----</span></div>
+      <div class="pr-loyalty-text" style="font-size: 10px; font-weight: bold; margin-top: 2px;"></div>
+    </div>
+
+    <table class="p-table">
+      <thead>
+        <tr>
+          <th style="width: 50%;">DETALLE</th>
+          <th style="width: 15%; text-align: center;">CANT</th>
+          <th style="width: 35%; text-align: right;">TOTAL</th>
+        </tr>
+      </thead>
+      <tbody class="pr-items-body"></tbody>
+    </table>
+
+    <div class="pr-box-obs" style="margin: 4px 0; font-size: 10.5px; display: none;">
+      <div style="border-top: 1px dotted #000; padding-top: 3px;">
+        <strong>OBS / ESTADO:</strong> <span class="pr-obs-texto"></span>
+      </div>
+    </div>
+
+    <div class="p-totals-box">
+      <div style="display: flex; justify-content: space-between; font-size: 11px;">
+        <span>SUBTOTAL:</span>
+        <span class="pr-total">$0</span>
+      </div>
+      <div style="display: flex; justify-content: space-between; font-size: 11px;">
+        <span>ABONO INICIAL:</span>
+        <span class="pr-abono">$0</span>
+      </div>
+      <div class="p-saldo-destacado">
+        <span>SALDO PENDIENTE:</span>
+        <span class="pr-saldo">$0</span>
+      </div>
+    </div>
+
+    <div class="p-footer">
+      🔍 Rastree el avance de su ropa con su <strong>número de ticket</strong> en:<br>
+      <strong>lavarte-software.onrender.com</strong><br>
+      ¡Gracias por escogernos!
+    </div>
+  </div>
+
+  <!-- COPIA 2: PLANTA / ACOPLE (Con salto de página para corte automático parcial) -->
+  <div class="ticket-copia">
+    <div class="p-header-box">
+      <svg class="p-icon-svg" viewBox="0 0 100 100">
+        <path d="M15 50 C15 28 35 15 55 15 C78 15 88 32 88 50 C88 72 70 85 50 85 C30 85 15 72 15 50 Z" fill="#000" />
+      </svg>
+      <div>
+        <div class="p-brand-text">LAVA ARTE</div>
+        <div class="p-brand-slogan">El Arte de Lavar [ACOPLE]</div>
+      </div>
+    </div>
+
+    <div class="p-box-ticket-hero pr-ticket-num" style="border-style: dashed !important;">
+      100
+    </div>
+
+    <div class="p-meta-cliente">
+      <div class="p-lbl-cliente">CLIENTE (ACOPLE)</div>
+      <div class="p-val-cliente"><span class="pr-cliente">---</span></div>
+      <div class="p-val-telefono">Teléfono: <span class="pr-telefono">---</span></div>
+      <div style="font-size: 10px; margin-top: 2px;">FECHA: <span class="pr-fecha">--/--/----</span></div>
+    </div>
+
+    <table class="p-table">
+      <thead>
+        <tr>
+          <th style="width: 50%;">DETALLE</th>
+          <th style="width: 15%; text-align: center;">CANT</th>
+          <th style="width: 35%; text-align: right;">TOTAL</th>
+        </tr>
+      </thead>
+      <tbody class="pr-items-body"></tbody>
+    </table>
+
+    <div class="pr-box-obs" style="margin: 4px 0; font-size: 10.5px; display: none;">
+      <div style="border-top: 1px dotted #000; padding-top: 3px;">
+        <strong>OBS / ESTADO:</strong> <span class="pr-obs-texto"></span>
+      </div>
+    </div>
+
+    <div class="p-totals-box">
+      <div style="display: flex; justify-content: space-between; font-size: 11px;">
+        <span>TOTAL FACTURA:</span>
+        <span class="pr-total">$0</span>
+      </div>
+      <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 12px; margin-top: 2px;">
+        <span>SALDO PENDIENTE:</span>
+        <span class="pr-saldo">$0</span>
+      </div>
+    </div>
+
+    <div class="p-footer" style="border-top: 1px dotted #000;">
+      * Control interno de calidad y empaque Lavaarte *
+    </div>
+  </div>
+
+</div>
+
+
+<!-- ==================== INFORMACIÓN LEGAL ==================== -->
+<div class="modal" id="modal-legal">
+  <div class="modal-content" style="width: 850px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
+      <h3 id="legal-titulo" style="color:var(--accent);">Información legal</h3>
+      <button class="nav-btn" onclick="cerrarModal('modal-legal')">✕ Cerrar</button>
+    </div>
+    <div id="legal-contenido" class="legal-text"></div>
+  </div>
+</div>
+<script>
+  const BOT_WHATSAPP_URL = "https://bot-lavaarte-whatsapp.onrender.com";
+  const APP_WEB_URL = "https://lavarte-software.onrender.com";
+
+  const SUPABASE_URL = "https://biumkyjjavpfgfishvzp.supabase.co";
+  const SUPABASE_KEY = "sb_publishable_vUntLk7lDbQ3DXROxTDCLg_NjgC6IIT";
+  const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  const TEXTOS_LEGALES = {
+    privacidad: { titulo: "Política de Privacidad y Tratamiento de Datos Personales", html: `
+      <p><strong>LAVAARTE LAVANDERÍA SAS</strong>, con domicilio en Bogotá D.C., Colombia, adopta esta política para informar cómo trata los datos personales utilizados por el sistema.</p>
+      <h4>1. Datos que podemos tratar</h4>
+      <p>Nombre o razón social, número de celular/WhatsApp y, cuando el servicio lo requiera, dirección. También pueden existir datos asociados a órdenes, tickets, domicilios, pagos y comunicaciones del servicio.</p>
+      <h4>2. Finalidades</h4>
+      <p>Gestionar órdenes y domicilios, identificar tickets, coordinar entregas, enviar comunicaciones operativas por WhatsApp, administrar fidelización, atención al cliente, facturación, contabilidad, seguridad y cumplimiento de obligaciones legales.</p>
+      <h4>3. Datos opcionales</h4>
+      <p>El cliente puede solicitar el servicio sin registrarse como cliente permanente. En ese caso, cuando técnicamente sea posible, la orden podrá quedar asociada sin <em>cliente_id</em>; los datos que no sean necesarios para ejecutar el servicio no deben exigirse.</p>
+      <h4>4. Derechos</h4>
+      <p>El titular puede conocer, actualizar, rectificar y solicitar la supresión o revocatoria cuando proceda, mediante los canales de atención de LAVAARTE. Para eliminar o desvincular un registro de cliente se podrá solicitar atención presencial en la sede y verificación de identidad. La supresión puede estar limitada por obligaciones legales, contables, contractuales o probatorias de conservación.</p>
+      <h4>5. Encargados, APIs y terceros</h4>
+      <p>El sistema puede apoyarse en proveedores tecnológicos para base de datos, infraestructura, mensajería, alojamiento y librerías/API de terceros. Estos servicios se utilizan para operar las funciones solicitadas y pueden implicar tratamiento o transmisión de información conforme a sus condiciones y a las obligaciones aplicables.</p>
+      <h4>6. Componentes asistidos por IA</h4>
+      <p>Algunas funciones, como reconocimiento o interpretación de voz y automatizaciones operativas, pueden incorporar componentes asistidos por inteligencia artificial. La IA no modifica por sí sola las condiciones comerciales ni sustituye la decisión del personal sobre una orden.</p>
+      <h4>7. Seguridad</h4>
+      <p>LAVAARTE aplica medidas razonables de control, acceso y protección. Ningún servicio conectado a Internet puede garantizar seguridad absoluta; por ello se recomienda no ingresar información innecesaria o especialmente sensible.</p>
+      <div class="legal-note"><strong>Importante:</strong> esta política no autoriza a exigir datos que no sean necesarios para el servicio y no sustituye los procedimientos internos de seguridad, gestión de incidentes, conservación y atención de solicitudes de titulares.</div>
+      <p><strong>Versión:</strong> 28 de septiembre de 2026.</p>
+    `},
+    terminos: { titulo: "Términos y Condiciones", html: `
+      <p>El uso de LAVAARTE implica la aceptación de estas condiciones en lo aplicable al servicio solicitado.</p>
+      <h4>1. Servicio y órdenes</h4><p>El cliente entrega prendas para los servicios seleccionados y debe informar características relevantes que puedan afectar el tratamiento de la prenda. Los precios son los mostrados o acordados en el sistema al momento de la orden.</p>
+      <h4>2. Lavaarte Loyalty</h4><p>En el ciclo correspondiente a la quinta visita puede existir un beneficio. Su aplicación es <strong>opcional</strong> y requiere decisión en el momento de liquidar la orden. Solo puede aplicarse a <strong>una unidad</strong> de una prenda elegible cuyo precio unitario sea de hasta <strong>$8.000 COP</strong>. No se multiplica por cantidad, no se acumula, no se convierte en efectivo y no se divide entre varias prendas.</p>
+      <h4>3. Domicilios y comunicaciones</h4><p>Las solicitudes de recogida o entrega están sujetas a cobertura, horarios y disponibilidad. Cuando se suministra un celular, puede utilizarse WhatsApp para comunicaciones operativas relacionadas con la orden.</p>
+      <h4>4. Proveedores tecnológicos</h4><p>El funcionamiento puede depender de Supabase, infraestructura de alojamiento, WhatsApp y otras APIs o librerías. Una interrupción de un proveedor puede afectar temporalmente funciones digitales sin alterar los registros que ya hayan sido guardados correctamente.</p>
+      <h4>5. Inteligencia artificial</h4><p>Algunas herramientas internas pueden utilizar IA para apoyo en voz o automatización. Las decisiones comerciales y operativas finales corresponden a LAVAARTE y al personal autorizado.</p>
+      <h4>6. Consumidor y comercio electrónico</h4><p>Las relaciones de consumo se rigen por las normas colombianas aplicables, incluyendo las obligaciones que correspondan según la naturaleza del servicio y del canal utilizado.</p>
+      <h4>7. Datos personales</h4><p>El tratamiento de datos se rige por la Política de Privacidad publicada en este sitio.</p>
+      <p><strong>Versión:</strong> 28 de septiembre de 2026.</p>
+    `},
+    cookies: { titulo: "Política de Cookies y Almacenamiento Local", html: `
+      <h4>1. Tecnologías utilizadas</h4><p>El sitio puede utilizar almacenamiento local del navegador para conservar preferencias operativas, por ejemplo el estado del modo de impresora en el equipo autorizado.</p>
+      <h4>2. Terceros</h4><p>Las librerías, APIs y proveedores integrados pueden utilizar mecanismos técnicos propios necesarios para prestar sus servicios. LAVAARTE no utiliza actualmente estas tecnologías para publicidad personalizada desde este sistema.</p>
+      <h4>3. Control del usuario</h4><p>El usuario puede administrar o eliminar almacenamiento local desde la configuración del navegador. Borrar estos datos puede restablecer preferencias del dispositivo, como el modo de impresora.</p>
+      <h4>4. Cambios</h4><p>Si en el futuro se incorporan cookies no esenciales con finalidades de analítica, publicidad o personalización que requieran autorización, se actualizará esta política y se implementarán los mecanismos de información y consentimiento que correspondan.</p>
+      <p><strong>Versión:</strong> 28 de septiembre de 2026.</p>
+    `}
+  };
+
+  function abrirLegal(tipo) {
+    const info = TEXTOS_LEGALES[tipo];
+    if (!info) return;
+    document.getElementById("legal-titulo").textContent = info.titulo;
+    document.getElementById("legal-contenido").innerHTML = info.html;
+    abrirModal("modal-legal");
+  }
+
+  const CATALOGO_DEFAULT = [
+    {codigo: 1, nombre: "Camisa", precio: 5500}, {codigo: 2, nombre: "Camiseta", precio: 6800}, {codigo: 3, nombre: "Pantalón", precio: 7500},
+    {codigo: 4, nombre: "Jeans", precio: 7500}, {codigo: 5, nombre: "Vestido Hombre 2 Pzs.", precio: 14000}, {codigo: 6, nombre: "Corbata", precio: 7000},
+    {codigo: 7, nombre: "Chaqueta Sencilla", precio: 8000}, {codigo: 8, nombre: "Chaqueta Acolchada", precio: 11000}, {codigo: 9, nombre: "Chaqueta Moto", precio: 25000},
+    {codigo: 10, nombre: "Chaqueta De Plumas", precio: 18000}, {codigo: 11, nombre: "Chaqueta Cuero (Solo Lavado)", precio: 120000}, {codigo: 12, nombre: "Chaqueta Cuero (Lavado Y Renovado)", precio: 120000},
+    {codigo: 13, nombre: "Chaqueta De Gamuza", precio: 150000}, {codigo: 14, nombre: "Chaqueta De Cuerina", precio: 25000}, {codigo: 15, nombre: "Gabán", precio: 14000},
+    {codigo: 16, nombre: "Abrigo", precio: 14000}, {codigo: 17, nombre: "Saco", precio: 8000}, {codigo: 18, nombre: "Suéter", precio: 7000},
+    {codigo: 19, nombre: "Buso", precio: 7000}, {codigo: 20, nombre: "Chaleco Sencillo", precio: 8000}, {codigo: 21, nombre: "Chaleco Plumas", precio: 18000},
+    {codigo: 22, nombre: "Blusa", precio: 7000}, {codigo: 23, nombre: "Falda", precio: 7000}, {codigo: 24, nombre: "Jardinera", precio: 14000},
+    {codigo: 25, nombre: "Bata Dama", precio: 14000}, {codigo: 26, nombre: "Vestido Dama 2 Pzs.", precio: 14000}, {codigo: 27, nombre: "Enterizo", precio: 14000},
+    {codigo: 28, nombre: "Sudadera", precio: 14000}, {codigo: 29, nombre: "Faja", precio: 9000}, {codigo: 30, nombre: "Pijama", precio: 9000},
+    {codigo: 31, nombre: "Chal", precio: 12000}, {codigo: 32, nombre: "Bufanda", precio: 7000}, {codigo: 33, nombre: "Ruana", precio: 18000},
+    {codigo: 34, nombre: "Bermuda", precio: 5000}, {codigo: 35, nombre: "Botas", precio: 25000}, {codigo: 36, nombre: "Tenis", precio: 15000},
+    {codigo: 37, nombre: "Gorra", precio: 7000}, {codigo: 38, nombre: "Bolso Dama", precio: 15000}, {codigo: 39, nombre: "Morral", precio: 15000},
+    {codigo: 40, nombre: "Maleta Viaje", precio: 35000}, {codigo: 41, nombre: "Overol", precio: 14000}, {codigo: 42, nombre: "Almohada Sencilla", precio: 15000},
+    {codigo: 43, nombre: "Almohada De Plumas", precio: 25000}, {codigo: 44, nombre: "Cubrelecho Sencillo", precio: 20000}, {codigo: 45, nombre: "Cubrelecho Doble", precio: 25000},
+    {codigo: 46, nombre: "Cubrelecho Queen", precio: 30000}, {codigo: 47, nombre: "Cubrelecho Plumas Sencillo", precio: 35000}, {codigo: 48, nombre: "Cubrelecho Plumas Doble", precio: 45000},
+    {codigo: 49, nombre: "Cubrelecho Plumas Queen", precio: 70000}, {codigo: 50, nombre: "Duvet", precio: 18000}, {codigo: 51, nombre: "Juego Sábanas", precio: 15000},
+    {codigo: 52, nombre: "Cobija Sencilla", precio: 20000}, {codigo: 53, nombre: "Cobija Doble", precio: 25000}, {codigo: 54, nombre: "Hamaca", precio: 35000},
+    {codigo: 55, nombre: "Cojín Relleno", precio: 10000}, {codigo: 56, nombre: "Mantel", precio: 12000}, {codigo: 57, nombre: "Toalla", precio: 12000},
+    {codigo: 58, nombre: "Cortina Velo Prense", precio: 2000}, {codigo: 59, nombre: "Cortina Pesada Prense", precio: 2500}, {codigo: 60, nombre: "Tapete Mt Cuadrado", precio: 35000},
+    {codigo: 61, nombre: "Muñeco", precio: 15000}, {codigo: 62, nombre: "Vestido Novia", precio: 200000}, {codigo: 63, nombre: "Vestido Quinceañera", precio: 50000},
+    {codigo: 64, nombre: "Vestido Fiesta Corto", precio: 35000}, {codigo: 65, nombre: "Vestido Fiesta Largo", precio: 50000}, {codigo: 66, nombre: "Vestido Primera Comunión", precio: 35000},
+    {codigo: 67, nombre: "Tintura Prenda", precio: 20000}, {codigo: 68, nombre: "Tintura Chaqueta", precio: 25000}, {codigo: 69, nombre: "Solo Plancha", precio: 5500},
+    {codigo: 70, nombre: "Forros De Carro", precio: 50000}, {codigo: 71, nombre: "Kilo De Ropa", precio: 16500}, {codigo: 72, nombre: "Bóxer", precio: 1800},
+    {codigo: 73, nombre: "Par Medias", precio: 1800}, {codigo: 74, nombre: "Brassiere", precio: 3900}, {codigo: 75, nombre: "Cama Mascota", precio: 25000},
+    {codigo: 76, nombre: "Camisa Galvis", precio: 4200}, {codigo: 77, nombre: "Muñeco Mediano", precio: 20000}
+  ];
+
+  let CATALOGO_CENTRAL = [];
+  let ticket = [];
+  let listaClientes = [];
+  let listaHotelesBD = [];
+  let ordenesMasterCache = [];
+  let ordenCobroActiva = null;
+  let metodoPagoSeleccionado = "EFECTIVO";
+  let ordenAlistarActiva = null;
+  let destinoPinAdmin = "";
+  let modoImpresoraHP = false;
+  const ordenesImpresionLocal = new Set();
+  const CLAVE_MODO_IMPRESORA = "lavaarte_modo_impresora_hp";
+  const LAVAARTE_DESKTOP = !!(window.electronAPI && window.electronAPI.isDesktop);
+
+  async function ejecutarImpresionLavaarte() {
+    if (LAVAARTE_DESKTOP && window.electronAPI?.printTicket) {
+      const r = await window.electronAPI.printTicket();
+      if (!r?.ok) throw new Error(r?.error || "No fue posible imprimir en la impresora configurada.");
+      return;
+    }
+    window.print();
+  }
+  let clienteVisitasHistorial = 0;
+  let itemSeleccionadoQuickBar = null;
+
+  window.onload = async () => {
+    actualizarReloj();
+    setInterval(actualizarReloj, 1000);
+    await sincronizarCatalogoSupabase();
+    precargarClientes();
+    precargarHotelesBD();
+    chequearCentinela60h();
+    restaurarModoImpresoraHP();
+    activarSuscripcionesRealtime();
+  };
+
+  function actualizarReloj() {
+    const ahora = new Date();
+    document.getElementById("hora-actual").textContent = ahora.toLocaleDateString("es-CO") + " " + ahora.toLocaleTimeString("en-US");
+  }
+
+  function mostrarVista(vistaId) {
+    document.querySelectorAll(".view-section").forEach(el => el.classList.remove("view-active"));
+    document.getElementById(vistaId).classList.add("view-active");
+    if (vistaId === "vista-entrega") buscarOrdenesEntrega("");
+    if (vistaId === "vista-domicilios-admin") cargarDomiciliosAdmin();
+    if (vistaId === "vista-inventario") cargarHistorialInventario();
+  }
+
+  function cerrarModal(id) { document.getElementById(id).style.display = "none"; }
+  function abrirModal(id) { document.getElementById(id).style.display = "flex"; }
+
+  async function sincronizarCatalogoSupabase() {
+    try {
+      const { data, error } = await db.from("catalogo_prendas").select("*").order("codigo", { ascending: true });
+      if (!error && data && data.length > 0) {
+        CATALOGO_CENTRAL = data;
+      } else {
+        CATALOGO_CENTRAL = CATALOGO_DEFAULT;
+        await db.from("catalogo_prendas").upsert(CATALOGO_DEFAULT);
+      }
+    } catch (e) {
+      console.warn("Fallback catálogo:", e);
+      CATALOGO_CENTRAL = CATALOGO_DEFAULT;
+    }
+    renderCatalogo("");
+  }
+
+  // Realtime Total
+  function activarSuscripcionesRealtime() {
+    db.channel('ordenes-live')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'ordenes' }, async (payload) => {
+        chequearCentinela60h();
+        if (document.getElementById("vista-busquedas").classList.contains("view-active")) {
+          ejecutarBusquedaAuditoria(document.getElementById("busc-auditoria-input").value);
+        }
+        if (modoImpresoraHP && payload.eventType === 'INSERT' && !payload.new.impresa && !ordenesImpresionLocal.has(payload.new.id)) {
+          imprimirOrdenRemota(payload.new.id);
+        }
+      })
+      .subscribe();
+
+    db.channel('clientes-live')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'clientes' }, async () => {
+        await precargarClientes();
+        if (document.getElementById("modal-admin-master").style.display === "flex") {
+          adminRenderClientesBD(listaClientes);
+        }
+      })
+      .subscribe();
+
+    db.channel('hoteles-live')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'hoteles' }, async () => {
+        await precargarHotelesBD();
+      })
+      .subscribe();
+
+    db.channel('domicilios-live')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'solicitudes_domicilio' }, () => {
+        cargarDomiciliosAdmin();
+      })
+      .subscribe();
+
+    db.channel('catalogo-live')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'catalogo_prendas' }, async () => {
+        const { data } = await db.from("catalogo_prendas").select("*").order("codigo", { ascending: true });
+        if (data) {
+          CATALOGO_CENTRAL = data;
+          renderCatalogo("");
+          if (document.getElementById("modal-admin-master").style.display === "flex") {
+            poblarSelectPrendasMaster();
+          }
+        }
+      })
+      .subscribe();
+  }
+
+  function actualizarBotonModoImpresora() {
+    const btn = document.getElementById("btn-modo-impresora");
+    if (!btn) return;
+    if (modoImpresoraHP) {
+      btn.style.background = "var(--success)";
+      btn.textContent = "🖨️ Modo Impresora HP: ACTIVO";
+    } else {
+      btn.style.background = "var(--bg-input)";
+      btn.textContent = "🖨️ Modo Impresora HP: OFF";
+    }
+  }
+
+  function restaurarModoImpresoraHP() {
+    try { modoImpresoraHP = localStorage.getItem(CLAVE_MODO_IMPRESORA) === "1"; }
+    catch (e) { modoImpresoraHP = false; }
+    actualizarBotonModoImpresora();
+  }
+
+  function toggleModoImpresoraHP() {
+    modoImpresoraHP = !modoImpresoraHP;
+    try { localStorage.setItem(CLAVE_MODO_IMPRESORA, modoImpresoraHP ? "1" : "0"); } catch (e) {}
+    actualizarBotonModoImpresora();
+    if (modoImpresoraHP) alert("✅ Impresora lista. Este dispositivo conservará el modo activo después de recargar la página. Debe permanecer abierto y conectado para recibir e imprimir órdenes remotas.");
+  }
+
+  function poblarPlantillaImpresion(ticketNum, fechaStr, clienteNom, clienteTel, codigoRastreo, itemsArray, obsTexto, totalNum, abonoNum, saldoNum, textoLoyalty) {
+    document.querySelectorAll(".pr-ticket-num").forEach(el => el.textContent = ticketNum);
+    document.querySelectorAll(".pr-fecha").forEach(el => el.textContent = fechaStr);
+    document.querySelectorAll(".pr-cliente").forEach(el => el.textContent = clienteNom);
+    document.querySelectorAll(".pr-telefono").forEach(el => el.textContent = clienteTel);
+    document.querySelectorAll(".pr-loyalty-text").forEach(el => el.textContent = textoLoyalty || "");
+
+    const itemsHTML = itemsArray.map(i => `
+      <tr>
+        <td><strong>${i.descripcion_prenda}</strong></td>
+        <td style="text-align: center;">${i.cantidad}</td>
+        <td style="text-align: right;">$${Number(i.subtotal).toLocaleString("es-CO")}</td>
+      </tr>
+    `).join("");
+
+    document.querySelectorAll(".pr-items-body").forEach(el => el.innerHTML = itemsHTML);
+
+    document.querySelectorAll(".pr-box-obs").forEach(el => {
+      if (obsTexto) {
+        el.style.display = "block";
+        el.querySelector(".pr-obs-texto").textContent = obsTexto;
+      } else {
+        el.style.display = "none";
+      }
+    });
+
+    document.querySelectorAll(".pr-total").forEach(el => el.textContent = `$${Number(totalNum).toLocaleString("es-CO")}`);
+    document.querySelectorAll(".pr-abono").forEach(el => el.textContent = `$${Number(abonoNum).toLocaleString("es-CO")}`);
+    document.querySelectorAll(".pr-saldo").forEach(el => el.textContent = `$${Number(saldoNum).toLocaleString("es-CO")}`);
+  }
+
+  async function imprimirOrdenRemota(ordenId) {
+    try {
+      const { data: o } = await db.from("ordenes").select("*, clientes(*), orden_items(*)").eq("id", ordenId).single();
+      if (!o) return;
+      poblarPlantillaImpresion(o.consecutivo_ticket, new Date(o.created_at).toLocaleString("es-CO"), o.clientes?.nombre_o_razon || "Particular", o.clientes?.telefono || "-", o.codigo_rastreo, o.orden_items || [], o.observaciones_estado_prendas, o.total_neto, o.abono_inicial || 0, o.saldo_pendiente, o.loyalty_beneficio_aplicado ? "⭐ Beneficio Lavaarte Loyalty aplicado: 1 unidad, máximo $8.000 COP." : "");
+      ordenesImpresionLocal.add(ordenId);
+      await ejecutarImpresionLavaarte();
+      await db.from("ordenes").update({ impresa: true }).eq("id", ordenId);
+      setTimeout(() => ordenesImpresionLocal.delete(ordenId), 10000);
+    } catch (e) { console.error("Error imprimiendo:", e); }
+  }
+
+  async function despacharWhatsApp(telefono, mensajeTexto) {
+    let enviadoServidor = false;
+    try {
+      const resp = await fetch(`${BOT_WHATSAPP_URL}/api/enviar-recibo`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ telefono: telefono, mensaje: mensajeTexto })
+      });
+      const resJson = await resp.json();
+      if (resJson && resJson.ok) enviadoServidor = true;
+    } catch (err) {
+      console.warn("Bot WhatsApp offline temporalmente...");
+    }
+
+    if (!enviadoServidor) {
+      const urlDirecta = `https://api.whatsapp.com/send?phone=57${telefono.replace(/\D/g, '')}&text=${encodeURIComponent(mensajeTexto)}`;
+      window.open(urlDirecta, "_blank");
+    }
+  }
+
+  // Barra Rápida Teclado
+  function quickBarFiltrarPrenda(val) {
+    const box = document.getElementById("drop-quick-prendas");
+    const q = val.toLowerCase().trim();
+    if (!q) { box.style.display = "none"; return; }
+
+    const matches = CATALOGO_CENTRAL.filter(p => p.nombre.toLowerCase().includes(q) || String(p.codigo).includes(q));
+    if (matches.length === 0) {
+      box.innerHTML = `<div class="autocomplete-item" onclick="quickBarSeleccionarPrenda({codigo: 99, nombre: '${val}', precio: 0})">➕ Personalizado: "<strong>${val}</strong>"</div>`;
+    } else {
+      box.innerHTML = matches.slice(0, 10).map(p => `
+        <div class="autocomplete-item" onclick='quickBarSeleccionarPrenda(${JSON.stringify(p)})'>
+          [${p.codigo}] <strong>${p.nombre}</strong> - $${Number(p.precio).toLocaleString("es-CO")}
+        </div>
+      `).join("");
+    }
+    box.style.display = "block";
+  }
+
+  function quickBarSeleccionarPrenda(p) {
+    itemSeleccionadoQuickBar = p;
+    document.getElementById("quick-bar-search").value = `[${p.codigo}] ${p.nombre}`;
+    document.getElementById("quick-bar-price").value = p.precio;
+    document.getElementById("drop-quick-prendas").style.display = "none";
+    document.getElementById("quick-bar-price").focus();
+    document.getElementById("quick-bar-price").select();
+  }
+
+  function quickBarAgregarAlTicket() {
+    const cantInput = document.getElementById("quick-bar-cant");
+    const priceInput = document.getElementById("quick-bar-price");
+    const searchInput = document.getElementById("quick-bar-search");
+
+    let cant = parseFloat(cantInput.value);
+    if (isNaN(cant) || cant <= 0) cant = 1;
+
+    let precio = Number(priceInput.value);
+    if (isNaN(precio) || precio < 0) precio = 0;
+
+    let nombrePrenda = "";
+    let codPrenda = 99;
+
+    if (itemSeleccionadoQuickBar) {
+      nombrePrenda = itemSeleccionadoQuickBar.nombre;
+      codPrenda = itemSeleccionadoQuickBar.codigo;
+    } else {
+      const txt = searchInput.value.trim();
+      if (!txt) return alert("Por favor busca o escribe una prenda.");
+      nombrePrenda = txt;
+    }
+
+    const ex = ticket.find(t => t.cod === codPrenda && t.nom === nombrePrenda);
+    if (ex) {
+      ex.cant += cant;
+      ex.pre = precio;
+    } else {
+      ticket.push({ cod: codPrenda, nom: nombrePrenda, pre: precio, cant: cant });
+    }
+
+    renderTicket();
+    itemSeleccionadoQuickBar = null;
+    searchInput.value = "";
+    priceInput.value = "";
+    cantInput.value = "1";
+    searchInput.focus();
+  }
+
+  function renderCatalogo(filtro) {
+    const grid = document.getElementById("grid-catalogo");
+    grid.innerHTML = "";
+    const f = filtro.toLowerCase();
+    CATALOGO_CENTRAL.filter(p => p.nombre.toLowerCase().includes(f) || String(p.codigo).includes(f)).forEach(p => {
+      const btn = document.createElement("div");
+      btn.className = "prenda-btn";
+      btn.onclick = () => agregarAlTicket({ cod: p.codigo, nom: p.nombre, pre: Number(p.precio) });
+      btn.innerHTML = `
+        <div class="prenda-name">[${p.codigo}] ${p.nombre}</div>
+        <div class="prenda-price">$${Number(p.precio).toLocaleString("es-CO")}</div>
+      `;
+      grid.appendChild(btn);
+    });
+  }
+
+  function agregarAlTicket(item) {
+    const ex = ticket.find(t => t.cod === item.cod && t.nom === item.nom);
+    if (ex) {
+      ex.cant++;
+    } else {
+      if (item.cod === 71) {
+        const kilos = prompt("Ingresa la cantidad de kilos (ej: 1, 2.5, 4):", "1");
+        const val = parseFloat(kilos);
+        if (isNaN(val) || val <= 0) return;
+        ticket.push({ cod: item.cod, nom: item.nom, pre: item.pre, cant: val });
+      } else {
+        ticket.push({ cod: item.cod, nom: item.nom, pre: item.pre, cant: 1 });
+      }
+    }
+    renderTicket();
+  }
+
+  function cambiarCantidad(idx, delta) {
+    ticket[idx].cant = Math.round((ticket[idx].cant + delta) * 100) / 100;
+    if (ticket[idx].cant <= 0) ticket.splice(idx, 1);
+    renderTicket();
+  }
+
+  function editarCantidadDirecta(idx) {
+    const val = prompt(`Ingresa la cantidad o peso para "${ticket[idx].nom}":`, ticket[idx].cant);
+    if (val !== null && !isNaN(val) && Number(val) > 0) {
+      ticket[idx].cant = parseFloat(val);
+      renderTicket();
+    }
+  }
+
+  function editarPrecioTicket(idx) {
+    const nuevo = prompt("Modificar precio unitario ($COP) antes de liquidar para " + ticket[idx].nom + ":", ticket[idx].pre);
+    if (nuevo !== null && !isNaN(nuevo) && Number(nuevo) >= 0) {
+      ticket[idx].pre = Number(nuevo);
+      renderTicket();
+    }
+  }
+
+  function renderTicket() {
+    const cont = document.getElementById("ticket-items");
+    document.getElementById("group-detalle-kilos").style.display = ticket.some(t => t.cod === 71) ? "flex" : "none";
+
+    if (ticket.length === 0) {
+      cont.innerHTML = '<div style="text-align: center; color: var(--text-muted); font-size: 13px; margin-top: 30px;">Selecciona prendas del catálogo o utiliza la barra rápida de teclado.</div>';
+      document.getElementById("pos-subtotal").textContent = "$0";
+      document.getElementById("pos-saldo").textContent = "$0";
+      return;
+    }
+    cont.innerHTML = "";
+    let sub = 0;
+    ticket.forEach((it, idx) => {
+      const tPre = it.pre * it.cant;
+      sub += tPre;
+      const row = document.createElement("div");
+      row.className = "ticket-item";
+      row.innerHTML = `
+        <div>
+          <strong>${it.nom}</strong>
+          <div style="font-size: 11px; color: var(--text-muted);">
+            <span style="cursor: pointer; text-decoration: underline;" onclick="editarCantidadDirecta(${idx})">${it.cant} uds/kg</span> x 
+            <span style="cursor: pointer; text-decoration: underline;" onclick="editarPrecioTicket(${idx})">$${it.pre.toLocaleString("es-CO")} (✏️ editar)</span>
+          </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 4px;">
+          <button class="btn-qty" onclick="cambiarCantidad(${idx}, -1)">-</button>
+          <span style="font-weight: bold; min-width: 25px; text-align: center;">${it.cant}</span>
+          <button class="btn-qty" onclick="cambiarCantidad(${idx}, 1)">+</button>
+          <strong style="color: var(--accent); margin-left: 6px;">$${Math.round(tPre).toLocaleString("es-CO")}</strong>
+          <button class="btn-del" onclick="ticket.splice(${idx}, 1); renderTicket();">×</button>
+        </div>
+      `;
+      cont.appendChild(row);
+    });
+    document.getElementById("pos-subtotal").textContent = "$" + Math.round(sub).toLocaleString("es-CO");
+    recalcularSaldo();
+  }
+
+  function recalcularSaldo() {
+    const sub = ticket.reduce((a, b) => a + (b.pre * b.cant), 0);
+    const abono = Number(document.getElementById("pos-abono").value) || 0;
+    const saldo = Math.max(0, sub - abono);
+    document.getElementById("pos-saldo").textContent = "$" + Math.round(saldo).toLocaleString("es-CO");
+  }
+
+  function abrirModalOtroItem() {
+    document.getElementById("otro-desc").value = "";
+    document.getElementById("otro-precio").value = "";
+    abrirModal("modal-otros");
+  }
+
+  function agregarOtroItemAlTicket() {
+    const desc = document.getElementById("otro-desc").value.trim();
+    const pre = Number(document.getElementById("otro-precio").value);
+    if (!desc || isNaN(pre) || pre <= 0) return alert("Ingresa descripción y precio válidos.");
+    ticket.push({ cod: 99, nom: desc, pre: pre, cant: 1 });
+    cerrarModal("modal-otros");
+    renderTicket();
+  }
+
+  // Clientes
+  function normalizarBusquedaCliente(txt) {
+    return String(txt || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, "");
+  }
+
+  function normalizarTelefonoCliente(txt) {
+    return String(txt || "").replace(/\D/g, "");
+  }
+
+  async function precargarClientes() {
+    try {
+      const { data } = await db.from("clientes").select("id, nombre_o_razon, telefono, direccion, loyalty_beneficio_pendiente").order("nombre_o_razon", { ascending: true });
+      listaClientes = data || [];
+    } catch (e) { console.error(e); }
+  }
+
+  function filtrarCliente(val) {
+    const box = document.getElementById("drop-clientes");
+    const q = normalizarBusquedaCliente(val);
+    if (!q) { box.style.display = "none"; return; }
+
+    const matches = listaClientes.filter(c => {
+      const nom = normalizarBusquedaCliente(c.nombre_o_razon);
+      const tel = normalizarTelefonoCliente(c.telefono);
+      return nom.includes(q) || tel.includes(normalizarTelefonoCliente(val));
+    });
+
+    let html = `<div class="autocomplete-item" style="color: var(--accent); font-weight: bold; background: #0f172a;" onclick="abrirModalCrearCliente('${String(val).replace(/'/g, "") }')">➕ REGISTRAR NUEVO CLIENTE: "${String(val).replace(/</g,'&lt;').replace(/>/g,'&gt;')}"</div>`;
+    if (matches.length > 0) {
+      html += matches.map(c => {
+        const payload = JSON.stringify({id:c.id,nombre:c.nombre_o_razon,telefono:c.telefono,direccion:c.direccion||""}).replace(/'/g,"&#39;");
+        return `<div class="autocomplete-item" onclick='cargarClienteDesdeObjeto(${payload})'>👤 ${String(c.nombre_o_razon).replace(/</g,'&lt;')} | 📞 ${String(c.telefono).replace(/</g,'&lt;')} ${c.direccion ? '(' + String(c.direccion).replace(/</g,'&lt;') + ')' : ''}</div>`;
+      }).join("");
+    }
+    box.innerHTML = html;
+    box.style.display = "block";
+  }
+
+  function abrirModalCrearCliente(nombreSugerido) {
+    document.getElementById("drop-clientes").style.display = "none";
+    document.getElementById("m-cli-nombre").value = nombreSugerido || "";
+    document.getElementById("m-cli-telefono").value = "";
+    document.getElementById("m-cli-direccion").value = "";
+    const cb = document.getElementById("m-cli-autoriza-datos");
+    if (cb) cb.checked = false;
+    abrirModal("modal-nuevo-cliente");
+    document.getElementById("m-cli-telefono").focus();
+  }
+
+  function cargarClienteDesdeObjeto(c) {
+    cargarCliente(c.nombre, c.telefono, c.id, c.direccion);
+  }
+
+  async function guardarNuevoClienteDesdeModal() {
+    const nom = document.getElementById("m-cli-nombre").value.trim().replace(/\s+/g, " ");
+    const tel = normalizarTelefonoCliente(document.getElementById("m-cli-telefono").value);
+    const dir = document.getElementById("m-cli-direccion").value.trim();
+    const autoriza = !!document.getElementById("m-cli-autoriza-datos")?.checked;
+
+    if (!nom || !tel) return alert("Para registrar un cliente en la base de datos se necesitan nombre y celular. La dirección es opcional.");
+    if (!autoriza) return alert("Para guardar un nuevo cliente y usar beneficios de fidelización, el cliente debe autorizar el tratamiento de sus datos. Si no desea registrarse, puede cerrar esta ventana y crear la orden como cliente particular.");
+
+    try {
+      let clienteGuardado = null;
+      const { data: ex, error: exErr } = await db.from("clientes").select("id").eq("telefono", tel).maybeSingle();
+      if (exErr) throw exErr;
+      if (ex) {
+        const { data: upd, error } = await db.from("clientes").update({ nombre_o_razon: nom, direccion: dir, autorizacion_datos_at: new Date().toISOString(), autorizacion_datos_version: "2026-09-28-v2" }).eq("id", ex.id).select().single();
+        if (error) throw error;
+        clienteGuardado = upd;
+      } else {
+        const { data: ins, error: errIns } = await db.from("clientes").insert({
+          empresa_id: 'a0000000-0000-0000-0000-000000000001', nombre_o_razon: nom, telefono: tel, direccion: dir,
+          autorizacion_datos_at: new Date().toISOString(), autorizacion_datos_version: "2026-09-28-v2"
+        }).select().single();
+        if (errIns) {
+          if (errIns.code === "23505") throw new Error("Ese número de celular ya está registrado. Búscalo por nombre o celular para seleccionarlo.");
+          throw errIns;
+        }
+        clienteGuardado = ins;
+      }
+      await precargarClientes();
+      cerrarModal("modal-nuevo-cliente");
+      await cargarCliente(clienteGuardado.nombre_o_razon, clienteGuardado.telefono, clienteGuardado.id, clienteGuardado.direccion);
+      alert(`✅ Cliente "${clienteGuardado.nombre_o_razon}" registrado y seleccionado con éxito.`);
+    } catch (e) { alert("Error guardando cliente: " + e.message); }
+  }
+
+  async function cargarCliente(nom, tel, cliId, dir) {
+    document.getElementById("pos-cli-nom").value = nom || "";
+    document.getElementById("pos-cli-tel").value = normalizarTelefonoCliente(tel);
+    document.getElementById("busc-cliente").value = (nom || "") + (tel ? " (" + normalizarTelefonoCliente(tel) + ")" : "");
+    document.getElementById("drop-clientes").style.display = "none";
+    await verificarFidelizacionCliente(cliId);
+  }
+
+  let loyaltyBeneficioAplicado = false;
+  let loyaltyBeneficioPendiente = false;
+  let loyaltyBeneficioMonto = 0;
+
+  async function verificarFidelizacionCliente(cliId) {
+    loyaltyBeneficioAplicado = false;
+    loyaltyBeneficioPendiente = false;
+    clienteVisitasHistorial = 0;
+    const badge = document.getElementById("badge-loyalty");
+    if (!cliId) { badge.style.display = "none"; return; }
+    try {
+      const { data: cliente, error: cErr } = await db.from("clientes").select("loyalty_beneficio_pendiente").eq("id", cliId).maybeSingle();
+      if (cErr) throw cErr;
+      const { count, error } = await db.from("ordenes").select("id", { count: 'exact', head: true }).eq("cliente_id", cliId).neq("estado", "ANULADO");
+      if (error) throw error;
+      clienteVisitasHistorial = count || 0;
+      loyaltyBeneficioPendiente = !!cliente?.loyalty_beneficio_pendiente || (clienteVisitasHistorial % 5 === 4);
+      const visitasCiclo = (clienteVisitasHistorial % 5) + 1;
+
+      if (loyaltyBeneficioPendiente) {
+        badge.innerHTML = `⭐ <strong>LAVAARTE LOYALTY:</strong> beneficio disponible. Es opcional y cubre <strong>1 sola unidad</strong> de una prenda elegible de hasta <strong>$8.000 COP</strong>.`;
+      } else {
+        badge.innerHTML = `🎖️ <strong>Lavaarte Loyalty:</strong> Visita #${visitasCiclo} de 5.`;
+      }
+      badge.style.display = "block";
+    } catch (e) { console.error(e); }
+  }
+
+  function aplicarBeneficioLoyaltyOpcional() {
+    if (!loyaltyBeneficioPendiente || loyaltyBeneficioAplicado || ticket.length === 0) return false;
+    const elegibles = ticket.filter(t => Number(t.pre) > 0 && Number(t.pre) <= 8000 && Number(t.cant) >= 1 && ![67,68,69,71,99].includes(Number(t.cod)));
+    if (elegibles.length === 0) return false;
+    const lista = elegibles.map((t,i) => `${i+1}. ${t.nom} — $${Number(t.pre).toLocaleString("es-CO")}`).join("\n");
+    const respuesta = prompt(`⭐ BENEFICIO LAVAARTE LOYALTY\n\nEs opcional. Puedes aplicar GRATIS una sola unidad de una prenda de hasta $8.000 COP.\n\n${lista}\n\nEscribe el número de la prenda o CANCELA para no usarlo:`);
+    if (respuesta === null || String(respuesta).trim().toLowerCase() === "cancela") return false;
+    const idx = parseInt(respuesta, 10) - 1;
+    if (isNaN(idx) || !elegibles[idx]) return alert("Selección no válida.");
+    const elegida = elegibles[idx];
+    const ticketIdx = ticket.indexOf(elegida);
+    if (elegida.cant > 1) {
+      elegida.cant -= 1;
+      ticket.splice(ticketIdx + 1, 0, { cod:elegida.cod, nom:elegida.nom + " (Loyalty)", pre:0, cant:1 });
+    } else {
+      elegida.pre = 0;
+      elegida.nom = elegida.nom.replace(/ \(Loyalty\)$/i, "") + " (Loyalty)";
+    }
+    loyaltyBeneficioAplicado = true;
+    loyaltyBeneficioMonto = Number(elegida.pre) || 0;
+    renderTicket();
+    return true;
+  }
+
+  // Hoteles
+  async function precargarHotelesBD() {
+    try {
+      const { data } = await db.from("hoteles").select("id, nombre, telefono_contacto, direccion").order("nombre", { ascending: true });
+      listaHotelesBD = data || [];
+    } catch (e) { console.error(e); }
+  }
+
+  function hotelFiltrarPrivado(val) {
+    const box = document.getElementById("drop-hoteles");
+    const q = val.toLowerCase().trim();
+    if (!q || q.length < 2) { box.style.display = "none"; return; }
+
+    const matches = listaHotelesBD.filter(h => h.nombre.toLowerCase().includes(q));
+
+    let html = "";
+    html += `<div class="autocomplete-item" style="color: var(--accent); font-weight: bold; background: #0f172a;" onclick="abrirModalCrearHotel('${val.replace(/'/g, "")}')">
+      🏨 REGISTRAR NUEVO ESTABLECIMIENTO: "${val}"
+    </div>`;
+
+    if (matches.length > 0) {
+      html += matches.map(h => `
+        <div class="autocomplete-item" onclick="hotelCargarSeleccion('${h.nombre.replace(/'/g,"")}', '${(h.telefono_contacto || "").replace(/'/g,"")}', '${(h.direccion || "").replace(/'/g,"")}')">
+          🏨 ${h.nombre} ${h.direccion ? '(' + h.direccion + ')' : ''}
+        </div>
+      `).join("");
+    }
+    box.innerHTML = html;
+    box.style.display = "block";
+  }
+
+  function abrirModalCrearHotel(nombreSugerido) {
+    document.getElementById("drop-hoteles").style.display = "none";
+    document.getElementById("m-hotel-nombre").value = nombreSugerido || "";
+    document.getElementById("m-hotel-telefono").value = "";
+    document.getElementById("m-hotel-direccion").value = "";
+    abrirModal("modal-nuevo-hotel");
+  }
+
+  async function guardarNuevoHotelDesdeModal() {
+    const nom = document.getElementById("m-hotel-nombre").value.trim();
+    const tel = document.getElementById("m-hotel-telefono").value.trim();
+    const dir = document.getElementById("m-hotel-direccion").value.trim();
+
+    if (!nom) return alert("El nombre del hotel es obligatorio.");
+
+    try {
+      await db.from("hoteles").insert({ nombre: nom, telefono_contacto: tel || null, direccion: dir || null });
+      await precargarHotelesBD();
+      cerrarModal("modal-nuevo-hotel");
+      hotelCargarSeleccion(nom, tel, dir);
+      alert(`✅ Establecimiento "${nom}" registrado con éxito.`);
+    } catch (e) {
+      alert("Error registrando hotel: " + e.message);
+    }
+  }
+
+  function hotelCargarSeleccion(nom, tel, dir) {
+    document.getElementById("hotel-busc-input").value = nom;
+    if (dir) document.getElementById("hotel-direccion-input").value = dir;
+    if (tel && !document.getElementById("hotel-contacto").value) {
+      document.getElementById("hotel-contacto").value = tel;
+    }
+    document.getElementById("drop-hoteles").style.display = "none";
+  }
+
+  async function hotelEnviarSolicitudPrivada() {
+    const hNom = document.getElementById("hotel-busc-input").value.trim();
+    const hSrv = document.getElementById("hotel-sel-servicio").value;
+    const hBultos = document.getElementById("hotel-cant-bultos").value.trim();
+    const hCont = document.getElementById("hotel-contacto").value.trim();
+    const hDir = document.getElementById("hotel-direccion-input").value.trim();
+    const hNotas = document.getElementById("hotel-notas").value.trim();
+
+    if (!hNom) return alert("Por favor ingresa el nombre de tu hotel.");
+
+    try {
+      const exHotel = listaHotelesBD.find(h => h.nombre.toLowerCase() === hNom.toLowerCase());
+      if (!exHotel) {
+        await db.from("hoteles").insert({
+          nombre: hNom,
+          telefono_contacto: hCont || null,
+          direccion: hDir || null
+        });
+        await precargarHotelesBD();
+      }
+
+      const hoyBog = new Date().toISOString().split("T")[0];
+      const direccionFinal = hDir || (exHotel?.direccion || "Sede Hotel");
+
+      const { error: insErr } = await db.from("solicitudes_domicilio").insert({
+        origen_tipo: 'HOTEL_RUTA',
+        tipo_servicio: 'RECOGIDA_HOTEL',
+        nombre_entidad: hNom,
+        nombre_cliente: hNom,
+        telefono: hCont || "Recepción / Ama de llaves",
+        direccion: direccionFinal,
+        fecha_programada: hoyBog,
+        fecha_recogida: hoyBog,
+        franja_horaria: "Ruta Activa Hoy",
+        notas: `Servicio: ${hSrv} | Bultos: ${hBultos || 'N/A'} | Nota: ${hNotas || '-'}`
+      });
+
+      if (insErr) throw insErr;
+
+      alert(`✅ ¡Solicitud registrada exitosamente para ${hNom}!\nEl conductor y despachador de ruta ya tienen la notificación activa.`);
+      
+      document.getElementById("hotel-busc-input").value = "";
+      document.getElementById("hotel-cant-bultos").value = "";
+      document.getElementById("hotel-contacto").value = "";
+      document.getElementById("hotel-direccion-input").value = "";
+      document.getElementById("hotel-notas").value = "";
+      mostrarVista("vista-home");
+    } catch (e) {
+      alert("Error procesando solicitud: " + e.message);
+    }
+  }
+
+  // Guardar Orden Mostrador
+  async function confirmarGenerarOrden() {
+    if (ticket.length === 0) return alert("El ticket está vacío.");
+    const nom = document.getElementById("pos-cli-nom").value.trim().replace(/\s+/g, " ");
+    const tel = normalizarTelefonoCliente(document.getElementById("pos-cli-tel").value);
+    let obs = document.getElementById("pos-obs-prendas").value.trim();
+    const kiloDetalle = document.getElementById("pos-kilo-detalle").value.trim();
+
+    if (kiloDetalle) obs = obs ? `${obs} | 📦 Desglose Kilos: [${kiloDetalle}]` : `📦 Desglose Kilos: [${kiloDetalle}]`;
+
+    // En la quinta visita el beneficio nunca se aplica solo: el empleado decide.
+    if (!loyaltyBeneficioAplicado && loyaltyBeneficioPendiente) aplicarBeneficioLoyaltyOpcional();
+
+    const total = Math.round(ticket.reduce((a, b) => a + (Number(b.pre) * Number(b.cant)), 0));
+    const abono = Math.max(0, Number(document.getElementById("pos-abono").value) || 0);
+    const saldo = Math.max(0, total - abono);
+
+    try {
+      let cliId = null;
+      // Solo se registra en clientes cuando hay nombre + celular y autorización expresa.
+      // Si faltan datos o el cliente no autoriza el registro, la orden sigue siendo válida como Particular.
+      const autorizaDatosPOS = !!document.getElementById("pos-autoriza-datos")?.checked;
+      if (nom && tel) {
+        const { data: exCli, error: exErr } = await db.from("clientes").select("id").eq("telefono", tel).maybeSingle();
+        if (exErr) throw exErr;
+        if (exCli) {
+          cliId = exCli.id;
+        } else if (autorizaDatosPOS) {
+          const { data: nCli, error: nErr } = await db.from("clientes").insert({
+            empresa_id: 'a0000000-0000-0000-0000-000000000001', nombre_o_razon: nom, telefono: tel,
+            autorizacion_datos_at: new Date().toISOString(), autorizacion_datos_version: "2026-09-28-v2"
+          }).select("id").single();
+          if (nErr) {
+            if (nErr.code === "23505") {
+              const { data: retryCli } = await db.from("clientes").select("id").eq("telefono", tel).maybeSingle();
+              cliId = retryCli?.id || null;
+            } else throw nErr;
+          } else cliId = nCli.id;
+        }
+      }
+
+      const codigoRastreo = "LAV-" + Math.random().toString(36).substring(2, 8).toUpperCase();
+      const objetoOrden = { cliente_id: cliId, codigo_rastreo: codigoRastreo, total_bruto: total, total_neto: total, saldo_pendiente: saldo, estado: 'INGRESADO', impresa: false };
+      if (abono > 0) objetoOrden.abono_inicial = abono;
+      if (obs) objetoOrden.observaciones_estado_prendas = obs;
+      if (loyaltyBeneficioAplicado) {
+        objetoOrden.loyalty_beneficio_aplicado = true;
+        objetoOrden.loyalty_beneficio_monto = Math.min(8000, loyaltyBeneficioMonto);
+        objetoOrden.loyalty_beneficio_detalle = "1 unidad de prenda elegible, máximo $8.000 COP";
+      }
+
+      const ordRes = await db.from("ordenes").insert(objetoOrden).select("id, consecutivo_ticket").single();
+      if (ordRes.error) throw ordRes.error;
+      const ord = ordRes.data;
+
+      const items = ticket.map(t => ({ orden_id: ord.id, prenda_codigo: t.cod, descripcion_prenda: t.nom, cantidad: t.cant, precio_unitario: t.pre, subtotal: Math.round(t.pre * t.cant) }));
+      const itemsRes = await db.from("orden_items").insert(items);
+      if (itemsRes.error) throw itemsRes.error;
+
+      if (cliId) {
+        const cambiosLoyalty = {};
+        if (loyaltyBeneficioAplicado) {
+          cambiosLoyalty.loyalty_beneficio_pendiente = false;
+          cambiosLoyalty.loyalty_beneficio_aplicado_at = new Date().toISOString();
+        } else if (loyaltyBeneficioPendiente) {
+          // Si en la quinta visita no lo usa, queda pendiente para una visita posterior.
+          cambiosLoyalty.loyalty_beneficio_pendiente = true;
+          cambiosLoyalty.loyalty_beneficio_generado_visita = clienteVisitasHistorial + 1;
+        }
+        if (Object.keys(cambiosLoyalty).length) {
+          const { error: loyErr } = await db.from("clientes").update(cambiosLoyalty).eq("id", cliId);
+          if (loyErr) console.warn("No se pudo actualizar Loyalty:", loyErr);
+        }
+      }
+
+      const textoLoyalty = loyaltyBeneficioAplicado
+        ? "⭐ Beneficio Lavaarte Loyalty aplicado: 1 unidad, máximo $8.000 COP."
+        : (loyaltyBeneficioPendiente ? "⭐ Beneficio Lavaarte Loyalty disponible (no aplicado)." : `🎖️ Lavaarte Loyalty: visita ${((clienteVisitasHistorial || 0) % 5) + 1} de 5.`);
+
+      const detallePrendasWA = items.map(i => `• ${i.cantidad}x ${i.descripcion_prenda} ($${Number(i.subtotal).toLocaleString("es-CO")})`).join("\n");
+      const notaObsWA = obs ? `\n⚠️ *Detalle / Estado de recepción:* _${obs}_\n` : "";
+      const nombreWA = nom || "cliente";
+      const mensajeTexto =
+        `*LAVAARTE LAVANDERÍA SAS*\n` +
+        `NIT: 901.344.335\n` +
+        `Sede: Diagonal 47 No.77C-80 Bogotá | Tels: 314-263-6787 / 315-333-0502\n\n` +
+        `Hola *${nombreWA}*, hemos recibido tus prendas conforme:\n` +
+        `📋 *Ticket / Orden #:* ${ord.consecutivo_ticket}\n` +
+        `🏷️ *Código Rastreo Web:* ${codigoRastreo}\n\n` +
+        `*PRENDAS REGISTRADAS:*\n${detallePrendasWA}\n` +
+        notaObsWA +
+        `\n💰 *Total:* $${total.toLocaleString("es-CO")}\n` +
+        `💵 *Abono inicial:* $${abono.toLocaleString("es-CO")}\n` +
+        `📌 *Saldo por pagar:* $${saldo.toLocaleString("es-CO")}\n\n` +
+        `${textoLoyalty}\n` +
+        `🔍 Rastreo: ${APP_WEB_URL}\n` +
+        `¡Gracias por escogernos!`;
+
+      if (tel) await despacharWhatsApp(tel, mensajeTexto);
+
+      poblarPlantillaImpresion(ord.consecutivo_ticket, new Date().toLocaleString("es-CO"), nombreWA, tel || "-", codigoRastreo, items, obs, total, abono, saldo, textoLoyalty);
+
+      if (modoImpresoraHP) {
+        ordenesImpresionLocal.add(ord.id);
+        await db.from("ordenes").update({ impresa: true }).eq("id", ord.id);
+        await ejecutarImpresionLavaarte();
+        setTimeout(() => ordenesImpresionLocal.delete(ord.id), 10000);
+      }
+
+      ticket = [];
+      document.getElementById("pos-cli-nom").value = "";
+      document.getElementById("pos-cli-tel").value = "";
+      document.getElementById("busc-cliente").value = "";
+      document.getElementById("pos-abono").value = 0;
+      document.getElementById("pos-obs-prendas").value = "";
+      document.getElementById("pos-kilo-detalle").value = "";
+      document.getElementById("badge-loyalty").style.display = "none";
+      clienteVisitasHistorial = 0; loyaltyBeneficioPendiente = false; loyaltyBeneficioAplicado = false; loyaltyBeneficioMonto = 0;
+      if (document.getElementById("pos-autoriza-datos")) document.getElementById("pos-autoriza-datos").checked = false;
+      renderTicket();
+      precargarClientes();
+      chequearCentinela60h();
+      alert(`✅ Orden #${ord.consecutivo_ticket} guardada correctamente.${modoImpresoraHP ? " Impresión enviada al equipo activo." : ""}${tel ? " WhatsApp enviado." : " Sin WhatsApp: no se registró celular."}`);
+    } catch (e) {
+      alert("Error guardando orden: " + e.message);
+    }
+  }
+
+  // Alistar Ropa
+  async function buscarTicketAlistar(num) {
+    const resBox = document.getElementById("alistar-ticket-resumen");
+    if (!num) { resBox.style.display = "none"; return; }
+
+    try {
+      const { data: o } = await db
+        .from("ordenes")
+        .select(`id, consecutivo_ticket, estado, total_neto, saldo_pendiente, observaciones_estado_prendas, clientes(nombre_o_razon, telefono), orden_items(descripcion_prenda, cantidad)`)
+        .eq("consecutivo_ticket", parseInt(num, 10))
+        .maybeSingle();
+
+      if (!o) { resBox.style.display = "none"; ordenAlistarActiva = null; return; }
+
+      ordenAlistarActiva = o;
+      document.getElementById("alistar-txt-ticket").textContent = `Ticket #${o.consecutivo_ticket}`;
+      document.getElementById("alistar-txt-estado").textContent = `[${o.estado}]`;
+      document.getElementById("alistar-txt-cliente").innerHTML = `Cliente: <strong>${o.clientes?.nombre_o_razon || 'Particular'}</strong> (${o.clientes?.telefono || '-'})`;
+      
+      const pStr = o.orden_items?.map(i => `${i.cantidad}x ${i.descripcion_prenda}`).join(", ") || "Sin prendas";
+      document.getElementById("alistar-txt-prendas").textContent = `Prendas: ${pStr}`;
+      document.getElementById("alistar-txt-obs").textContent = o.observaciones_estado_prendas ? `⚠️ Observación: ${o.observaciones_estado_prendas}` : "";
+      resBox.style.display = "block";
+    } catch (e) { console.error(e); }
+  }
+
+  async function marcarTicketComoListo() {
+    if (!ordenAlistarActiva) return;
+    const ord = ordenAlistarActiva;
+
+    try {
+      await db.from("ordenes").update({ estado: 'LISTO_ENTREGA' }).eq("id", ord.id);
+      
+      if (ord.clientes?.telefono) {
+        const msgListo = 
+          `*LAVAARTE LAVANDERÍA SAS*\n` +
+          `Hola *${ord.clientes.nombre_o_razon}*, tu orden *#${ord.consecutivo_ticket}* está *100% LISTA PARA ENTREGAR*.\n` +
+          `📌 Saldo por cancelar: $${Number(ord.saldo_pendiente).toLocaleString("es-CO")}.\n` +
+          `Puedes pasar por ella en nuestro horario habitual o solicitar entrega a domicilio en:\n${APP_WEB_URL}\n¡Gracias por escogernos!`;
+
+        despacharWhatsApp(ord.clientes.telefono, msgListo);
+      }
+
+      alert(`✅ ¡Ticket #${ord.consecutivo_ticket} marcado como LISTO PARA ENTREGAR!`);
+      document.getElementById("alistar-ticket-input").value = "";
+      document.getElementById("alistar-ticket-resumen").style.display = "none";
+      ordenAlistarActiva = null;
+      chequearCentinela60h();
+    } catch (e) { alert("Error: " + e.message); }
+  }
+
+  // Centinela 60 Horas
+  let ordenesRetrasadas60h = [];
+
+  async function chequearCentinela60h() {
+    try {
+      const limite = new Date(Date.now() - 60 * 60 * 1000 * 60).toISOString();
+      const { data } = await db
+        .from("ordenes")
+        .select("consecutivo_ticket, created_at, estado, clientes(nombre_o_razon, telefono)")
+        .neq("estado", "ENTREGADO")
+        .neq("estado", "ANULADO")
+        .neq("estado", "LISTO_ENTREGA")
+        .lte("created_at", limite);
+
+      ordenesRetrasadas60h = data || [];
+      const box = document.getElementById("box-centinela-alerta");
+      const resumen = document.getElementById("centinela-resumen");
+
+      if (ordenesRetrasadas60h.length > 0) {
+        box.style.display = "block";
+        resumen.innerHTML = ordenesRetrasadas60h.map(o => {
+          const h = Math.round((Date.now() - new Date(o.created_at).getTime()) / 3600000);
+          return `• <strong>Ticket #${o.consecutivo_ticket}</strong> (${o.clientes?.nombre_o_razon || 'Particular'}) - Estado: <strong>${o.estado}</strong> - ⏳ ${h} horas en proceso.`;
+        }).join("<br>");
+      } else {
+        box.style.display = "none";
+      }
+    } catch (e) { console.error(e); }
+  }
+
+  // Entrega y Cobro
+  async function buscarOrdenesEntrega(q) {
+    const tbody = document.getElementById("tabla-entrega-body");
+    try {
+      let qBuilder = db.from("ordenes").select(`id, consecutivo_ticket, codigo_rastreo, estado, total_neto, saldo_pendiente, abono_inicial, clientes(nombre_o_razon, telefono), orden_items(descripcion_prenda, cantidad)`).neq("estado", "ANULADO").order("consecutivo_ticket", { ascending: false }).limit(15);
+      if (q && /^\d+$/.test(q)) qBuilder = qBuilder.eq("consecutivo_ticket", parseInt(q, 10));
+
+      const { data } = await qBuilder;
+      let res = data || [];
+
+      if (q && !/^\d+$/.test(q)) {
+        const qLow = q.toLowerCase();
+        res = res.filter(o => (o.clientes?.nombre_o_razon || "").toLowerCase().includes(qLow) || (o.clientes?.telefono || "").includes(q));
+      }
+
+      if (res.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; color: var(--text-muted);">No se encontraron órdenes.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = res.map(o => {
+        const prendasStr = o.orden_items?.map(i => `${i.cantidad} ${i.descripcion_prenda}`).join(", ") || "Sin detalle";
+        const btnAccion = o.estado === "ENTREGADO" 
+          ? '<span style="color: var(--text-muted); font-weight: bold;">✓ Ya entregado</span>'
+          : `<button class="btn-success" style="padding: 6px 12px; font-size: 12px;" onclick='prepararCobroEntrega(${JSON.stringify(o)})'>🤝 Entregar / Cobrar</button>`;
+        
+        return `
+          <tr>
+            <td><strong>#${o.consecutivo_ticket}</strong></td>
+            <td>${o.clientes?.nombre_o_razon || 'Particular'}</td>
+            <td>${o.clientes?.telefono || '-'}</td>
+            <td style="max-width: 250px; font-size: 12px; color: var(--text-muted);">${prendasStr}</td>
+            <td><strong>${o.estado}</strong></td>
+            <td>$${Number(o.total_neto).toLocaleString("es-CO")}</td>
+            <td style="color: var(--danger); font-weight: bold;">$${Number(o.saldo_pendiente).toLocaleString("es-CO")}</td>
+            <td>${btnAccion}</td>
+          </tr>
+        `;
+      }).join("");
+    } catch (e) { console.error(e); }
+  }
+
+  function prepararCobroEntrega(orden) {
+    ordenCobroActiva = orden;
+    metodoPagoSeleccionado = "EFECTIVO";
+    const det = document.getElementById("info-orden-cobro");
+    det.innerHTML = `
+      <strong>Ticket #${orden.consecutivo_ticket}</strong> | Cliente: ${orden.clientes?.nombre_o_razon}<br>
+      Total Factura: <strong>$${Number(orden.total_neto).toLocaleString("es-CO")}</strong><br>
+      Abono previo: $${Number(orden.abono_inicial || 0).toLocaleString("es-CO")}<br>
+      Saldo sugerido: <strong>$${Number(orden.saldo_pendiente).toLocaleString("es-CO")}</strong>
+    `;
+    document.getElementById("entrega-saldo-modificable").value = Number(orden.saldo_pendiente);
+    
+    document.querySelectorAll(".btn-payment").forEach(b => b.classList.remove("selected"));
+    document.querySelector(".btn-payment").classList.add("selected");
+    document.getElementById("box-alerta-nequi").style.display = "none";
+
+    abrirModal("modal-cobro-entrega");
+  }
+
+  function seleccionarMetodoPago(metodo, btnElem) {
+    metodoPagoSeleccionado = metodo;
+    document.querySelectorAll(".btn-payment").forEach(b => b.classList.remove("selected"));
+    btnElem.classList.add("selected");
+    
+    const boxNequi = document.getElementById("box-alerta-nequi");
+    if (metodo === "NEQUI_DAVIPLATA" || metodo === "LLAVE") {
+      boxNequi.style.display = "block";
+    } else {
+      boxNequi.style.display = "none";
+    }
+  }
+
+  async function ejecutarEntregaFinal() {
+    if (!ordenCobroActiva) return;
+    const saldoACobrar = Number(document.getElementById("entrega-saldo-modificable").value);
+    const ord = ordenCobroActiva;
+
+    try {
+      await db.from("ordenes").update({
+        estado: 'ENTREGADO',
+        saldo_pendiente: 0.00,
+        metodo_pago_saldo: metodoPagoSeleccionado,
+        entregado_at: new Date().toISOString()
+      }).eq("id", ord.id);
+
+      const mensajeWA = 
+        `*LAVAARTE LAVANDERÍA SAS*\n` +
+        `Hola *${ord.clientes?.nombre_o_razon}*, tu orden *#${ord.consecutivo_ticket}* ha sido entregada a conformidad.\n` +
+        `Saldo cancelado: *$${saldoACobrar.toLocaleString("es-CO")}* mediante *${metodoPagoSeleccionado}*.\n` +
+        `¡Gracias por escogernos!`;
+
+      despacharWhatsApp(ord.clientes?.telefono, mensajeWA);
+
+      alert("✅ Entrega registrada con éxito.");
+      cerrarModal("modal-cobro-entrega");
+      buscarOrdenesEntrega("");
+      chequearCentinela60h();
+    } catch (e) { alert("Error: " + e.message); }
+  }
+
+  // Egresos
+  async function guardarEgresoCaja() {
+    const monto = Number(document.getElementById("egreso-monto").value);
+    const conc = document.getElementById("egreso-concepto").value.trim();
+    const resp = document.getElementById("egreso-resp").value.trim();
+    
+    if (!monto || monto <= 0 || !conc) return alert("Ingresa monto y concepto válidos.");
+    if (!resp) return alert("⚠️ Obligatorio: Debes escribir tu nombre como responsable del gasto.");
+
+    try {
+      await db.from("egresos_caja").insert({ monto, concepto: conc, responsable: resp });
+      alert(`🔴 Salida de $${monto.toLocaleString("es-CO")} registrada por ${resp}.`);
+      document.getElementById("egreso-monto").value = "";
+      document.getElementById("egreso-concepto").value = "";
+      document.getElementById("egreso-resp").value = "";
+      mostrarVista("vista-dashboard");
+    } catch (e) { alert(e.message); }
+  }
+
+  // Arqueo
+  let reporteArqueoActual = null;
+  async function abrirArqueoCaja() {
+    try {
+      const hoy = new Date();
+      hoy.setHours(0,0,0,0);
+
+      const { data: ords } = await db.from("ordenes").select("consecutivo_ticket, total_neto, abono_inicial, saldo_pendiente, metodo_pago_saldo, estado, created_at, entregado_at, clientes(nombre_o_razon)").or(`created_at.gte.${hoy.toISOString()},entregado_at.gte.${hoy.toISOString()}`);
+      const { data: egrs } = await db.from("egresos_caja").select("*").gte("created_at", hoy.toISOString());
+
+      let efectivoTotal = 0;
+      let transferenciasTotal = 0;
+      let totalEgresos = (egrs || []).reduce((a, b) => a + Number(b.monto), 0);
+      let desgloseRecibos = [];
+
+      (ords || []).forEach(o => {
+        if (new Date(o.created_at) >= hoy && Number(o.abono_inicial) > 0) {
+          efectivoTotal += Number(o.abono_inicial);
+          desgloseRecibos.push({ ticket: o.consecutivo_ticket, cliente: o.clientes?.nombre_o_razon || 'Particular', concepto: 'Abono Inicial Mostrador', medio: 'EFECTIVO', monto: Number(o.abono_inicial) });
+        }
+        if (o.entregado_at && new Date(o.entregado_at) >= hoy && o.estado === "ENTREGADO") {
+          const saldo = Number(o.total_neto) - Number(o.abono_inicial || 0);
+          if (saldo > 0) {
+            const medio = o.metodo_pago_saldo || "EFECTIVO";
+            if (medio === "EFECTIVO") efectivoTotal += saldo;
+            else transferenciasTotal += saldo;
+            desgloseRecibos.push({ ticket: o.consecutivo_ticket, cliente: o.clientes?.nombre_o_razon || 'Particular', concepto: 'Saldo Liquidado Entrega', medio, monto: saldo });
+          }
+        }
+      });
+
+      const dineroNetoEnCaja = efectivoTotal - totalEgresos;
+      reporteArqueoActual = { fecha: new Date().toLocaleDateString("es-CO"), efectivoTotal, transferenciasTotal, totalEgresos, dineroNetoEnCaja, desgloseRecibos, egresos: egrs || [], centinela: ordenesRetrasadas60h };
+
+      document.getElementById("caja-resumen").innerHTML = `
+        <div style="display: flex; justify-content: space-between; margin-bottom: 6px;"><span>💵 Entradas en Efectivo:</span><strong style="color: var(--success);">$${efectivoTotal.toLocaleString("es-CO")}</strong></div>
+        <div style="display: flex; justify-content: space-between; margin-bottom: 6px;"><span>📱 Pagos Electrónicos (Nequi/Daviplata/Datáfono):</span><strong style="color: var(--accent);">$${transferenciasTotal.toLocaleString("es-CO")}</strong></div>
+        <div style="display: flex; justify-content: space-between; margin-bottom: 6px; border-bottom: 1px dashed var(--border); padding-bottom: 6px;"><span>🔴 Salidas Caja Menor:</span><strong style="color: var(--danger);">$${totalEgresos.toLocaleString("es-CO")}</strong></div>
+        <div style="display: flex; justify-content: space-between; font-size: 18px; margin-top: 6px;"><span>TOTAL DINERO FÍSICO EN CAJÓN:</span><strong style="color: var(--accent);">$${dineroNetoEnCaja.toLocaleString("es-CO")}</strong></div>
+      `;
+
+      document.getElementById("tabla-desglose-arqueo-body").innerHTML = desgloseRecibos.length === 0 
+        ? '<tr><td colspan="5" style="text-align: center; color: var(--text-muted);">No hay cobros hoy.</td></tr>'
+        : desgloseRecibos.map(r => `<tr><td><strong>#${r.ticket}</strong></td><td>${r.cliente}</td><td>${r.concepto}</td><td><strong>${r.medio}</strong></td><td style="color: var(--success); font-weight: bold;">$${r.monto.toLocaleString("es-CO")}</td></tr>`).join("");
+
+      document.getElementById("tabla-desglose-egresos-body").innerHTML = (!egrs || egrs.length === 0)
+        ? '<tr><td colspan="4" style="text-align: center; color: var(--text-muted);">Sin egresos hoy.</td></tr>'
+        : egrs.map(e => `<tr><td>${new Date(e.created_at).toLocaleTimeString("es-CO")}</td><td>${e.concepto}</td><td>${e.responsable}</td><td style="color: var(--danger); font-weight: bold;">$${Number(e.monto).toLocaleString("es-CO")}</td></tr>`).join("");
+
+      document.getElementById("arqueo-centinela-list").innerHTML = ordenesRetrasadas60h.length === 0
+        ? "✓ Cero órdenes retrasadas. Planta al día."
+        : ordenesRetrasadas60h.map(o => {
+            const h = Math.round((Date.now() - new Date(o.created_at).getTime()) / 3600000);
+            return `• Ticket #${o.consecutivo_ticket} (${o.clientes?.nombre_o_razon || 'Particular'}) - Retraso: ${h}h`;
+          }).join("<br>");
+
+      abrirModal("modal-arqueo");
+    } catch (e) { alert(e.message); }
+  }
+
+  function exportarExcelArqueo() {
+    if (!reporteArqueoActual) return;
+    const wb = XLSX.utils.book_new();
+
+    const ws1Data = [
+      ["=============================================================="],
+      ["               LAVAARTE LAVANDERÍA SAS                        "],
+      ["           INFORME CORPORATIVO DE ARQUEO DIARIO               "],
+      ["=============================================================="],
+      ["Fecha de Cierre:", reporteArqueoActual.fecha],
+      ["Generado por:", "Sistema Central Lavaarte OS"],
+      [""],
+      ["RESUMEN FINANCIERO DEL DÍA", "VALOR ($COP)"],
+      ["(+) Total Entradas en Efectivo (Cajón)", reporteArqueoActual.efectivoTotal],
+      ["(+) Total Pagos Electrónicos (Nequi / Bancos)", reporteArqueoActual.transferenciasTotal],
+      ["(-) Total Salidas de Caja Menor (Gastos)", reporteArqueoActual.totalEgresos],
+      ["--------------------------------------------------------------", "-------------------"],
+      ["(=) TOTAL DINERO FÍSICO A ENTREGAR EN CAJA", reporteArqueoActual.dineroNetoEnCaja]
+    ];
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(ws1Data), "Resumen_Caja");
+
+    const wsRecibosData = [
+      ["LAVAARTE - DETALLE DE MOVIMIENTOS E INGRESOS DEL DÍA"],
+      ["Ticket #", "Cliente", "Concepto de Cobro", "Forma de Pago", "Monto ($COP)"]
+    ];
+    reporteArqueoActual.desgloseRecibos.forEach(r => wsRecibosData.push([r.ticket, r.cliente, r.concepto, r.medio, r.monto]));
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(wsRecibosData), "Ingresos_Desglosados");
+
+    const ws2Data = [
+      ["LAVAARTE - SALIDAS DE CAJA MENOR"],
+      ["Hora", "Monto ($COP)", "Concepto del Gasto", "Responsable"]
+    ];
+    reporteArqueoActual.egresos.forEach(e => ws2Data.push([new Date(e.created_at).toLocaleTimeString("es-CO"), e.monto, e.concepto, e.responsable]));
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(ws2Data), "Egresos_Caja");
+
+    XLSX.writeFile(wb, `Lavaarte_Cierre_Corporativo_${reporteArqueoActual.fecha.replace(/\//g,'-')}.xlsx`);
+  }
+
+  // ==================== BÚSQUEDAS Y AUDITORÍA ====================
+  function abrirVistaBusquedas() {
+    mostrarVista('vista-busquedas');
+    ejecutarBusquedaAuditoria("");
+  }
+
+  async function ejecutarBusquedaAuditoria(q) {
+    const tbody = document.getElementById("tabla-auditoria-body");
+    try {
+      let qBuilder = db.from("ordenes")
+        .select(`id, consecutivo_ticket, codigo_rastreo, estado, total_neto, abono_inicial, saldo_pendiente, metodo_pago_saldo, created_at, entregado_at, observaciones_estado_prendas, clientes(nombre_o_razon, telefono), orden_items(cantidad, descripcion_prenda)`)
+        .order("consecutivo_ticket", { ascending: false })
+        .limit(50);
+
+      if (q && /^\d+$/.test(q)) {
+        qBuilder = qBuilder.eq("consecutivo_ticket", parseInt(q, 10));
+      }
+
+      const { data, error } = await qBuilder;
+      if (error) throw error;
+
+      let res = data || [];
+      if (q && !/^\d+$/.test(q)) {
+        const qLow = q.toLowerCase().trim();
+        res = res.filter(o => (o.clientes?.nombre_o_razon || "").toLowerCase().includes(qLow) || (o.clientes?.telefono || "").includes(q));
+      }
+
+      if (res.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="11" style="text-align: center; color: var(--text-muted); padding: 25px;">No se encontraron órdenes con ese criterio.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = res.map(o => {
+        const prendasTexto = o.orden_items?.map(i => `${i.cantidad}x ${i.descripcion_prenda}`).join("<br>") || "-";
+        const fIngreso = new Date(o.created_at).toLocaleString("es-CO");
+        const fEntrega = o.entregado_at ? new Date(o.entregado_at).toLocaleString("es-CO") : "-";
+
+        let badgeColor = "var(--warning)";
+        if (o.estado === "ENTREGADO") badgeColor = "var(--success)";
+        if (o.estado === "ANULADO") badgeColor = "var(--danger)";
+
+        return `
+          <tr>
+            <td><strong>#${o.consecutivo_ticket}</strong></td>
+            <td style="font-size: 11px;">${fIngreso}</td>
+            <td><strong>${o.clientes?.nombre_o_razon || 'Particular'}</strong></td>
+            <td>${o.clientes?.telefono || '-'}</td>
+            <td style="font-size: 11.5px; color: var(--text);">${prendasTexto}</td>
+            <td style="font-size: 11px; color: var(--warning);">${o.observaciones_estado_prendas || '-'}</td>
+            <td><span style="color: ${badgeColor}; font-weight: bold;">[${o.estado}]</span></td>
+            <td>$${Number(o.total_neto).toLocaleString("es-CO")}</td>
+            <td style="color: var(--danger); font-weight: bold;">$${Number(o.saldo_pendiente).toLocaleString("es-CO")}</td>
+            <td>${o.metodo_pago_saldo || '-'}</td>
+            <td style="font-size: 11px;">${fEntrega}</td>
+          </tr>
+        `;
+      }).join("");
+    } catch (e) {
+      console.error(e);
+      tbody.innerHTML = `<tr><td colspan="11" style="color: var(--danger); text-align: center;">Error consultando auditoría: ${e.message}</td></tr>`;
+    }
+  }
+
+  async function descargarHistoricoOrdenesExcel() {
+    try {
+      const { data, error } = await db.from("ordenes").select(`consecutivo_ticket, codigo_rastreo, estado, total_neto, abono_inicial, saldo_pendiente, metodo_pago_saldo, created_at, entregado_at, observaciones_estado_prendas, clientes(nombre_o_razon, telefono), orden_items(cantidad, descripcion_prenda, precio_unitario, subtotal)`).order("consecutivo_ticket", { ascending: false });
+      if (error) throw error;
+      if (!data || data.length === 0) return alert("No hay órdenes registradas.");
+
+      const filasExcel = [["Ticket #", "Código Rastreo", "Fecha Ingreso", "Cliente", "Teléfono", "Prendas", "Observaciones / Kilos", "Total Neto", "Abono Inicial", "Saldo Pendiente", "Estado", "Medio Pago Saldo", "Fecha Entrega"]];
+      data.forEach(o => {
+        const prendasTexto = o.orden_items?.map(i => `${i.cantidad}x ${i.descripcion_prenda}`).join(" | ") || "";
+        filasExcel.push([o.consecutivo_ticket, o.codigo_rastreo || "", new Date(o.created_at).toLocaleString("es-CO"), o.clientes?.nombre_o_razon || "Particular", o.clientes?.telefono || "", prendasTexto, o.observaciones_estado_prendas || "", o.total_neto, o.abono_inicial || 0, o.saldo_pendiente, o.estado, o.metodo_pago_saldo || "", o.entregado_at ? new Date(o.entregado_at).toLocaleString("es-CO") : ""]);
+      });
+
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(filasExcel), "Historico_Recibos");
+      XLSX.writeFile(wb, `Lavaarte_BaseDatos_Recibos_${new Date().toISOString().split("T")[0]}.xlsx`);
+      alert("✅ Base de datos descargada con éxito.");
+    } catch (e) { alert("Error: " + e.message); }
+  }
+
+  // ==================== MÓDULO 10: INVENTARIO ====================
+  async function guardarEntradaInventario() {
+    const prod = document.getElementById("inv-producto").value.trim();
+    const cant = Number(document.getElementById("inv-cantidad").value) || 1;
+    const unid = document.getElementById("inv-unidad").value.trim() || 'Unidades';
+    const costo = Number(document.getElementById("inv-costo").value) || 0;
+    const prov = document.getElementById("inv-proveedor").value.trim();
+    const resp = document.getElementById("inv-responsable").value.trim();
+
+    if (!prod || !resp) return alert("Debes escribir el producto y el responsable.");
+
+    try {
+      const { error } = await db.from("inventario_insumos").insert({
+        producto: prod,
+        cantidad: cant,
+        unidad: unid,
+        costo_total: costo,
+        proveedor: prov,
+        responsable: resp
+      });
+
+      if (error) throw error;
+
+      alert(`✅ Insumo "${prod}" registrado con éxito.`);
+      document.getElementById("inv-producto").value = "";
+      document.getElementById("inv-costo").value = "";
+      document.getElementById("inv-proveedor").value = "";
+      document.getElementById("inv-responsable").value = "";
+      cargarHistorialInventario();
+    } catch (e) {
+      alert("Error guardando inventario: " + e.message);
+    }
+  }
+
+  let cacheInventario = [];
+  async function cargarHistorialInventario() {
+    const tbody = document.getElementById("tabla-inventario-body");
+    try {
+      const { data, error } = await db.from("inventario_insumos").select("*").order("created_at", { ascending: false });
+      if (error) throw error;
+
+      cacheInventario = data || [];
+      if (cacheInventario.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: var(--text-muted);">Sin compras de insumos registradas.</td></tr>';
+        document.getElementById("inv-total-gastado").textContent = "Total Invertido: $0";
+        return;
+      }
+
+      let totalGasto = 0;
+      tbody.innerHTML = cacheInventario.map(i => {
+        totalGasto += Number(i.costo_total);
+        return `
+          <tr>
+            <td>${new Date(i.created_at).toLocaleDateString("es-CO")}</td>
+            <td><strong>${i.producto}</strong></td>
+            <td>${i.cantidad}</td>
+            <td>${i.unidad}</td>
+            <td style="color: var(--warning); font-weight: bold;">$${Number(i.costo_total).toLocaleString("es-CO")}</td>
+            <td>${i.proveedor || '-'}</td>
+            <td>${i.responsable}</td>
+          </tr>
+        `;
+      }).join("");
+
+      document.getElementById("inv-total-gastado").textContent = `Total Invertido: $${totalGasto.toLocaleString("es-CO")}`;
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  function exportarExcelInventario() {
+    if (cacheInventario.length === 0) return alert("No hay datos de inventario para exportar.");
+    const wb = XLSX.utils.book_new();
+    const rows = [
+      ["LAVAARTE LAVANDERÍA SAS - CONTROL DE INVENTARIO E INSUMOS"],
+      ["Fecha", "Producto", "Cantidad", "Unidad", "Costo Total ($COP)", "Proveedor", "Responsable"]
+    ];
+    cacheInventario.forEach(i => {
+      rows.push([
+        new Date(i.created_at).toLocaleDateString("es-CO"),
+        i.producto,
+        i.cantidad,
+        i.unidad,
+        Number(i.costo_total),
+        i.proveedor || '',
+        i.responsable
+      ]);
+    });
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rows), "Inventario");
+    XLSX.writeFile(wb, `Lavaarte_Inventario_${new Date().toISOString().split("T")[0]}.xlsx`);
+  }
+
+  // ==================== SEGURIDAD JERÁRQUICA ====================
+  function solicitarAccesoEmpleados(destino) {
+    destinoPinAdmin = destino;
+    document.getElementById("auth-modal-title").textContent = "🔒 Acceso Colaboradores Lavaarte";
+    document.getElementById("auth-modal-desc").textContent = "Ingresa tu PIN de colaborador para continuar:";
+    document.getElementById("admin-pin").value = "";
+    abrirModal("modal-admin-auth");
+  }
+
+  function pedirClaveSegura(destinoModal) {
+    destinoPinAdmin = destinoModal;
+    document.getElementById("auth-modal-title").textContent = "🛡️ Control Administrativo";
+    document.getElementById("auth-modal-desc").textContent = "Acceso restringido. Ingresa el PIN de Administrador:";
+    document.getElementById("admin-pin").value = "";
+    abrirModal("modal-admin-auth");
+  }
+
+  function validarPinSeguro() {
+    const pin = document.getElementById("admin-pin").value.trim();
+
+    if (destinoPinAdmin === "vista-dashboard") {
+      if (pin === "1510" || pin === "2415") {
+        cerrarModal("modal-admin-auth");
+        mostrarVista("vista-dashboard");
+      } else {
+        alert("PIN de colaborador incorrecto.");
+      }
+      return;
+    }
+
+    if (destinoPinAdmin === "modal-admin-master" || destinoPinAdmin === "modal-admin-panel" || destinoPinAdmin === "modal-arqueo" || destinoPinAdmin === "vista-inventario") {
+      if (pin === "2415") {
+        cerrarModal("modal-admin-auth");
+        if (destinoPinAdmin === "modal-admin-master") abrirModalMasterAdmin();
+        else if (destinoPinAdmin === "modal-admin-panel") abrirModal("modal-admin-panel");
+        else if (destinoPinAdmin === "modal-arqueo") abrirArqueoCaja();
+        else if (destinoPinAdmin === "vista-inventario") mostrarVista("vista-inventario");
+      } else {
+        alert("⚠️ PIN ADMINISTRADOR INCORRECTO. Acceso denegado.");
+      }
+    }
+  }
+
+  // Anulación en Tiempo Real
+  async function adminCargarTicket() {
+    const tNum = document.getElementById("admin-ticket-input").value.trim();
+    if (!tNum) return;
+    try {
+      const { data: o } = await db.from("ordenes").select("*, clientes(*)").eq("consecutivo_ticket", parseInt(tNum, 10)).maybeSingle();
+      const det = document.getElementById("admin-ticket-detalle");
+      if (!o) { det.innerHTML = "No existe la orden."; return; }
+
+      det.innerHTML = `
+        <div style="background: var(--bg-input); padding: 12px; border-radius: 8px; margin-top: 10px;">
+          <strong>Ticket #${o.consecutivo_ticket}</strong> | Estado actual: <strong>${o.estado}</strong><br>
+          Cliente: ${o.clientes?.nombre_o_razon} (${o.clientes?.telefono})<br>
+          Total: $${Number(o.total_neto).toLocaleString("es-CO")} | Saldo: $${Number(o.saldo_pendiente).toLocaleString("es-CO")}<br><br>
+          <div style="display: flex; gap: 8px;">
+            <button class="btn-danger" style="flex: 1;" onclick="adminAnularOrden('${o.id}')">🚫 Anular Factura</button>
+            <button class="btn-primary" style="flex: 1;" onclick="adminCambiarEstado('${o.id}', 'LISTO_ENTREGA')">Marcar LISTO</button>
+          </div>
+        </div>
+      `;
+    } catch (e) { alert(e.message); }
+  }
+
+  async function adminAnularOrden(id) {
+    const motivo = prompt("Motivo de anulación:");
+    if (!motivo) return;
+    try {
+      const { error } = await db.from("ordenes").update({
+        estado: 'ANULADO',
+        motivo_anulacion: motivo,
+        saldo_pendiente: 0
+      }).eq("id", id);
+
+      if (error) throw error;
+
+      alert("✅ Factura anulada exitosamente en la base de datos.");
+      cerrarModal("modal-admin-panel");
+      buscarOrdenesEntrega("");
+      chequearCentinela60h();
+      if (document.getElementById("vista-busquedas").classList.contains("view-active")) {
+        ejecutarBusquedaAuditoria("");
+      }
+    } catch (e) {
+      alert("Error anulando: " + e.message);
+    }
+  }
+
+  async function adminCambiarEstado(id, est) {
+    await db.from("ordenes").update({ estado: est }).eq("id", id);
+    alert("Estado actualizado.");
+    cerrarModal("modal-admin-panel");
+    buscarOrdenesEntrega("");
+  }
+
+  // Panel Maestro (Botón 9)
+  async function abrirModalMasterAdmin() {
+    poblarSelectPrendasMaster();
+    await adminCargarOrdenesBD();
+    adminRenderClientesBD(listaClientes);
+    abrirModal("modal-admin-master");
+  }
+
+  function poblarSelectPrendasMaster() {
+    const sel = document.getElementById("adm-edit-prenda-sel");
+    sel.innerHTML = CATALOGO_CENTRAL.map(p => `<option value="${p.codigo}">[${p.codigo}] ${p.nombre} - $${Number(p.precio).toLocaleString("es-CO")}</option>`).join("");
+  }
+
+  async function adminCrearPrendaCatalogo() {
+    const nom = document.getElementById("adm-nuevo-nom").value.trim();
+    const pre = Number(document.getElementById("adm-nuevo-pre").value);
+    if (!nom || isNaN(pre) || pre <= 0) return alert("Ingresa un nombre y precio válidos.");
+
+    const nuevoCod = CATALOGO_CENTRAL.length > 0 ? Math.max(...CATALOGO_CENTRAL.map(p => p.codigo)) + 1 : 1;
+
+    try {
+      const { error } = await db.from("catalogo_prendas").insert({ codigo: nuevoCod, nombre: nom, precio: pre });
+      if (error) throw error;
+
+      await sincronizarCatalogoSupabase();
+      poblarSelectPrendasMaster();
+      document.getElementById("adm-nuevo-nom").value = "";
+      document.getElementById("adm-nuevo-pre").value = "";
+      alert(`✅ Prenda "${nom}" creada en Supabase a $${pre.toLocaleString("es-CO")}.`);
+    } catch (e) {
+      alert("Error creando prenda: " + e.message);
+    }
+  }
+
+  async function adminGuardarPrecioCatalogo() {
+    const cod = Number(document.getElementById("adm-edit-prenda-sel").value);
+    const nuevoPre = Number(document.getElementById("adm-edit-prenda-nuevo-precio").value);
+    if (isNaN(nuevoPre) || nuevoPre <= 0) return alert("Ingresa un nuevo precio válido.");
+
+    try {
+      const { error } = await db.from("catalogo_prendas").update({ precio: nuevoPre, updated_at: new Date().toISOString() }).eq("codigo", cod);
+      if (error) throw error;
+
+      await sincronizarCatalogoSupabase();
+      poblarSelectPrendasMaster();
+      document.getElementById("adm-edit-prenda-nuevo-precio").value = "";
+      alert(`✅ Precio actualizado a $${nuevoPre.toLocaleString("es-CO")} en todos los dispositivos.`);
+    } catch (e) {
+      alert("Error actualizando precio: " + e.message);
+    }
+  }
+
+  async function adminCargarOrdenesBD() {
+    try {
+      const { data } = await db.from("ordenes").select("id, consecutivo_ticket, estado, saldo_pendiente, total_neto, clientes(nombre_o_razon)").order("consecutivo_ticket", { ascending: false }).limit(40);
+      ordenesMasterCache = data || [];
+      adminRenderOrdenesBD(ordenesMasterCache);
+    } catch (e) { console.error(e); }
+  }
+
+  function adminRenderOrdenesBD(lista) {
+    const tbody = document.getElementById("adm-tabla-ordenes-bd-body");
+    if (!lista || lista.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--text-muted);">Sin órdenes.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = lista.map(o => `
+      <tr>
+        <td><strong>#${o.consecutivo_ticket}</strong></td>
+        <td>${o.clientes?.nombre_o_razon || 'Particular'}</td>
+        <td><span style="font-weight: bold;">${o.estado}</span></td>
+        <td>$${Number(o.saldo_pendiente).toLocaleString("es-CO")}</td>
+        <td>
+          <button class="nav-btn" style="padding: 2px 6px; font-size: 11px;" onclick="adminEditarSaldoOrdenBD('${o.id}', ${o.saldo_pendiente})">✏️ Saldo</button>
+          <button class="nav-btn" style="padding: 2px 6px; font-size: 11px;" onclick="adminEditarEstadoOrdenBD('${o.id}', '${o.estado}')">🔄 Estado</button>
+          <button class="btn-danger" style="padding: 2px 6px; font-size: 11px;" onclick="adminEliminarOrdenPorId('${o.id}', ${o.consecutivo_ticket})">🗑️</button>
+        </td>
+      </tr>
+    `).join("");
+  }
+
+  function adminFiltrarOrdenesBD(val) {
+    const q = val.toLowerCase().trim();
+    if (!q) return adminRenderOrdenesBD(ordenesMasterCache);
+    const filtradas = ordenesMasterCache.filter(o => String(o.consecutivo_ticket).includes(q) || (o.clientes?.nombre_o_razon || "").toLowerCase().includes(q) || o.estado.toLowerCase().includes(q));
+    adminRenderOrdenesBD(filtradas);
+  }
+
+  async function adminEditarSaldoOrdenBD(id, saldoActual) {
+    const nuevo = prompt("Modificar saldo pendiente ($COP):", saldoActual);
+    if (nuevo === null || isNaN(nuevo)) return;
+    await db.from("ordenes").update({ saldo_pendiente: Number(nuevo) }).eq("id", id);
+    await adminCargarOrdenesBD();
+  }
+
+  async function adminEditarEstadoOrdenBD(id, estActual) {
+    const opciones = ["INGRESADO", "LISTO_ENTREGA", "ENTREGADO", "ANULADO"];
+    const sig = prompt(`Cambiar estado (${estActual}).\nOpciones: INGRESADO, LISTO_ENTREGA, ENTREGADO o ANULADO:`, estActual);
+    if (!sig || !opciones.includes(sig.toUpperCase().trim())) return;
+    await db.from("ordenes").update({ estado: sig.toUpperCase().trim() }).eq("id", id);
+    await adminCargarOrdenesBD();
+    chequearCentinela60h();
+  }
+
+  async function adminEliminarOrdenPorId(id, numTicket) {
+    const conf = confirm(`¿Eliminar permanentemente de la base de datos la orden #${numTicket}?`);
+    if (!conf) return;
+    try {
+      await db.from("orden_items").delete().eq("orden_id", id);
+      await db.from("ordenes").delete().eq("id", id);
+      alert(`Orden #${numTicket} borrada de la base de datos.`);
+      await adminCargarOrdenesBD();
+      chequearCentinela60h();
+      buscarOrdenesEntrega("");
+    } catch (e) { alert("Error: " + e.message); }
+  }
+
+  async function adminBorrarOrdenFisica() {
+    const ticketInput = document.getElementById("adm-delete-ticket-input").value.trim();
+    if (!ticketInput) return alert("Ingresa el número de ticket que deseas eliminar.");
+
+    const numTicket = parseInt(ticketInput, 10);
+    const seguro = confirm(`⚠️ ADVERTENCIA CRÍTICA:\n¿Estás 100% seguro de que deseas ELIMINAR COMPLETAMENTE la orden #${numTicket} de la base de datos?\nEsta acción no se puede deshacer.`);
+    if (!seguro) return;
+
+    try {
+      const { data: orden, error: errBusq } = await db.from("ordenes").select("id").eq("consecutivo_ticket", numTicket).maybeSingle();
+      if (errBusq || !orden) return alert(`No se encontró ninguna orden con el ticket #${numTicket}.`);
+
+      await db.from("orden_items").delete().eq("orden_id", orden.id);
+      await db.from("ordenes").delete().eq("id", orden.id);
+
+      alert(`🗑️ Orden #${numTicket} eliminada físicamente de la base de datos con éxito.`);
+      document.getElementById("adm-delete-ticket-input").value = "";
+      await adminCargarOrdenesBD();
+      chequearCentinela60h();
+      buscarOrdenesEntrega("");
+    } catch (e) {
+      alert("Error eliminando orden: " + e.message);
+    }
+  }
+
+  function adminRenderClientesBD(lista) {
+    const tbody = document.getElementById("adm-tabla-clientes-bd-body");
+    if (!lista || lista.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: var(--text-muted);">Sin clientes.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = lista.slice(0, 50).map(c => `
+      <tr>
+        <td><strong>${c.nombre_o_razon}</strong></td>
+        <td>${c.telefono}</td>
+        <td>${c.direccion || '-'}</td>
+        <td>
+          <button class="nav-btn" style="padding: 2px 6px; font-size: 11px;" onclick="adminEditarClienteBD('${c.id}', '${c.nombre_o_razon.replace(/'/g, "")}', '${c.telefono}', '${(c.direccion || "").replace(/'/g, "")}')">✏️ Editar</button>
+        </td>
+      </tr>
+    `).join("");
+  }
+
+  function adminFiltrarClientesBD(val) {
+    const q = normalizarBusquedaCliente(val);
+    const qTel = normalizarTelefonoCliente(val);
+    if (!q) return adminRenderClientesBD(listaClientes);
+    const filtrados = listaClientes.filter(c => normalizarBusquedaCliente(c.nombre_o_razon).includes(q) || normalizarTelefonoCliente(c.telefono).includes(qTel));
+    adminRenderClientesBD(filtrados);
+  }
+
+  async function adminEditarClienteBD(id, nomAct, telAct, dirAct) {
+    const nuevoNom = prompt("Nombre del cliente:", nomAct);
+    if (!nuevoNom) return;
+    const nuevoTel = prompt("Teléfono del cliente:", telAct);
+    if (!nuevoTel) return;
+    const nuevaDir = prompt("Dirección del cliente:", dirAct);
+    const telNormalizado = normalizarTelefonoCliente(nuevoTel);
+
+    try {
+      const { error } = await db.from("clientes").update({ nombre_o_razon: nuevoNom.trim().replace(/\s+/g," "), telefono: telNormalizado, direccion: nuevaDir || "" }).eq("id", id);
+      if (error) {
+        if (error.code === "23505") throw new Error("Ese celular ya pertenece a otro cliente.");
+        throw error;
+      }
+      alert("✅ Datos del cliente actualizados.");
+      await precargarClientes();
+      adminRenderClientesBD(listaClientes);
+    } catch (e) { alert("Error: " + e.message); }
+  }
+
+  function adminImportarClientesExcel(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const inputFile = document.getElementById("adm-file-clientes");
+
+    const normalizarEncabezadoImportacion = (txt) =>
+      normalizarBusquedaCliente(String(txt || "")).replace(/_/g, "");
+
+    const obtenerCampoImportacion = (fila, candidatos) => {
+      const claves = Object.keys(fila || {});
+      const mapa = {};
+      claves.forEach(k => {
+        mapa[normalizarEncabezadoImportacion(k)] = k;
+      });
+
+      for (const candidato of candidatos) {
+        const claveNormalizada = normalizarEncabezadoImportacion(candidato);
+        if (Object.prototype.hasOwnProperty.call(mapa, claveNormalizada)) {
+          return fila[mapa[claveNormalizada]];
+        }
+      }
+      return "";
+    };
+
+    const normalizarTelefonoImportacion = (valor) => {
+      if (valor === null || valor === undefined || valor === "") return "";
+
+      // Excel puede convertir teléfonos numéricos grandes a notación científica.
+      if (typeof valor === "number" && Number.isFinite(valor)) {
+        return String(Math.trunc(valor));
+      }
+
+      let texto = String(valor).trim();
+
+      if (/^[+-]?\d+(?:[.,]\d+)?e[+-]?\d+$/i.test(texto)) {
+        const numero = Number(texto.replace(",", "."));
+        if (Number.isFinite(numero)) texto = String(Math.trunc(numero));
+      }
+
+      if (/^\d+\.0+$/.test(texto)) {
+        texto = texto.replace(/\.0+$/, "");
+      }
+
+      return texto.replace(/\D/g, "");
+    };
+
+    const mostrarResultadoImportacion = (r) => {
+      const detalle =
+        `\n\nNuevos: ${r.importados}` +
+        `\nYa existentes: ${r.yaExistian}` +
+        `\nDuplicados dentro del archivo: ${r.duplicadosArchivo}` +
+        `\nDatos incompletos/ inválidos: ${r.invalidos}` +
+        `\nErrores de inserción: ${r.errores}`;
+
+      alert(`✅ Migración de clientes finalizada.${detalle}\n\nNo se modificaron clientes existentes.`);
+    };
+
+    const reader = new FileReader();
+
+    reader.onload = async (e) => {
+      try {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: "array", cellDates: true });
+        const nombreHoja = workbook.SheetNames[0];
+
+        if (!nombreHoja) throw new Error("El archivo no contiene ninguna hoja.");
+
+        const sheet = workbook.Sheets[nombreHoja];
+        const filas = XLSX.utils.sheet_to_json(sheet, { defval: "" });
+
+        if (!filas || filas.length === 0) {
+          throw new Error("El archivo Excel/CSV está vacío.");
+        }
+
+        const resultado = {
+          importados: 0,
+          yaExistian: 0,
+          duplicadosArchivo: 0,
+          invalidos: 0,
+          errores: 0
+        };
+
+        // Cargamos la base actual una sola vez para evitar consultas repetidas.
+        await precargarClientes();
+
+        const telefonosExistentes = new Set(
+          (listaClientes || []).map(c => normalizarTelefonoCliente(c.telefono)).filter(Boolean)
+        );
+
+        const telefonosArchivo = new Set();
+        const registrosValidos = [];
+
+        for (const fila of filas) {
+          const nom = String(obtenerCampoImportacion(fila, [
+            "Nombre", "Nombre completo", "Cliente", "Nombre cliente",
+            "Razon social", "Razón social", "Nombres"
+          ]) || "").trim().replace(/\s+/g, " ");
+
+          const tel = normalizarTelefonoImportacion(obtenerCampoImportacion(fila, [
+            "Telefono", "Teléfono", "Celular", "Celular WhatsApp",
+            "WhatsApp", "Movil", "Móvil", "Tel", "Contacto"
+          ]));
+
+          const dir = String(obtenerCampoImportacion(fila, [
+            "Direccion", "Dirección", "Domicilio", "Dirección de entrega", "Dir"
+          ]) || "").trim().replace(/\s+/g, " ");
+
+          // Para una migración de clientes se exige nombre + celular.
+          if (!nom || !tel || tel.length < 7) {
+            resultado.invalidos++;
+            continue;
+          }
+
+          if (telefonosArchivo.has(tel)) {
+            resultado.duplicadosArchivo++;
+            continue;
+          }
+
+          telefonosArchivo.add(tel);
+
+          if (telefonosExistentes.has(tel)) {
+            resultado.yaExistian++;
+            continue;
+          }
+
+          registrosValidos.push({
+            empresa_id: "a0000000-0000-0000-0000-000000000001",
+            nombre_o_razon: nom,
+            telefono: tel,
+            direccion: dir
+          });
+
+          // También evita duplicados entre lotes de la misma importación.
+          telefonosExistentes.add(tel);
+        }
+
+        // Insertamos por bloques. Si un bloque falla, se intenta fila por fila
+        // para no perder toda la migración por un solo registro problemático.
+        const TAMANO_BLOQUE = 100;
+
+        for (let i = 0; i < registrosValidos.length; i += TAMANO_BLOQUE) {
+          const bloque = registrosValidos.slice(i, i + TAMANO_BLOQUE);
+
+          const { data: insertados, error } = await db
+            .from("clientes")
+            .insert(bloque)
+            .select("id, telefono");
+
+          if (!error) {
+            resultado.importados += insertados?.length || bloque.length;
+            continue;
+          }
+
+          console.warn("Bloque de importación con error; se reintentará individualmente.", error);
+
+          for (const registro of bloque) {
+            const { error: errFila } = await db.from("clientes").insert(registro);
+
+            if (!errFila) {
+              resultado.importados++;
+            } else if (errFila.code === "23505") {
+              resultado.yaExistian++;
+            } else {
+              resultado.errores++;
+              console.error("Error importando cliente:", registro, errFila);
+            }
+          }
+        }
+
+        await precargarClientes();
+        adminRenderClientesBD(listaClientes);
+        mostrarResultadoImportacion(resultado);
+
+      } catch (err) {
+        alert("❌ Error procesando la migración: " + err.message);
+      } finally {
+        if (inputFile) inputFile.value = "";
+      }
+    };
+
+    reader.onerror = () => {
+      if (inputFile) inputFile.value = "";
+      alert("❌ No fue posible leer el archivo seleccionado.");
+    };
+
+    reader.readAsArrayBuffer(file);
+  }
+
+  // Domicilios Particulares
+  async function clienteCrearSolicitud(tipo) {
+    let nom, tel, dir, detDir, fec, fra, notas, ticketRef = "";
+    if (tipo === "RECOGIDA_DOMICILIO") {
+      nom = document.getElementById("dom-rec-nom").value.trim();
+      tel = document.getElementById("dom-rec-tel").value.trim();
+      dir = document.getElementById("dom-rec-dir").value.trim();
+      detDir = document.getElementById("dom-rec-detalles").value.trim();
+      fec = document.getElementById("dom-rec-fec").value;
+      fra = document.getElementById("dom-rec-franja").value;
+      notas = document.getElementById("dom-rec-notas").value.trim();
+      if (!nom || !tel || !dir || !detDir || !fec) return alert("Completa los campos obligatorios (*).");
+    } else {
+      ticketRef = document.getElementById("dom-ent-ticket").value.trim();
+      nom = document.getElementById("dom-ent-nom").value.trim();
+      tel = document.getElementById("dom-ent-tel").value.trim();
+      dir = document.getElementById("dom-ent-dir").value.trim();
+      detDir = document.getElementById("dom-ent-detalles").value.trim();
+      fec = document.getElementById("dom-ent-fec").value;
+      fra = document.getElementById("dom-ent-franja").value;
+      if (!ticketRef || !nom || !tel || !dir || !detDir || !fec) return alert("Completa los campos obligatorios (*).");
+      notas = `Entrega solicitada para el Ticket #${ticketRef}`;
+    }
+
+    try {
+      const direccionCompleta = `${dir} | Ref: ${detDir}`;
+      const { error: errDom } = await db.from("solicitudes_domicilio").insert({
+        origen_tipo: 'CLIENTE_PARTICULAR',
+        tipo_servicio: tipo,
+        nombre_entidad: nom,
+        nombre_cliente: nom,
+        telefono: tel,
+        direccion: direccionCompleta,
+        ticket_referencia: ticketRef,
+        fecha_programada: fec,
+        fecha_recogida: fec,
+        franja_horaria: fra,
+        notas
+      });
+
+      if (errDom) throw errDom;
+
+      alert("✅ Solicitud de servicio registrada con éxito. Lavaarte ya tiene tu pedido en cola.");
+      if (tipo === "RECOGIDA_DOMICILIO") {
+        document.getElementById("dom-rec-nom").value = "";
+        document.getElementById("dom-rec-tel").value = "";
+        document.getElementById("dom-rec-dir").value = "";
+        document.getElementById("dom-rec-detalles").value = "";
+      } else {
+        document.getElementById("dom-ent-ticket").value = "";
+        document.getElementById("dom-ent-nom").value = "";
+        document.getElementById("dom-ent-tel").value = "";
+        document.getElementById("dom-ent-dir").value = "";
+        document.getElementById("dom-ent-detalles").value = "";
+      }
+      mostrarVista("vista-home");
+    } catch (e) { alert("Error registrando solicitud: " + e.message); }
+  }
+
+  // Domicilios Admin
+  async function cargarDomiciliosAdmin() {
+    const tbody = document.getElementById("tabla-domicilios-body");
+    try {
+      const limite24h = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+      
+      const { data, error } = await db.from("solicitudes_domicilio")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+
+      let registros = data || [];
+      registros = registros.filter(d => {
+        if (d.estado !== "COMPLETADO") return true;
+        if (!d.completado_at) return true;
+        return new Date(d.completado_at) >= new Date(limite24h);
+      });
+
+      if (registros.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; color: var(--text-muted);">Sin solicitudes pendientes en ruta.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = registros.map(d => {
+        const esCompletado = d.estado === "COMPLETADO";
+        const botonAccion = esCompletado
+          ? `<span style="color: var(--success); font-weight: bold;">✓ Completado</span>`
+          : `<button class="btn-success" style="padding: 4px 8px; font-size: 11px;" onclick="chulearDomicilio('${d.id}')">✓ Completar</button>`;
+
+        const nom = d.nombre_entidad || d.nombre_cliente || 'Particular';
+
+        return `
+          <tr style="${esCompletado ? 'opacity: 0.6;' : ''}">
+            <td>${new Date(d.created_at).toLocaleDateString("es-CO")}</td>
+            <td><strong style="color: ${d.origen_tipo === 'HOTEL_RUTA' ? 'var(--accent)' : 'var(--success)'};">${d.origen_tipo}</strong></td>
+            <td>${d.tipo_servicio}</td>
+            <td><strong>${nom}</strong></td>
+            <td>${d.telefono}</td>
+            <td>${d.direccion || '-'}</td>
+            <td>${d.ticket_referencia ? '#' + d.ticket_referencia : '-'}</td>
+            <td style="font-size: 11px; color: var(--text-muted);">${d.notas || '-'}</td>
+            <td>${botonAccion}</td>
+          </tr>
+        `;
+      }).join("");
+    } catch (e) { console.error(e); }
+  }
+
+  async function chulearDomicilio(id) {
+    try {
+      await db.from("solicitudes_domicilio").update({
+        estado: 'COMPLETADO',
+        completado_at: new Date().toISOString()
+      }).eq("id", id);
+      cargarDomiciliosAdmin();
+    } catch (e) { alert("Error: " + e.message); }
+  }
+
+  // Consulta Cliente Privada
+  async function clienteConsultarTicket() {
+    const t = document.getElementById("cliente-ticket-query").value.trim();
+    const resBox = document.getElementById("cliente-ticket-result");
+    if (!t) return;
+
+    try {
+      const { data: o } = await db.from("ordenes")
+        .select("consecutivo_ticket, estado, saldo_pendiente, orden_items(cantidad, descripcion_prenda)")
+        .eq("consecutivo_ticket", parseInt(t, 10))
+        .maybeSingle();
+
+      if (!o) {
+        resBox.innerHTML = '<span style="color: var(--danger);">No se encontró ninguna orden con ese ticket.</span>';
+        return;
+      }
+
+      let color = "var(--warning)";
+      let textoEstado = "EN PROCESO / EN PLANTA";
+      if (o.estado === "INGRESADO") { color = "var(--accent)"; textoEstado = "INGRESADO EN RECEPCIÓN"; }
+      if (o.estado === "LISTO_ENTREGA") { color = "var(--success)"; textoEstado = "✅ 100% LISTO PARA ENTREGAR"; }
+      if (o.estado === "ENTREGADO") { color = "var(--text-muted)"; textoEstado = "ENTREGADO A CONFORMIDAD"; }
+      if (o.estado === "ANULADO") { color = "var(--danger)"; textoEstado = "ANULADO"; }
+
+      const prendasItemsHTML = o.orden_items && o.orden_items.length > 0
+        ? o.orden_items.map(i => `• <strong>${i.cantidad}x</strong> ${i.descripcion_prenda}`).join("<br>")
+        : "Sin desglose registrado";
+
+      resBox.innerHTML = `
+        <div style="background: var(--bg-input); padding: 14px; border-radius: 8px; border: 1px solid var(--border); line-height: 1.6;">
+          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 6px;">
+            <strong style="font-size: 16px; color: #fff;">Orden #${o.consecutivo_ticket}</strong>
+            <span style="color: ${color}; font-weight: 900; font-size: 13px;">${textoEstado}</span>
+          </div>
+          
+          <div style="margin-top: 10px;">
+            <div style="font-size: 11px; color: var(--accent); font-weight: bold; text-transform: uppercase;">Prendas en esta orden:</div>
+            <div style="font-size: 13px; color: #fff; margin-top: 4px; padding-left: 4px;">
+              ${prendasItemsHTML}
+            </div>
+          </div>
+
+          <div style="margin-top: 12px; font-size: 13px; border-top: 1px dashed var(--border); padding-top: 8px; display: flex; justify-content: space-between;">
+            <span>Saldo pendiente:</span>
+            <strong style="color: ${Number(o.saldo_pendiente) > 0 ? 'var(--danger)' : 'var(--success)'}; font-size: 15px;">
+              $${Number(o.saldo_pendiente).toLocaleString("es-CO")}
+            </strong>
+          </div>
+        </div>
+      `;
+    } catch (e) { alert(e.message); }
+  }
+
+  // Reconocimiento de Voz
+  function iniciarVozPOSInteligente() {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) return alert("Usa Google Chrome o Edge para el reconocimiento de voz.");
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'es-CO';
+    recognition.interimResults = false;
+
+    const btn = document.getElementById("btn-voz-pos");
+    btn.classList.add("recording");
+    btn.textContent = "🔴 Escuchando... Habla libremente";
+
+    recognition.onresult = async (e) => {
+      const texto = e.results[0][0].transcript;
+      btn.classList.remove("recording");
+      btn.textContent = "🎙️ Dictar Orden Completa (Cliente + Prendas + Estado)";
+      await procesarVozIntegral(texto);
+    };
+
+    recognition.onerror = () => {
+      btn.classList.remove("recording");
+      btn.textContent = "🎙️ Dictar Orden Completa (Cliente + Prendas + Estado)";
+    };
+
+    recognition.start();
+  }
+
+  const PALABRAS_A_NUMEROS = {
+    'un': 1, 'una': 1, 'uno': 1, 'dos': 2, 'tres': 3, 'cuatro': 4, 'cinco': 5,
+    'seis': 6, 'siete': 7, 'ocho': 8, 'nueve': 9, 'diez': 10
+  };
+
+  async function procesarVozIntegral(textoCompleto) {
+    let t = String(textoCompleto || "").toLowerCase().trim();
+    const tNorm = () => normalizarBusquedaCliente(t);
+
+    let clienteDetectado = null;
+    const textoNorm = normalizarBusquedaCliente(t);
+    for (const c of listaClientes) {
+      if (textoNorm.includes(normalizarBusquedaCliente(c.nombre_o_razon))) {
+        clienteDetectado = c;
+        break;
+      }
+    }
+
+    if (clienteDetectado) {
+      await cargarCliente(clienteDetectado.nombre_o_razon, clienteDetectado.telefono, clienteDetectado.id, clienteDetectado.direccion);
+      t = t.replace(clienteDetectado.nombre_o_razon.toLowerCase(), '').trim();
+    } else {
+      const palabras = t.split(/\s+/);
+      const nombresProbables = [];
+      for (const p of palabras) {
+        if (PALABRAS_A_NUMEROS[p] || /^\d+$/.test(p) || CATALOGO_CENTRAL.some(item => normalizarBusquedaCliente(item.nombre).includes(normalizarBusquedaCliente(p)))) break;
+        nombresProbables.push(p);
+      }
+      if (nombresProbables.length > 0) {
+        const nomTentativo = nombresProbables.map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
+        abrirModalCrearCliente(nomTentativo);
+        t = t.replace(nombresProbables.join(" "), '').trim();
+      }
+    }
+
+    // Variantes: si el cliente no dice "doble", "sencilla" o "sencillo", se intenta primero la variante sencilla.
+    const variantesExplicitas = /\b(doble|sencilla|sencillo)\b/i.test(t);
+    const catalogoPorNorma = CATALOGO_CENTRAL.map(p => ({...p, _norm: normalizarBusquedaCliente(p.nombre)}));
+
+    if (!variantesExplicitas) {
+      const grupos = new Map();
+      catalogoPorNorma.forEach(p => {
+        const base = p._norm.replace(/sencilla|sencillo|doble/g, "").replace(/\d+/g, "").trim();
+        if (!grupos.has(base)) grupos.set(base, []);
+        grupos.get(base).push(p);
+      });
+      for (const grupo of grupos.values()) {
+        const simples = grupo.filter(p => /sencilla|sencillo/.test(p._norm));
+        const elegidoSimple = simples[0];
+        if (!elegidoSimple) continue;
+        const nombreBase = elegidoSimple._norm.replace(/sencilla|sencillo/g, "").trim();
+        if (!nombreBase || !tNorm().includes(nombreBase)) continue;
+        const ex = ticket.find(item => item.cod === elegidoSimple.codigo);
+        if (ex) ex.cant += 1;
+        else ticket.push({ cod:elegidoSimple.codigo, nom:elegidoSimple.nombre, pre:Number(elegidoSimple.precio), cant:1 });
+      }
+    }
+
+    // Coincidencia normal del catálogo para prendas explícitas.
+    catalogoPorNorma.forEach(p => {
+      const nombrePrenda = p.nombre.toLowerCase();
+      const regex = new RegExp(`(\\d+|un|una|uno|dos|tres|cuatro|cinco|seis|siete|ocho|nueve|diez)?\\s*(${nombrePrenda.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}[s|es]?)`, 'gi');
+      let match;
+      while ((match = regex.exec(t)) !== null) {
+        // Si existen variantes y no fueron pronunciadas, no tomar la variante doble.
+        if (!variantesExplicitas && /\b(doble)\b/i.test(nombrePrenda)) continue;
+        let cant = 1;
+        if (match[1]) cant = PALABRAS_A_NUMEROS[match[1].toLowerCase()] || parseInt(match[1], 10) || 1;
+        const ex = ticket.find(item => item.cod === p.codigo);
+        if (ex) ex.cant += cant;
+        else ticket.push({ cod:p.codigo, nom:p.nombre, pre:Number(p.precio), cant:cant });
+      }
+    });
+
+    const palabrasClaveDanio = ['manchad', 'rot', 'sin boton', 'descosid', 'quemad', 'sucio', 'desgastad', 'desteñid', 'capota', 'cuello', 'cremallera'];
+    const frasesObs = [];
+    t.split(/,| y |\./).forEach(frase => { if (palabrasClaveDanio.some(k => frase.includes(k))) frasesObs.push(frase.trim()); });
+    if (frasesObs.length > 0) {
+      const obsActual = document.getElementById("pos-obs-prendas").value.trim();
+      const nuevaObs = frasesObs.join(" | ");
+      document.getElementById("pos-obs-prendas").value = obsActual ? `${obsActual} | ${nuevaObs}` : nuevaObs;
+    }
+    renderTicket();
+  }
+
+  function iniciarVozAlistar() {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) return alert("Usa Google Chrome o Edge para reconocimiento de voz.");
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'es-CO';
+    recognition.interimResults = false;
+
+    const btn = document.getElementById("btn-voz-alistar");
+    btn.classList.add("recording");
+    btn.textContent = "🔴 Escuchando...";
+
+    recognition.onresult = async (e) => {
+      const texto = e.results[0][0].transcript.toLowerCase();
+      btn.classList.remove("recording");
+      btn.textContent = "🎙️ 'Orden [Número] lista'";
+
+      const match = texto.match(/(\d+)/);
+      if (match) {
+        const numTicket = match[1];
+        document.getElementById("alistar-ticket-input").value = numTicket;
+        await buscarTicketAlistar(numTicket);
+        if (ordenAlistarActiva) marcarTicketComoListo();
+      } else {
+        alert(`No reconocí el número en: "${texto}"`);
+      }
+    };
+
+    recognition.onerror = () => {
+      btn.classList.remove("recording");
+      btn.textContent = "🎙️ 'Orden [Número] lista'";
+    };
+
+    recognition.start();
+  }
+</script>
+
+<footer class="legal-footer">
+  <button onclick="abrirLegal('privacidad')">Política de Privacidad</button>
+  <button onclick="abrirLegal('terminos')">Términos y Condiciones</button>
+  <button onclick="abrirLegal('cookies')">Política de Cookies</button>
+  <button onclick="window.open('https://www.sic.gov.co/', '_blank', 'noopener,noreferrer')">SIC</button>
+</footer>
+</body>
+</html>
