@@ -1,1 +1,46 @@
+name: LAVAARTE OS Desktop Release
 
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+
+    defaults:
+      run:
+        working-directory: desktop
+
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: desktop/package.json
+
+      - name: Instalar dependencias
+        run: npm install
+
+      - name: Sincronizar web maestra con Desktop
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force app | Out-Null
+          Copy-Item ..\public\index.html .\app\index.html -Force
+
+      - name: Verificar JavaScript
+        run: npm run check
+
+      - name: Crear y publicar instalador
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npm run dist:publish
