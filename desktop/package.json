@@ -1,7 +1,7 @@
 {
   "name": "lavaarte-os-desktop",
   "productName": "LAVAARTE OS",
-  "version": "1.1.1",
+  "version": "1.2.0",
   "description": "LAVAARTE OS Desktop - Sistema integral de lavandería",
   "main": "main.js",
   "author": "LAVAARTE S.A.S.",
