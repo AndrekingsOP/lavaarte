@@ -300,6 +300,7 @@
 <div class="topbar">
   <div class="brand" onclick="mostrarVista('vista-home')">
     🧺 Lavaarte <span>| Sistema Integral</span>
+    <span id="lavaarte-version" title="Versión de LAVAARTE OS" style="display:inline-flex;align-items:center;margin-left:8px;padding:3px 7px;border:1px solid var(--border);border-radius:6px;font-size:10px;font-weight:600;color:var(--text-muted);vertical-align:middle;">Web v1.2.0</span>
   </div>
   <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
     <button class="nav-btn" id="btn-modo-impresora" onclick="toggleModoImpresoraHP()">🖨️ Modo Impresora HP: OFF</button>
@@ -3408,5 +3409,34 @@
   <button onclick="abrirLegal('cookies')">Política de Cookies</button>
   <button onclick="window.open('https://www.sic.gov.co/', '_blank', 'noopener,noreferrer')">SIC</button>
 </footer>
+
+<script>
+// LAVAARTE OS v1.2.0: versión visible y atajo Esc para cerrar el modal superior.
+(function () {
+  const versionNode = document.getElementById('lavaarte-version');
+  if (versionNode && window.electronAPI && typeof window.electronAPI.getAppInfo === 'function') {
+    window.electronAPI.getAppInfo().then(info => {
+      if (info && info.version) versionNode.textContent = 'Desktop v' + info.version + ' · Web UI v1.2.0';
+    }).catch(() => {});
+  }
+
+  document.addEventListener('keydown', function (event) {
+    if (event.key !== 'Escape' || event.defaultPrevented || event.isComposing) return;
+    // Close only the last visible modal; never close the whole application.
+    const visibleModals = Array.from(document.querySelectorAll('.modal')).filter(modal => {
+      const style = window.getComputedStyle(modal);
+      return style.display !== 'none' && style.visibility !== 'hidden' && style.opacity !== '0';
+    });
+    if (!visibleModals.length) return;
+    const topModal = visibleModals[visibleModals.length - 1];
+    if (topModal.id && typeof window.cerrarModal === 'function') {
+      event.preventDefault();
+      event.stopPropagation();
+      window.cerrarModal(topModal.id);
+    }
+  }, true);
+})();
+</script>
+
 </body>
 </html>
