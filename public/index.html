@@ -300,10 +300,10 @@
 <div class="topbar">
   <div class="brand" onclick="mostrarVista('vista-home')">
     🧺 Lavaarte <span>| Sistema Integral</span>
-    <span id="lavaarte-version" title="Versión de LAVAARTE OS" style="display:inline-flex;align-items:center;margin-left:8px;padding:3px 7px;border:1px solid var(--border);border-radius:6px;font-size:10px;font-weight:600;color:var(--text-muted);vertical-align:middle;">Web v1.2.0</span>
+    <span id="lavaarte-version" title="Versión de LAVAARTE OS" style="display:inline-flex;align-items:center;margin-left:8px;padding:3px 7px;border:1px solid var(--border);border-radius:6px;font-size:10px;font-weight:600;color:var(--text-muted);vertical-align:middle;">Web v1.3.0</span>
   </div>
   <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-    <button class="nav-btn" id="btn-modo-impresora" onclick="toggleModoImpresoraHP()">🖨️ Modo Impresora HP: OFF</button>
+    <button class="nav-btn" id="btn-modo-impresora" style="display:none" onclick="toggleModoImpresoraHP()">🖨️ Modo Impresora HP: OFF</button>
     <button class="nav-btn" onclick="mostrarVista('vista-portal-hoteles')">🏨 Servicios Hoteles</button>
     <button class="nav-btn" onclick="mostrarVista('vista-portal-cliente')">🌐 Servicios Clientes</button>
     <button class="nav-btn" style="background: #0284c7; border: none;" onclick="solicitarAccesoEmpleados('vista-dashboard')">🔐 Lavaarte</button>
@@ -462,7 +462,7 @@
         </div>
 
         <label style="display:flex; gap:8px; align-items:flex-start; font-size:11px; color:var(--text-muted); line-height:1.35; margin-top:6px;">
-          <input type="checkbox" id="pos-autoriza-datos" style="margin-top:2px;">
+          <input type="checkbox" id="pos-autoriza-datos" style="margin-top:2px;" checked>
           <span>Opcional: autorizar registro de estos datos para próximas visitas, WhatsApp y Lavaarte Loyalty. Si no se marca, la orden puede guardarse como cliente particular sin crear un registro permanente.</span>
         </label>
 
@@ -943,6 +943,15 @@
       <div class="btn-payment" onclick="seleccionarMetodoPago('TRANSFERENCIA', this)">🏦 Transferencia</div>
     </div>
 
+    <div class="input-group" style="margin-top:8px;">
+      <label class="label-sm" for="entrega-cuenta-pago">Número/cuenta receptora (para pagos electrónicos)</label>
+      <select id="entrega-cuenta-pago" class="input-text"><option value="">Selecciona una cuenta configurada</option></select>
+    </div>
+    <div class="input-group" style="margin-top:4px;">
+      <label class="label-sm" for="entrega-responsable">Responsable de entregar</label>
+      <input id="entrega-responsable" class="input-text" list="lista-responsables-entrega" maxlength="100" autocomplete="off" placeholder="Escribe una letra o el nombre">
+      <datalist id="lista-responsables-entrega"></datalist>
+    </div>
     <div id="box-alerta-nequi" style="display: none; background: rgba(56, 189, 248, 0.15); border: 1.5px solid var(--accent); padding: 12px; border-radius: 8px; text-align: center;">
       <div style="font-size: 12px; color: var(--text-muted);">Pagar a la cuenta Nequi / Daviplata Lavaarte:</div>
       <div style="font-size: 20px; font-weight: 900; color: #fff; letter-spacing: 1px; margin-top: 2px;">317 534 2828</div>
@@ -957,7 +966,7 @@
 
 <!-- Modal: Arqueo Diario Desglosado con Colores Corporativos -->
 <div class="modal" id="modal-arqueo">
-  <div class="modal-content" style="width: 820px;">
+  <div class="modal-content" style="width: 820px; max-height:94vh; min-height:75vh;">
     <h3 style="color: var(--accent);">📊 Arqueo y Cierre Diario Desglosado</h3>
     <div id="caja-resumen" style="font-size: 13px; line-height: 1.8; background: var(--bg-input); padding: 14px; border-radius: 8px;"></div>
 
@@ -969,7 +978,8 @@
             <th>Ticket #</th>
             <th>Cliente</th>
             <th>Concepto</th>
-            <th>Medio de Pago</th>
+            <th>Medio / Cuenta receptora</th>
+            <th>Responsable entrega</th>
             <th>Monto</th>
           </tr>
         </thead>
@@ -1026,9 +1036,21 @@
   <div class="modal-content" style="width: 380px; text-align: center;">
     <h3 id="auth-modal-title" style="color: var(--warning);">🔒 Acceso Protegido</h3>
     <p id="auth-modal-desc" style="font-size: 13px; color: var(--text-muted);">Ingresa tu PIN de seguridad:</p>
-    <input type="password" id="admin-pin" class="input-text" style="font-size: 24px; text-align: center; letter-spacing: 6px;" maxlength="4" placeholder="••••">
+    <input type="password" id="admin-pin" class="input-text" style="font-size: 24px; text-align: center; letter-spacing: 6px;" maxlength="4" inputmode="numeric" pattern="[0-9]{4}" autocomplete="one-time-code" aria-label="PIN de cuatro dígitos" placeholder="••••"><div id="pin-feedback" role="status" aria-live="polite" style="min-height:18px;font-size:12px;color:var(--danger);"></div>
     <button class="btn-primary" onclick="validarPinSeguro()">Entrar</button>
     <button class="nav-btn" onclick="cerrarModal('modal-admin-auth')">Cancelar</button>
+  </div>
+</div>
+
+<!-- Modal: edición completa de cliente -->
+<div class="modal" id="modal-editar-cliente">
+  <div class="modal-content" style="width:520px;max-width:94vw;">
+    <h3 style="color:var(--accent);">Editar cliente</h3>
+    <input type="hidden" id="editar-cliente-id">
+    <label class="label-sm" for="editar-cliente-nombre">Nombre</label><input id="editar-cliente-nombre" class="input-text" maxlength="160" autocomplete="name">
+    <label class="label-sm" for="editar-cliente-telefono">Teléfono</label><input id="editar-cliente-telefono" class="input-text" inputmode="tel" maxlength="24" autocomplete="tel">
+    <label class="label-sm" for="editar-cliente-direccion">Dirección (opcional)</label><input id="editar-cliente-direccion" class="input-text" maxlength="250" autocomplete="street-address">
+    <div style="display:flex;gap:8px;justify-content:flex-end;"><button class="nav-btn" onclick="cerrarModal('modal-editar-cliente')">Cancelar</button><button class="btn-success" id="btn-guardar-cliente-edicion" onclick="guardarEdicionClienteBD()">Guardar cambios</button></div>
   </div>
 </div>
 
@@ -1122,6 +1144,18 @@
         <input type="number" id="adm-delete-ticket-input" class="input-text" placeholder="Ticket # a eliminar (Ej: 100)">
         <button class="btn-danger" style="white-space: nowrap;" onclick="adminBorrarOrdenFisica()">ELIMINAR DE RAÍZ</button>
       </div>
+    </div>
+
+    <div style="background:var(--bg-input);padding:14px;border-radius:8px;border:1px solid var(--border);margin-top:10px;">
+      <h4 style="color:var(--accent);margin-bottom:8px;">💳 Cuentas para pagos electrónicos</h4>
+      <p style="font-size:12px;color:var(--text-muted);margin-bottom:8px;">Agrega o elimina números receptores. Se compartirán entre dispositivos mediante Supabase.</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:8px;">
+        <select id="adm-cuenta-medio" class="input-text"><option value="NEQUI">Nequi</option><option value="DAVIPLATA">Daviplata</option><option value="LLAVE">Llave</option><option value="TRANSFERENCIA">Transferencia</option><option value="DATAFONO">Datáfono</option></select>
+        <input id="adm-cuenta-alias" class="input-text" maxlength="60" placeholder="Alias (opcional)">
+        <input id="adm-cuenta-numero" class="input-text" maxlength="80" placeholder="Número / cuenta / llave">
+        <button class="btn-success" onclick="agregarCuentaPago()">Agregar</button>
+      </div>
+      <div id="adm-cuentas-pago-lista" style="margin-top:8px;font-size:12px;"></div>
     </div>
 
     <button class="nav-btn" onclick="cerrarModal('modal-admin-master')">Cerrar Panel Maestro</button>
@@ -1468,6 +1502,12 @@
       })
       .subscribe();
   }
+
+  // Refrescar catálogos configurables cuando se modifiquen desde otro dispositivo.
+  db.channel('lavaarte-config-live')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'medios_pago_config' }, () => { cargarCuentasPago().catch(e => console.warn(e)); })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'responsables_entrega' }, () => { cargarResponsablesEntrega().catch(e => console.warn(e)); })
+    .subscribe();
 
   function actualizarBotonModoImpresora() {
     const btn = document.getElementById("btn-modo-impresora");
@@ -2268,6 +2308,10 @@
       Saldo sugerido: <strong>$${Number(orden.saldo_pendiente).toLocaleString("es-CO")}</strong>
     `;
     document.getElementById("entrega-saldo-modificable").value = Number(orden.saldo_pendiente);
+    document.getElementById('entrega-responsable').value = '';
+    document.getElementById('entrega-cuenta-pago').value = '';
+    cargarResponsablesEntrega().catch(e => console.warn(e));
+    cargarCuentasPago().catch(e => console.warn(e));
     
     document.querySelectorAll(".btn-payment").forEach(b => b.classList.remove("selected"));
     document.querySelector(".btn-payment").classList.add("selected");
@@ -2282,10 +2326,23 @@
     btnElem.classList.add("selected");
     
     const boxNequi = document.getElementById("box-alerta-nequi");
-    if (metodo === "NEQUI_DAVIPLATA" || metodo === "LLAVE") {
+    if (metodo === "NEQUI_DAVIPLATA" || metodo === "LLAVE" || metodo === "TRANSFERENCIA" || metodo === "DATAFONO") {
       boxNequi.style.display = "block";
     } else {
       boxNequi.style.display = "none";
+    }
+    const sel = document.getElementById('entrega-cuenta-pago');
+    if (sel) {
+      const prev = sel.value;
+      const validos = cuentasPagoCache.filter(c => {
+        if (metodo === 'NEQUI_DAVIPLATA') return ['NEQUI','DAVIPLATA'].includes(c.medio);
+        if (metodo === 'LLAVE') return c.medio === 'LLAVE';
+        if (metodo === 'TRANSFERENCIA') return c.medio === 'TRANSFERENCIA';
+        if (metodo === 'DATAFONO') return c.medio === 'DATAFONO';
+        return false;
+      });
+      sel.innerHTML = '<option value="">Selecciona una cuenta configurada</option>' + validos.map(c => `<option value="${escaparHTML(c.id)}">${escaparHTML(c.medio)} · ${escaparHTML(c.alias || c.numero)} (${escaparHTML(c.numero)})</option>`).join('');
+      if (validos.some(c => c.id === prev)) sel.value = prev;
     }
   }
 
@@ -2295,12 +2352,22 @@
     const ord = ordenCobroActiva;
 
     try {
-      await db.from("ordenes").update({
+      const responsableEntrega = document.getElementById('entrega-responsable').value.trim();
+      const cuentaPagoId = document.getElementById('entrega-cuenta-pago').value;
+      const cuentaPago = cuentasPagoCache.find(c => String(c.id) === String(cuentaPagoId));
+      if (!responsableEntrega) return alert('Escribe o selecciona el responsable de entregar.');
+      if (metodoPagoSeleccionado !== 'EFECTIVO' && !cuentaPago) return alert('Selecciona la cuenta o número receptor del pago electrónico.');
+      const cuentaDescripcion = cuentaPago ? `${cuentaPago.medio}${cuentaPago.alias ? ' · '+cuentaPago.alias : ''} · ${cuentaPago.numero}` : null;
+      const { error: errorEntrega } = await db.from("ordenes").update({
         estado: 'ENTREGADO',
         saldo_pendiente: 0.00,
         metodo_pago_saldo: metodoPagoSeleccionado,
+        medio_pago_cuenta: cuentaDescripcion,
+        responsable_entrega: responsableEntrega,
         entregado_at: new Date().toISOString()
       }).eq("id", ord.id);
+      if (errorEntrega) throw errorEntrega;
+      await guardarResponsableEntrega(responsableEntrega);
 
       const mensajeWA = 
         `*LAVAARTE LAVANDERÍA SAS*\n` +
@@ -2315,6 +2382,52 @@
       buscarOrdenesEntrega("");
       chequearCentinela60h();
     } catch (e) { alert("Error: " + e.message); }
+  }
+
+  let cuentasPagoCache = [];
+  let responsablesEntregaCache = [];
+  async function cargarCuentasPago() {
+    const { data, error } = await db.from('medios_pago_config').select('id,medio,alias,numero,activo').eq('activo',true).order('medio').order('alias');
+    if (error) throw error;
+    cuentasPagoCache = data || [];
+    const sel = document.getElementById('entrega-cuenta-pago');
+    if (sel) {
+      const actual = sel.value;
+      sel.innerHTML = '<option value="">Selecciona una cuenta configurada</option>' + cuentasPagoCache.map(c => `<option value="${escaparHTML(c.id)}">${escaparHTML(c.medio)} · ${escaparHTML(c.alias || c.numero)} (${escaparHTML(c.numero)})</option>`).join('');
+      if (actual) sel.value = actual;
+    }
+    const lista = document.getElementById('adm-cuentas-pago-lista');
+    if (lista) lista.innerHTML = cuentasPagoCache.map(c => `<div style="display:flex;gap:8px;align-items:center;justify-content:space-between;padding:6px;border-bottom:1px solid var(--border);"><span>${escaparHTML(c.medio)} · ${escaparHTML(c.alias || '')} — <strong>${escaparHTML(c.numero)}</strong></span><button class="btn-danger" style="padding:4px 8px" onclick="desactivarCuentaPago('${escaparHTML(c.id)}')">Eliminar</button></div>`).join('') || '<span>No hay cuentas configuradas.</span>';
+    const activeMethod = metodoPagoSeleccionado;
+    const payBtn = Array.from(document.querySelectorAll('.btn-payment')).find(b => b.classList.contains('selected'));
+    if (payBtn) seleccionarMetodoPago(activeMethod, payBtn);
+  }
+  async function agregarCuentaPago() {
+    const medio = document.getElementById('adm-cuenta-medio').value;
+    const alias = document.getElementById('adm-cuenta-alias').value.trim();
+    const numero = document.getElementById('adm-cuenta-numero').value.trim();
+    if (!numero) return alert('Escribe el número, cuenta o llave.');
+    const { error } = await db.from('medios_pago_config').insert({ medio, alias: alias || null, numero, activo:true });
+    if (error) return alert('No se pudo guardar la cuenta: ' + error.message);
+    document.getElementById('adm-cuenta-alias').value = ''; document.getElementById('adm-cuenta-numero').value = '';
+    await cargarCuentasPago(); alert('Cuenta guardada y disponible en los dispositivos conectados.');
+  }
+  async function desactivarCuentaPago(id) {
+    if (!confirm('¿Desactivar esta cuenta para nuevos pagos? Los datos históricos de órdenes no se borrarán.')) return;
+    const { error } = await db.from('medios_pago_config').update({activo:false}).eq('id',id);
+    if (error) return alert('No se pudo desactivar: ' + error.message);
+    await cargarCuentasPago();
+  }
+  async function cargarResponsablesEntrega() {
+    const { data, error } = await db.from('responsables_entrega').select('nombre').eq('activo',true).order('nombre');
+    if (error) throw error;
+    responsablesEntregaCache = data || [];
+    const dl = document.getElementById('lista-responsables-entrega');
+    if (dl) dl.innerHTML = responsablesEntregaCache.map(r => `<option value="${escaparHTML(r.nombre)}"></option>`).join('');
+  }
+  async function guardarResponsableEntrega(nombre) {
+    const { error } = await db.from('responsables_entrega').upsert({nombre,activo:true},{onConflict:'nombre'});
+    if (error) console.warn('[LAVAARTE] No se pudo guardar responsable para autocompletar:', error.message);
   }
 
   // Egresos
@@ -2343,7 +2456,7 @@
       const hoy = new Date();
       hoy.setHours(0,0,0,0);
 
-      const { data: ords } = await db.from("ordenes").select("consecutivo_ticket, total_neto, abono_inicial, saldo_pendiente, metodo_pago_saldo, estado, created_at, entregado_at, clientes(nombre_o_razon)").or(`created_at.gte.${hoy.toISOString()},entregado_at.gte.${hoy.toISOString()}`);
+      const { data: ords } = await db.from("ordenes").select("consecutivo_ticket, total_neto, abono_inicial, saldo_pendiente, metodo_pago_saldo, medio_pago_cuenta, responsable_entrega, estado, created_at, entregado_at, clientes(nombre_o_razon)").or(`created_at.gte.${hoy.toISOString()},entregado_at.gte.${hoy.toISOString()}`);
       const { data: egrs } = await db.from("egresos_caja").select("*").gte("created_at", hoy.toISOString());
 
       let efectivoTotal = 0;
@@ -2354,7 +2467,7 @@
       (ords || []).forEach(o => {
         if (new Date(o.created_at) >= hoy && Number(o.abono_inicial) > 0) {
           efectivoTotal += Number(o.abono_inicial);
-          desgloseRecibos.push({ ticket: o.consecutivo_ticket, cliente: o.clientes?.nombre_o_razon || 'Particular', concepto: 'Abono Inicial Mostrador', medio: 'EFECTIVO', monto: Number(o.abono_inicial) });
+          desgloseRecibos.push({ ticket: o.consecutivo_ticket, cliente: o.clientes?.nombre_o_razon || 'Particular', concepto: 'Abono Inicial Mostrador', medio: 'EFECTIVO', responsable: '—', monto: Number(o.abono_inicial) });
         }
         if (o.entregado_at && new Date(o.entregado_at) >= hoy && o.estado === "ENTREGADO") {
           const saldo = Number(o.total_neto) - Number(o.abono_inicial || 0);
@@ -2362,7 +2475,7 @@
             const medio = o.metodo_pago_saldo || "EFECTIVO";
             if (medio === "EFECTIVO") efectivoTotal += saldo;
             else transferenciasTotal += saldo;
-            desgloseRecibos.push({ ticket: o.consecutivo_ticket, cliente: o.clientes?.nombre_o_razon || 'Particular', concepto: 'Saldo Liquidado Entrega', medio, monto: saldo });
+            desgloseRecibos.push({ ticket: o.consecutivo_ticket, cliente: o.clientes?.nombre_o_razon || 'Particular', concepto: 'Saldo Liquidado Entrega', medio: medio === 'EFECTIVO' ? 'EFECTIVO' : `${medio} · ${o.medio_pago_cuenta || 'Cuenta no registrada'}`, responsable: o.responsable_entrega || '—', monto: saldo });
           }
         }
       });
@@ -2378,8 +2491,8 @@
       `;
 
       document.getElementById("tabla-desglose-arqueo-body").innerHTML = desgloseRecibos.length === 0 
-        ? '<tr><td colspan="5" style="text-align: center; color: var(--text-muted);">No hay cobros hoy.</td></tr>'
-        : desgloseRecibos.map(r => `<tr><td><strong>#${r.ticket}</strong></td><td>${r.cliente}</td><td>${r.concepto}</td><td><strong>${r.medio}</strong></td><td style="color: var(--success); font-weight: bold;">$${r.monto.toLocaleString("es-CO")}</td></tr>`).join("");
+        ? '<tr><td colspan="6" style="text-align: center; color: var(--text-muted);">No hay cobros hoy.</td></tr>'
+        : desgloseRecibos.map(r => `<tr><td><strong>#${r.ticket}</strong></td><td>${escaparHTML(r.cliente)}</td><td>${escaparHTML(r.concepto)}</td><td><strong>${escaparHTML(r.medio)}</strong></td><td>${escaparHTML(r.responsable || '—')}</td><td style="color: var(--success); font-weight: bold;">$${r.monto.toLocaleString("es-CO")}</td></tr>`).join("");
 
       document.getElementById("tabla-desglose-egresos-body").innerHTML = (!egrs || egrs.length === 0)
         ? '<tr><td colspan="4" style="text-align: center; color: var(--text-muted);">Sin egresos hoy.</td></tr>'
@@ -2609,12 +2722,15 @@
   }
 
   // ==================== SEGURIDAD JERÁRQUICA ====================
+  let pinValidando = false;
   function solicitarAccesoEmpleados(destino) {
     destinoPinAdmin = destino;
     document.getElementById("auth-modal-title").textContent = "🔒 Acceso Colaboradores Lavaarte";
     document.getElementById("auth-modal-desc").textContent = "Ingresa tu PIN de colaborador para continuar:";
     document.getElementById("admin-pin").value = "";
+    document.getElementById("pin-feedback").textContent = "";
     abrirModal("modal-admin-auth");
+    setTimeout(() => document.getElementById('admin-pin').focus(), 60);
   }
 
   function pedirClaveSegura(destinoModal) {
@@ -2622,34 +2738,55 @@
     document.getElementById("auth-modal-title").textContent = "🛡️ Control Administrativo";
     document.getElementById("auth-modal-desc").textContent = "Acceso restringido. Ingresa el PIN de Administrador:";
     document.getElementById("admin-pin").value = "";
+    document.getElementById("pin-feedback").textContent = "";
     abrirModal("modal-admin-auth");
+    setTimeout(() => document.getElementById('admin-pin').focus(), 60);
   }
 
   function validarPinSeguro() {
-    const pin = document.getElementById("admin-pin").value.trim();
-
+    if (pinValidando) return;
+    const campo = document.getElementById("admin-pin");
+    const feedback = document.getElementById('pin-feedback');
+    const pin = campo.value.replace(/\D/g,'').slice(0,4);
+    campo.value = pin;
+    if (pin.length !== 4) return;
+    let correcto = false;
+    let accion = null;
     if (destinoPinAdmin === "vista-dashboard") {
-      if (pin === "1510" || pin === "2415") {
-        cerrarModal("modal-admin-auth");
-        mostrarVista("vista-dashboard");
-      } else {
-        alert("PIN de colaborador incorrecto.");
-      }
-      return;
-    }
-
-    if (destinoPinAdmin === "modal-admin-master" || destinoPinAdmin === "modal-admin-panel" || destinoPinAdmin === "modal-arqueo" || destinoPinAdmin === "vista-inventario") {
-      if (pin === "2415") {
-        cerrarModal("modal-admin-auth");
+      correcto = pin === "1510" || pin === "2415";
+      accion = () => mostrarVista("vista-dashboard");
+    } else if (["modal-admin-master","modal-admin-panel","modal-arqueo","vista-inventario"].includes(destinoPinAdmin)) {
+      correcto = pin === "2415";
+      accion = () => {
         if (destinoPinAdmin === "modal-admin-master") abrirModalMasterAdmin();
         else if (destinoPinAdmin === "modal-admin-panel") abrirModal("modal-admin-panel");
         else if (destinoPinAdmin === "modal-arqueo") abrirArqueoCaja();
         else if (destinoPinAdmin === "vista-inventario") mostrarVista("vista-inventario");
-      } else {
-        alert("⚠️ PIN ADMINISTRADOR INCORRECTO. Acceso denegado.");
-      }
+      };
     }
+    if (!correcto) {
+      feedback.textContent = destinoPinAdmin === "vista-dashboard" ? 'PIN de colaborador incorrecto.' : 'PIN administrador incorrecto. Acceso denegado.';
+      campo.value = '';
+      campo.focus();
+      return;
+    }
+    pinValidando = true;
+    cerrarModal("modal-admin-auth");
+    try { if (accion) accion(); }
+    finally { setTimeout(() => { pinValidando = false; }, 250); }
   }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const pin = document.getElementById('admin-pin');
+    if (pin) {
+      pin.addEventListener('input', () => {
+        const limpio = pin.value.replace(/\D/g,'').slice(0,4);
+        if (pin.value !== limpio) pin.value = limpio;
+        if (limpio.length === 4) validarPinSeguro();
+      });
+      pin.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); validarPinSeguro(); } });
+    }
+  });
 
   // Anulación en Tiempo Real
   async function adminCargarTicket() {
@@ -2707,10 +2844,12 @@
 
   // Panel Maestro (Botón 9)
   async function abrirModalMasterAdmin() {
-    poblarSelectPrendasMaster();
-    await adminCargarOrdenesBD();
-    adminRenderClientesBD(listaClientes);
     abrirModal("modal-admin-master");
+    poblarSelectPrendasMaster();
+    adminRenderClientesBD(listaClientes);
+    cargarCuentasPago().catch(e => console.warn('[LAVAARTE] Cuentas de pago:', e));
+    // No bloquear la apertura del panel esperando una carga histórica pesada.
+    setTimeout(() => adminCargarOrdenesBD().catch(e => console.error('[LAVAARTE] Carga de órdenes:', e)), 0);
   }
 
   function poblarSelectPrendasMaster() {
@@ -2847,51 +2986,72 @@
     }
   }
 
+  function escaparHTML(valor) {
+    return String(valor ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+  }
+
   function adminRenderClientesBD(lista) {
     const tbody = document.getElementById("adm-tabla-clientes-bd-body");
+    if (!tbody) return;
     if (!lista || lista.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: var(--text-muted);">Sin clientes.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text-muted);">Sin clientes.</td></tr>';
       return;
     }
-    tbody.innerHTML = lista.slice(0, 50).map(c => `
-      <tr>
-        <td><strong>${c.nombre_o_razon}</strong></td>
-        <td>${c.telefono}</td>
-        <td>${c.direccion || '-'}</td>
-        <td>
-          <button class="nav-btn" style="padding: 2px 6px; font-size: 11px;" onclick="adminEditarClienteBD('${c.id}', '${c.nombre_o_razon.replace(/'/g, "")}', '${c.telefono}', '${(c.direccion || "").replace(/'/g, "")}')">✏️ Editar</button>
-        </td>
-      </tr>
-    `).join("");
+    tbody.replaceChildren();
+    lista.slice(0, 100).forEach(c => {
+      const tr = document.createElement('tr');
+      [c.nombre_o_razon, c.telefono, c.direccion || '-'].forEach(v => {
+        const td = document.createElement('td'); td.textContent = String(v ?? ''); tr.appendChild(td);
+      });
+      const td = document.createElement('td');
+      const btn = document.createElement('button'); btn.className = 'nav-btn'; btn.style.cssText='padding:2px 6px;font-size:11px;'; btn.textContent='✏️ Editar';
+      btn.addEventListener('click', () => abrirEditorClienteBD(c.id)); td.appendChild(btn); tr.appendChild(td); tbody.appendChild(tr);
+    });
   }
 
   function adminFiltrarClientesBD(val) {
     const q = normalizarBusquedaCliente(val);
     const qTel = normalizarTelefonoCliente(val);
-    if (!q) return adminRenderClientesBD(listaClientes);
-    const filtrados = listaClientes.filter(c => normalizarBusquedaCliente(c.nombre_o_razon).includes(q) || normalizarTelefonoCliente(c.telefono).includes(qTel));
+    if (!q && !qTel) return adminRenderClientesBD(listaClientes);
+    const filtrados = listaClientes.filter(c => normalizarBusquedaCliente(c.nombre_o_razon).includes(q) || (qTel && normalizarTelefonoCliente(c.telefono).includes(qTel)));
     adminRenderClientesBD(filtrados);
   }
 
-  async function adminEditarClienteBD(id, nomAct, telAct, dirAct) {
-    const nuevoNom = prompt("Nombre del cliente:", nomAct);
-    if (!nuevoNom) return;
-    const nuevoTel = prompt("Teléfono del cliente:", telAct);
-    if (!nuevoTel) return;
-    const nuevaDir = prompt("Dirección del cliente:", dirAct);
-    const telNormalizado = normalizarTelefonoCliente(nuevoTel);
+  function abrirEditorClienteBD(id) {
+    const c = listaClientes.find(x => String(x.id) === String(id));
+    if (!c) return alert('No se encontró el cliente. Actualiza la lista e inténtalo de nuevo.');
+    document.getElementById('editar-cliente-id').value = c.id;
+    document.getElementById('editar-cliente-nombre').value = c.nombre_o_razon || '';
+    document.getElementById('editar-cliente-telefono').value = c.telefono || '';
+    document.getElementById('editar-cliente-direccion').value = c.direccion || '';
+    abrirModal('modal-editar-cliente');
+    setTimeout(() => document.getElementById('editar-cliente-nombre').focus(), 50);
+  }
 
+  async function guardarEdicionClienteBD() {
+    const btn = document.getElementById('btn-guardar-cliente-edicion');
+    const id = document.getElementById('editar-cliente-id').value;
+    const nombre = document.getElementById('editar-cliente-nombre').value.trim().replace(/\s+/g,' ');
+    const telefono = normalizarTelefonoCliente(document.getElementById('editar-cliente-telefono').value);
+    const direccion = document.getElementById('editar-cliente-direccion').value.trim();
+    if (!id) return alert('Falta el identificador del cliente.');
+    if (!nombre) return alert('El nombre es obligatorio.');
+    if (!/^\d{7,15}$/.test(telefono)) return alert('Ingresa un teléfono válido de 7 a 15 dígitos.');
+    btn.disabled = true; btn.textContent = 'Guardando…';
     try {
-      const { error } = await db.from("clientes").update({ nombre_o_razon: nuevoNom.trim().replace(/\s+/g," "), telefono: telNormalizado, direccion: nuevaDir || "" }).eq("id", id);
-      if (error) {
-        if (error.code === "23505") throw new Error("Ese celular ya pertenece a otro cliente.");
-        throw error;
-      }
-      alert("✅ Datos del cliente actualizados.");
+      const { data, error } = await db.from('clientes').update({ nombre_o_razon:nombre, telefono, direccion }).eq('id',id).select('id,nombre_o_razon,telefono,direccion').single();
+      if (error) { if (error.code === '23505') throw new Error('Ese teléfono ya pertenece a otro cliente.'); throw error; }
+      if (!data) throw new Error('Supabase no confirmó la actualización.');
       await precargarClientes();
       adminRenderClientesBD(listaClientes);
-    } catch (e) { alert("Error: " + e.message); }
+      cerrarModal('modal-editar-cliente');
+      alert('Cliente actualizado y guardado en Supabase. Los demás dispositivos lo recibirán por Realtime.');
+    } catch (e) { alert('No se pudo guardar el cliente: ' + (e.message || 'Error desconocido')); }
+    finally { btn.disabled = false; btn.textContent = 'Guardar cambios'; }
   }
+
+  // Compatibilidad con botones o llamadas antiguas.
+  async function adminEditarClienteBD(id) { abrirEditorClienteBD(id); }
 
   function adminImportarClientesExcel(event) {
     const file = event.target.files[0];
@@ -3290,6 +3450,21 @@
     let t = String(textoCompleto || "").toLowerCase().trim();
     const tNorm = () => normalizarBusquedaCliente(t);
 
+    // Si el dictado incluye un teléfono, priorizar búsqueda por número para resolver nombres olvidados.
+    const digitosDictados = t.replace(/\D/g, '');
+    const telefonoDictado = (digitosDictados.match(/(?:57)?(\d{10})/) || [])[1];
+    if (telefonoDictado) {
+      const { data: porTelefono, error: errorTelefono } = await db.from('clientes').select('id,nombre_o_razon,telefono,direccion').eq('telefono', telefonoDictado).maybeSingle();
+      if (errorTelefono) console.warn('[LAVAARTE] Búsqueda por teléfono dictado:', errorTelefono.message);
+      if (porTelefono) {
+        await cargarCliente(porTelefono.nombre_o_razon, porTelefono.telefono, porTelefono.id, porTelefono.direccion);
+        t = t.replace(telefonoDictado, '').trim();
+      } else {
+        document.getElementById('pos-cli-tel').value = telefonoDictado;
+        const sinNumero = t.replace(telefonoDictado, '').trim();
+        if (sinNumero) document.getElementById('pos-cli-nom').value = sinNumero.replace(/\b(cliente|tel[eé]fono|celular|n[uú]mero)\b/gi,'').trim();
+      }
+    }
     let clienteDetectado = null;
     const textoNorm = normalizarBusquedaCliente(t);
     for (const c of listaClientes) {
@@ -3416,7 +3591,7 @@
   const versionNode = document.getElementById('lavaarte-version');
   if (versionNode && window.electronAPI && typeof window.electronAPI.getAppInfo === 'function') {
     window.electronAPI.getAppInfo().then(info => {
-      if (info && info.version) versionNode.textContent = 'Desktop v' + info.version + ' · Web UI v1.2.0';
+      if (info && info.version) versionNode.textContent = 'Desktop v' + info.version + ' · Web UI v1.3.0';
     }).catch(() => {});
   }
 
@@ -3437,6 +3612,40 @@
   }, true);
 })();
 </script>
+
+
+<script>
+/* LAVAARTE OS 1.3.0: mejoras de acceso, edición, sincronización y entorno desktop. */
+(function () {
+  const isDesktop = !!(window.electronAPI && typeof window.electronAPI.getAppInfo === 'function');
+  document.addEventListener('DOMContentLoaded', () => {
+    const printer = document.getElementById('btn-modo-impresora');
+    const dashboard = document.getElementById('vista-dashboard');
+    if (printer && dashboard) {
+      const header = dashboard.querySelector('div');
+      if (header) { printer.style.display = 'inline-flex'; printer.style.marginTop = '8px'; header.appendChild(printer); }
+    }
+    if (isDesktop) {
+      document.body.classList.add('lavaarte-desktop');
+      document.querySelectorAll('[onclick="mostrarVista(\'vista-portal-hoteles\')"], [onclick="mostrarVista(\'vista-portal-cliente\')"]').forEach(el => el.style.display='none');
+      document.querySelectorAll('.portal-card').forEach(el => {
+        const click = el.getAttribute('onclick') || '';
+        if (click.includes('vista-portal-hoteles') || click.includes('vista-portal-cliente')) el.style.display='none';
+      });
+    }
+  });
+})();
+</script>
+<style>
+/* LAVAARTE 1.3.0 responsive refinements */
+#modal-arqueo .modal-content { max-height:94vh !important; min-height:75vh; }
+@media(max-width:600px) {
+  #modal-arqueo .modal-content { width:96vw !important; max-width:96vw !important; max-height:96dvh !important; min-height:88dvh; padding:14px; }
+  #modal-arqueo .modal-content > div { max-height:55vh; }
+  #modal-admin-auth .modal-content { width:min(92vw,380px) !important; }
+  #admin-pin { font-size:30px !important; min-height:58px; letter-spacing:10px !important; }
+}
+</style>
 
 </body>
 </html>
