@@ -104,7 +104,9 @@
   .data-table td { padding: 10px; border-bottom: 1px solid var(--border); }
 
   .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.75); display: none; align-items: center; justify-content: center; z-index: 100; }
-  .modal-content { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; width: 650px; max-width: 92vw; padding: 20px; display: flex; flex-direction: column; gap: 14px; max-height: 85vh; overflow-y: auto; }
+  #modal-editar-cliente { z-index: 300 !important; }
+#modal-anular-orden { z-index: 400 !important; }
+.modal-content { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; width: 650px; max-width: 92vw; padding: 20px; display: flex; flex-direction: column; gap: 14px; max-height: 85vh; overflow-y: auto; }
   .centinela-box { background: rgba(239, 68, 68, 0.12); border: 1px solid var(--danger); border-radius: 8px; padding: 12px; }
 
   #ticket-termico-print { display: none; }
@@ -497,7 +499,8 @@
           </div>
         </div>
 
-        <button class="btn-success" style="margin-top: 10px; padding: 14px;" onclick="confirmarGenerarOrden()">💾 GUARDAR, IMPRIMIR Y ENVIAR WHATSAPP</button>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:10px;text-align:center;">Presiona <strong>F12</strong> para generar la orden, guardar, imprimir y abrir WhatsApp cuando corresponda.</div>
+        <button id="btn-generar-orden" class="btn-success" style="margin-top: 2px; padding: 14px;" onclick="confirmarGenerarOrden()">GENERAR ORDEN</button>
       </div>
 
       <div class="pos-catalog">
@@ -514,13 +517,13 @@
 
             <div class="input-group">
               <label class="label-sm">Buscar Prenda / Ítem</label>
-              <input type="text" id="quick-bar-search" class="input-text" placeholder="Escribe prenda o código..." oninput="quickBarFiltrarPrenda(this.value)">
+              <input type="text" id="quick-bar-search" class="input-text" placeholder="Escribe prenda o código..." autocomplete="off" oninput="quickBarFiltrarPrenda(this.value)" onkeydown="quickBarManejarTeclaBusqueda(event)">
               <div id="drop-quick-prendas" class="autocomplete-box"></div>
             </div>
 
             <div class="input-group">
               <label class="label-sm">Precio ($COP)</label>
-              <input type="number" id="quick-bar-price" class="input-text" style="text-align: right; font-weight: bold; color: var(--accent);" placeholder="0" onkeydown="if(event.key==='Enter') quickBarAgregarAlTicket()">
+              <input type="number" id="quick-bar-price" class="input-text" style="text-align: right; font-weight: bold; color: var(--accent);" placeholder="0" onkeydown="quickBarManejarTeclaPrecio(event)">
             </div>
           </div>
 
@@ -796,11 +799,12 @@
               <th>Total</th>
               <th>Saldo</th>
               <th>Medio Pago Saldo</th>
+              <th>Responsable entrega</th>
               <th>Fecha Entrega</th>
             </tr>
           </thead>
           <tbody id="tabla-auditoria-body">
-            <tr><td colspan="11" style="text-align: center; color: var(--text-muted); padding: 25px;">Escribe un ticket, teléfono o nombre para consultar órdenes.</td></tr>
+            <tr><td colspan="12" style="text-align: center; color: var(--text-muted); padding: 25px;">Escribe un ticket, teléfono o nombre para consultar órdenes.</td></tr>
           </tbody>
         </table>
       </div>
@@ -953,8 +957,8 @@
       <datalist id="lista-responsables-entrega"></datalist>
     </div>
     <div id="box-alerta-nequi" style="display: none; background: rgba(56, 189, 248, 0.15); border: 1.5px solid var(--accent); padding: 12px; border-radius: 8px; text-align: center;">
-      <div style="font-size: 12px; color: var(--text-muted);">Pagar a la cuenta Nequi / Daviplata Lavaarte:</div>
-      <div style="font-size: 20px; font-weight: 900; color: #fff; letter-spacing: 1px; margin-top: 2px;">317 534 2828</div>
+      <div id="entrega-cuenta-label" style="font-size: 12px; color: var(--text-muted);">Selecciona una cuenta receptora configurada:</div>
+      <div id="entrega-cuenta-numero-visible" style="font-size: 20px; font-weight: 900; color: #38bdf8; letter-spacing: 1px; margin-top: 2px;">Selecciona una cuenta</div>
     </div>
 
     <button class="btn-success" style="padding: 14px; font-size: 15px; margin-top: 6px;" onclick="ejecutarEntregaFinal()">
@@ -1064,6 +1068,21 @@
     </div>
     <div id="admin-ticket-detalle" style="font-size: 13px;"></div>
     <button class="nav-btn" onclick="cerrarModal('modal-admin-panel')">Cerrar</button>
+  </div>
+</div>
+
+<!-- Modal no bloqueante para anulación: evita prompt() en Electron -->
+<div class="modal" id="modal-anular-orden">
+  <div class="modal-content" style="width:480px;max-width:94vw;">
+    <h3 style="color:var(--danger);">Anular orden</h3>
+    <p id="anular-orden-resumen" style="font-size:13px;">Confirma la anulación de esta orden.</p>
+    <input type="hidden" id="anular-orden-id">
+    <label class="label-sm" for="anular-orden-motivo">Motivo de anulación</label>
+    <textarea id="anular-orden-motivo" class="input-text" rows="3" maxlength="500" placeholder="Escribe el motivo (obligatorio)"></textarea>
+    <div style="display:flex;gap:8px;justify-content:flex-end;">
+      <button class="nav-btn" onclick="cerrarModal('modal-anular-orden')">Cancelar</button>
+      <button id="btn-confirmar-anular" class="btn-danger" onclick="confirmarAnulacionOrden()">Confirmar anulación</button>
+    </div>
   </div>
 </div>
 
@@ -1410,6 +1429,9 @@
   const CLAVE_MODO_IMPRESORA = "lavaarte_modo_impresora_hp";
   let clienteVisitasHistorial = 0;
   let itemSeleccionadoQuickBar = null;
+  let quickBarIndiceActivo = -1;
+  let ordenGuardando = false;
+  let ordenAnularPendiente = null;
 
   window.onload = async () => {
     actualizarReloj();
@@ -1427,7 +1449,28 @@
     document.getElementById("hora-actual").textContent = ahora.toLocaleDateString("es-CO") + " " + ahora.toLocaleTimeString("en-US");
   }
 
+  function resetearIngresoPrendas() {
+    ticket = [];
+    itemSeleccionadoQuickBar = null;
+    quickBarIndiceActivo = -1;
+    ["pos-cli-nom","pos-cli-tel","busc-cliente","pos-obs-prendas","pos-kilo-detalle","quick-bar-search","quick-bar-price","filtro-prenda"].forEach(id => { const el=document.getElementById(id); if(el) el.value=""; });
+    const cant=document.getElementById("quick-bar-cant"); if(cant) cant.value="1";
+    const abono=document.getElementById("pos-abono"); if(abono) abono.value="0";
+    const autoriza=document.getElementById("pos-autoriza-datos"); if(autoriza) autoriza.checked=false;
+    const drop=document.getElementById("drop-quick-prendas"); if(drop) {drop.innerHTML="";drop.style.display="none";}
+    const clientes=document.getElementById("drop-clientes"); if(clientes) {clientes.innerHTML="";clientes.style.display="none";}
+    const badge=document.getElementById("badge-loyalty"); if(badge) {badge.style.display="none";badge.innerHTML="";}
+    const detalle=document.getElementById("group-detalle-kilos"); if(detalle) detalle.style.display="none";
+    clienteVisitasHistorial=0; loyaltyBeneficioPendiente=false; loyaltyBeneficioAplicado=false; loyaltyBeneficioMonto=0;
+    renderTicket();
+  }
+
   function mostrarVista(vistaId) {
+    const vistaActual = document.querySelector(".view-section.view-active");
+    if (vistaActual && vistaActual.id === "vista-pos" && vistaId !== "vista-pos") {
+      // Si se sale sin generar la orden, descartar el borrador para no mezclarlo con la siguiente.
+      resetearIngresoPrendas();
+    }
     document.querySelectorAll(".view-section").forEach(el => el.classList.remove("view-active"));
     document.getElementById(vistaId).classList.add("view-active");
     if (vistaId === "vista-entrega") buscarOrdenesEntrega("");
@@ -1601,23 +1644,64 @@
   function quickBarFiltrarPrenda(val) {
     const box = document.getElementById("drop-quick-prendas");
     const q = val.toLowerCase().trim();
-    if (!q) { box.style.display = "none"; return; }
+    quickBarIndiceActivo = -1;
+    if (!q) { box.style.display = "none"; box.innerHTML = ""; return; }
 
-    const matches = CATALOGO_CENTRAL.filter(p => p.nombre.toLowerCase().includes(q) || String(p.codigo).includes(q));
+    const matches = CATALOGO_CENTRAL.filter(p => p.nombre.toLowerCase().includes(q) || String(p.codigo).includes(q)).slice(0, 10);
     if (matches.length === 0) {
-      box.innerHTML = `<div class="autocomplete-item" onclick="quickBarSeleccionarPrenda({codigo: 99, nombre: '${val}', precio: 0})">➕ Personalizado: "<strong>${val}</strong>"</div>`;
+      const safeName = val.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/\"/g,"&quot;");
+      box.innerHTML = `<div class="autocomplete-item" data-quick-index="0" onclick='quickBarSeleccionarPrenda({codigo:99,nombre:${JSON.stringify(val)},precio:0})'>➕ Personalizado: "<strong>${safeName}</strong>"</div>`;
     } else {
-      box.innerHTML = matches.slice(0, 10).map(p => `
-        <div class="autocomplete-item" onclick='quickBarSeleccionarPrenda(${JSON.stringify(p)})'>
-          [${p.codigo}] <strong>${p.nombre}</strong> - $${Number(p.precio).toLocaleString("es-CO")}
+      box.innerHTML = matches.map((p, i) => `
+        <div class="autocomplete-item" data-quick-index="${i}" onclick='quickBarSeleccionarPrenda(${JSON.stringify(p)})'>
+          [${p.codigo}] <strong>${String(p.nombre).replace(/</g,"&lt;").replace(/>/g,"&gt;")}</strong> - $${Number(p.precio).toLocaleString("es-CO")}
         </div>
       `).join("");
     }
     box.style.display = "block";
+    quickBarPintarOpcionActiva();
+  }
+
+  function quickBarPintarOpcionActiva() {
+    const box = document.getElementById("drop-quick-prendas");
+    if (!box) return;
+    box.querySelectorAll("[data-quick-index]").forEach((el, i) => {
+      el.style.background = i === quickBarIndiceActivo ? "var(--bg-input)" : "";
+      el.style.color = i === quickBarIndiceActivo ? "var(--accent)" : "";
+      if (i === quickBarIndiceActivo) el.scrollIntoView({block:"nearest"});
+    });
+  }
+
+  function quickBarManejarTeclaBusqueda(event) {
+    const box = document.getElementById("drop-quick-prendas");
+    const opciones = box ? Array.from(box.querySelectorAll("[data-quick-index]")) : [];
+    if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+      if (!opciones.length) return;
+      event.preventDefault();
+      const delta = event.key === "ArrowDown" ? 1 : -1;
+      quickBarIndiceActivo = (quickBarIndiceActivo + delta + opciones.length) % opciones.length;
+      quickBarPintarOpcionActiva();
+    } else if (event.key === "Enter") {
+      event.preventDefault();
+      if (opciones.length && box.style.display !== "none") {
+        const idx = quickBarIndiceActivo >= 0 ? quickBarIndiceActivo : 0;
+        opciones[idx]?.click();
+      } else if (itemSeleccionadoQuickBar) {
+        document.getElementById("quick-bar-price").focus();
+        document.getElementById("quick-bar-price").select();
+      } else if (event.currentTarget.value.trim()) {
+        quickBarFiltrarPrenda(event.currentTarget.value);
+      }
+    } else if (event.key === "Escape") { box.style.display = "none"; }
+  }
+
+  function quickBarManejarTeclaPrecio(event) {
+    if (event.key === "Enter") { event.preventDefault(); quickBarAgregarAlTicket(); }
   }
 
   function quickBarSeleccionarPrenda(p) {
     itemSeleccionadoQuickBar = p;
+    quickBarIndiceActivo = -1;
     document.getElementById("quick-bar-search").value = `[${p.codigo}] ${p.nombre}`;
     document.getElementById("quick-bar-price").value = p.precio;
     document.getElementById("drop-quick-prendas").style.display = "none";
@@ -2048,7 +2132,11 @@
 
   // Guardar Orden Mostrador
   async function confirmarGenerarOrden() {
+    if (ordenGuardando) return;
     if (ticket.length === 0) return alert("El ticket está vacío.");
+    ordenGuardando = true;
+    const botonGenerar = document.getElementById("btn-generar-orden");
+    if (botonGenerar) { botonGenerar.disabled = true; botonGenerar.textContent = "GENERANDO…"; }
     const nom = document.getElementById("pos-cli-nom").value.trim().replace(/\s+/g, " ");
     const tel = normalizarTelefonoCliente(document.getElementById("pos-cli-tel").value);
     let obs = document.getElementById("pos-obs-prendas").value.trim();
@@ -2171,6 +2259,9 @@
       alert(`✅ Orden #${ord.consecutivo_ticket} guardada correctamente.${modoImpresoraHP ? " Impresión enviada al equipo activo." : ""}${tel ? " WhatsApp enviado." : " Sin WhatsApp: no se registró celular."}`);
     } catch (e) {
       alert("Error guardando orden: " + e.message);
+    } finally {
+      ordenGuardando = false;
+      if (botonGenerar) { botonGenerar.disabled = false; botonGenerar.textContent = "GENERAR ORDEN"; }
     }
   }
 
@@ -2342,7 +2433,9 @@
         return false;
       });
       sel.innerHTML = '<option value="">Selecciona una cuenta configurada</option>' + validos.map(c => `<option value="${escaparHTML(c.id)}">${escaparHTML(c.medio)} · ${escaparHTML(c.alias || c.numero)} (${escaparHTML(c.numero)})</option>`).join('');
-      if (validos.some(c => c.id === prev)) sel.value = prev;
+      if (validos.some(c => String(c.id) === String(prev))) sel.value = prev;
+      else sel.value = "";
+      actualizarCuentaPagoVisible();
     }
   }
 
@@ -2395,6 +2488,7 @@
       const actual = sel.value;
       sel.innerHTML = '<option value="">Selecciona una cuenta configurada</option>' + cuentasPagoCache.map(c => `<option value="${escaparHTML(c.id)}">${escaparHTML(c.medio)} · ${escaparHTML(c.alias || c.numero)} (${escaparHTML(c.numero)})</option>`).join('');
       if (actual) sel.value = actual;
+      actualizarCuentaPagoVisible();
     }
     const lista = document.getElementById('adm-cuentas-pago-lista');
     if (lista) lista.innerHTML = cuentasPagoCache.map(c => `<div style="display:flex;gap:8px;align-items:center;justify-content:space-between;padding:6px;border-bottom:1px solid var(--border);"><span>${escaparHTML(c.medio)} · ${escaparHTML(c.alias || '')} — <strong>${escaparHTML(c.numero)}</strong></span><button class="btn-danger" style="padding:4px 8px" onclick="desactivarCuentaPago('${escaparHTML(c.id)}')">Eliminar</button></div>`).join('') || '<span>No hay cuentas configuradas.</span>';
@@ -2402,6 +2496,24 @@
     const payBtn = Array.from(document.querySelectorAll('.btn-payment')).find(b => b.classList.contains('selected'));
     if (payBtn) seleccionarMetodoPago(activeMethod, payBtn);
   }
+  function actualizarCuentaPagoVisible() {
+    const sel = document.getElementById('entrega-cuenta-pago');
+    const numeroEl = document.getElementById('entrega-cuenta-numero-visible');
+    const labelEl = document.getElementById('entrega-cuenta-label');
+    if (!sel || !numeroEl || !labelEl) return;
+    const cuenta = cuentasPagoCache.find(c => String(c.id) === String(sel.value));
+    if (cuenta) {
+      numeroEl.textContent = cuenta.numero || 'Sin número configurado';
+      labelEl.textContent = `${cuenta.medio}${cuenta.alias ? ' · ' + cuenta.alias : ''}`;
+    } else {
+      numeroEl.textContent = 'Selecciona una cuenta';
+      labelEl.textContent = 'Selecciona una cuenta receptora configurada:';
+    }
+  }
+  document.addEventListener('change', function(e) {
+    if (e.target && e.target.id === 'entrega-cuenta-pago') actualizarCuentaPagoVisible();
+  });
+
   async function agregarCuentaPago() {
     const medio = document.getElementById('adm-cuenta-medio').value;
     const alias = document.getElementById('adm-cuenta-alias').value.trim();
@@ -2557,7 +2669,7 @@
     const tbody = document.getElementById("tabla-auditoria-body");
     try {
       let qBuilder = db.from("ordenes")
-        .select(`id, consecutivo_ticket, codigo_rastreo, estado, total_neto, abono_inicial, saldo_pendiente, metodo_pago_saldo, created_at, entregado_at, observaciones_estado_prendas, clientes(nombre_o_razon, telefono), orden_items(cantidad, descripcion_prenda)`)
+        .select(`id, consecutivo_ticket, codigo_rastreo, estado, total_neto, abono_inicial, saldo_pendiente, metodo_pago_saldo, responsable_entrega, created_at, entregado_at, observaciones_estado_prendas, clientes(nombre_o_razon, telefono), orden_items(cantidad, descripcion_prenda)`)
         .order("consecutivo_ticket", { ascending: false })
         .limit(50);
 
@@ -2575,7 +2687,7 @@
       }
 
       if (res.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="11" style="text-align: center; color: var(--text-muted); padding: 25px;">No se encontraron órdenes con ese criterio.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="12" style="text-align: center; color: var(--text-muted); padding: 25px;">No se encontraron órdenes con ese criterio.</td></tr>';
         return;
       }
 
@@ -2600,26 +2712,27 @@
             <td>$${Number(o.total_neto).toLocaleString("es-CO")}</td>
             <td style="color: var(--danger); font-weight: bold;">$${Number(o.saldo_pendiente).toLocaleString("es-CO")}</td>
             <td>${o.metodo_pago_saldo || '-'}</td>
+            <td>${escaparHTML(o.responsable_entrega || '-')}</td>
             <td style="font-size: 11px;">${fEntrega}</td>
           </tr>
         `;
       }).join("");
     } catch (e) {
       console.error(e);
-      tbody.innerHTML = `<tr><td colspan="11" style="color: var(--danger); text-align: center;">Error consultando auditoría: ${e.message}</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="12" style="color: var(--danger); text-align: center;">Error consultando auditoría: ${e.message}</td></tr>`;
     }
   }
 
   async function descargarHistoricoOrdenesExcel() {
     try {
-      const { data, error } = await db.from("ordenes").select(`consecutivo_ticket, codigo_rastreo, estado, total_neto, abono_inicial, saldo_pendiente, metodo_pago_saldo, created_at, entregado_at, observaciones_estado_prendas, clientes(nombre_o_razon, telefono), orden_items(cantidad, descripcion_prenda, precio_unitario, subtotal)`).order("consecutivo_ticket", { ascending: false });
+      const { data, error } = await db.from("ordenes").select(`consecutivo_ticket, codigo_rastreo, estado, total_neto, abono_inicial, saldo_pendiente, metodo_pago_saldo, responsable_entrega, created_at, entregado_at, observaciones_estado_prendas, clientes(nombre_o_razon, telefono), orden_items(cantidad, descripcion_prenda, precio_unitario, subtotal)`).order("consecutivo_ticket", { ascending: false });
       if (error) throw error;
       if (!data || data.length === 0) return alert("No hay órdenes registradas.");
 
-      const filasExcel = [["Ticket #", "Código Rastreo", "Fecha Ingreso", "Cliente", "Teléfono", "Prendas", "Observaciones / Kilos", "Total Neto", "Abono Inicial", "Saldo Pendiente", "Estado", "Medio Pago Saldo", "Fecha Entrega"]];
+      const filasExcel = [["Ticket #", "Código Rastreo", "Fecha Ingreso", "Cliente", "Teléfono", "Prendas", "Observaciones / Kilos", "Total Neto", "Abono Inicial", "Saldo Pendiente", "Estado", "Medio Pago Saldo", "Responsable entrega", "Fecha Entrega"]];
       data.forEach(o => {
         const prendasTexto = o.orden_items?.map(i => `${i.cantidad}x ${i.descripcion_prenda}`).join(" | ") || "";
-        filasExcel.push([o.consecutivo_ticket, o.codigo_rastreo || "", new Date(o.created_at).toLocaleString("es-CO"), o.clientes?.nombre_o_razon || "Particular", o.clientes?.telefono || "", prendasTexto, o.observaciones_estado_prendas || "", o.total_neto, o.abono_inicial || 0, o.saldo_pendiente, o.estado, o.metodo_pago_saldo || "", o.entregado_at ? new Date(o.entregado_at).toLocaleString("es-CO") : ""]);
+        filasExcel.push([o.consecutivo_ticket, o.codigo_rastreo || "", new Date(o.created_at).toLocaleString("es-CO"), o.clientes?.nombre_o_razon || "Particular", o.clientes?.telefono || "", prendasTexto, o.observaciones_estado_prendas || "", o.total_neto, o.abono_inicial || 0, o.saldo_pendiente, o.estado, o.metodo_pago_saldo || "", o.responsable_entrega || "", o.entregado_at ? new Date(o.entregado_at).toLocaleString("es-CO") : ""]);
       });
 
       const wb = XLSX.utils.book_new();
@@ -2803,7 +2916,7 @@
           Cliente: ${o.clientes?.nombre_o_razon} (${o.clientes?.telefono})<br>
           Total: $${Number(o.total_neto).toLocaleString("es-CO")} | Saldo: $${Number(o.saldo_pendiente).toLocaleString("es-CO")}<br><br>
           <div style="display: flex; gap: 8px;">
-            <button class="btn-danger" style="flex: 1;" onclick="adminAnularOrden('${o.id}')">🚫 Anular Factura</button>
+            <button class="btn-danger" style="flex: 1;" onclick="adminAnularOrden('${o.id}')">🚫 Anular Orden</button>
             <button class="btn-primary" style="flex: 1;" onclick="adminCambiarEstado('${o.id}', 'LISTO_ENTREGA')">Marcar LISTO</button>
           </div>
         </div>
@@ -2811,27 +2924,45 @@
     } catch (e) { alert(e.message); }
   }
 
-  async function adminAnularOrden(id) {
-    const motivo = prompt("Motivo de anulación:");
-    if (!motivo) return;
+  function adminAnularOrden(id) {
+    ordenAnularPendiente = id;
+    document.getElementById("anular-orden-id").value = id;
+    document.getElementById("anular-orden-motivo").value = "";
+    const detalle = document.getElementById("admin-ticket-detalle");
+    const resumen = document.getElementById("anular-orden-resumen");
+    const ticketTexto = detalle?.querySelector("strong")?.textContent || "la orden seleccionada";
+    if (resumen) resumen.textContent = `Vas a anular ${ticketTexto}. La orden quedará marcada como ANULADO y dejará de aparecer en el Centinela.`;
+    abrirModal("modal-anular-orden");
+    setTimeout(() => document.getElementById("anular-orden-motivo")?.focus(), 50);
+  }
+
+  async function confirmarAnulacionOrden() {
+    const id = document.getElementById("anular-orden-id").value || ordenAnularPendiente;
+    const motivo = document.getElementById("anular-orden-motivo").value.trim();
+    const boton = document.getElementById("btn-confirmar-anular");
+    if (!id) return alert("No se identificó la orden que se va a anular.");
+    if (!motivo) return alert("Escribe el motivo de anulación para continuar.");
+    if (boton) { boton.disabled = true; boton.textContent = "Anulando…"; }
     try {
-      const { error } = await db.from("ordenes").update({
-        estado: 'ANULADO',
-        motivo_anulacion: motivo,
-        saldo_pendiente: 0
-      }).eq("id", id);
-
+      // Primero se cambia el estado en una operación independiente. Así un campo de motivo ausente
+      // en una base antigua no impide que la orden quede anulada.
+      const { data, error } = await db.from("ordenes").update({ estado: "ANULADO", saldo_pendiente: 0 }).eq("id", id).select("id,estado").single();
       if (error) throw error;
-
-      alert("✅ Factura anulada exitosamente en la base de datos.");
+      if (!data || data.estado !== "ANULADO") throw new Error("Supabase no confirmó el estado ANULADO.");
+      // El motivo se guarda por separado; si una base antigua no tiene la columna, no revierte la anulación.
+      const { error: motivoError } = await db.from("ordenes").update({ motivo_anulacion: motivo }).eq("id", id);
+      cerrarModal("modal-anular-orden");
       cerrarModal("modal-admin-panel");
-      buscarOrdenesEntrega("");
-      chequearCentinela60h();
-      if (document.getElementById("vista-busquedas").classList.contains("view-active")) {
-        ejecutarBusquedaAuditoria("");
-      }
+      ordenAnularPendiente = null;
+      await Promise.allSettled([buscarOrdenesEntrega(""), chequearCentinela60h()]);
+      if (document.getElementById("vista-busquedas").classList.contains("view-active")) await ejecutarBusquedaAuditoria("");
+      alert(motivoError
+        ? "Orden anulada correctamente. El motivo no se pudo guardar porque la base de datos puede requerir la migración de motivo_anulacion."
+        : "Orden anulada correctamente. Quedó excluida del Centinela y de las órdenes pendientes.");
     } catch (e) {
-      alert("Error anulando: " + e.message);
+      alert("No se pudo anular la orden: " + (e.message || e));
+    } finally {
+      if (boton) { boton.disabled = false; boton.textContent = "Confirmar anulación"; }
     }
   }
 
@@ -3586,16 +3717,25 @@
 </footer>
 
 <script>
-// LAVAARTE OS v1.2.0: versión visible y atajo Esc para cerrar el modal superior.
+// LAVAARTE OS v1.3.1: correcciones de anulación, teclado y borradores de ingreso.
 (function () {
   const versionNode = document.getElementById('lavaarte-version');
   if (versionNode && window.electronAPI && typeof window.electronAPI.getAppInfo === 'function') {
     window.electronAPI.getAppInfo().then(info => {
-      if (info && info.version) versionNode.textContent = 'Desktop v' + info.version + ' · Web UI v1.3.0';
+      if (info && info.version) versionNode.textContent = 'Desktop v' + info.version + ' · Web UI v1.3.1';
     }).catch(() => {});
   }
 
   document.addEventListener('keydown', function (event) {
+    if (event.key === 'F12' && !event.defaultPrevented && !event.isComposing) {
+      const pos = document.getElementById('vista-pos');
+      if (pos && pos.classList.contains('view-active')) {
+        event.preventDefault();
+        event.stopPropagation();
+        confirmarGenerarOrden();
+        return;
+      }
+    }
     if (event.key !== 'Escape' || event.defaultPrevented || event.isComposing) return;
     // Close only the last visible modal; never close the whole application.
     const visibleModals = Array.from(document.querySelectorAll('.modal')).filter(modal => {
