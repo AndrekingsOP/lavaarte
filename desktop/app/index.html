@@ -179,6 +179,8 @@
       break-after: avoid;
       padding-bottom: 3mm;
     }
+    #ticket-termico-print[data-print-acopladora="1"] .ticket-copia:first-child { display:none !important; }
+    #ticket-termico-print[data-print-acopladora="1"] .ticket-copia:last-child { page-break-before: avoid !important; break-before: avoid !important; }
 
     /* Encabezado Logo Fiel a la Foto Real */
     .p-header-box {
@@ -302,7 +304,7 @@
 <div class="topbar">
   <div class="brand" onclick="mostrarVista('vista-home')">
     🧺 Lavaarte <span>| Sistema Integral</span>
-    <span id="lavaarte-version" title="Versión de LAVAARTE OS" style="display:inline-flex;align-items:center;margin-left:8px;padding:3px 7px;border:1px solid var(--border);border-radius:6px;font-size:10px;font-weight:600;color:var(--text-muted);vertical-align:middle;">Web v1.3.0</span>
+    <span id="lavaarte-version" title="Versión de LAVAARTE OS" style="display:inline-flex;align-items:center;margin-left:8px;padding:3px 7px;border:1px solid var(--border);border-radius:6px;font-size:10px;font-weight:600;color:var(--text-muted);vertical-align:middle;">Web v1.4.0</span>
   </div>
   <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
     <button class="nav-btn" id="btn-modo-impresora" style="display:none" onclick="toggleModoImpresoraHP()">🖨️ Modo Impresora HP: OFF</button>
@@ -435,8 +437,11 @@
   <!-- ==================== VISTA 2: INGRESO DE PRENDAS (POS) ==================== -->
   <div class="view-section" id="vista-pos">
     <div style="display: flex; justify-content: space-between; align-items: center;">
-      <h3>📥 Ingreso de Prendas al Mostrador</h3>
-      <button class="nav-btn" onclick="mostrarVista('vista-dashboard')">⬅️ Volver al Menú</button>
+      <h3>📥 Ingreso de Prendas al Mostrador <span style="font-size:12px;color:var(--text-muted);font-weight:500;">· F12 para generar e imprimir</span></h3>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+        <button class="nav-btn" onclick="confirmarGenerarOrden()" title="Generar, guardar e imprimir la orden">🖨️ Generar orden · F12</button>
+        <button class="nav-btn" onclick="mostrarVista('vista-dashboard')">⬅️ Volver al Menú</button>
+      </div>
     </div>
 
     <div class="pos-layout">
@@ -801,10 +806,11 @@
               <th>Medio Pago Saldo</th>
               <th>Responsable entrega</th>
               <th>Fecha Entrega</th>
+              <th>Impresión</th>
             </tr>
           </thead>
           <tbody id="tabla-auditoria-body">
-            <tr><td colspan="12" style="text-align: center; color: var(--text-muted); padding: 25px;">Escribe un ticket, teléfono o nombre para consultar órdenes.</td></tr>
+            <tr><td colspan="13" style="text-align: center; color: var(--text-muted); padding: 25px;">Escribe un ticket, teléfono o nombre para consultar órdenes.</td></tr>
           </tbody>
         </table>
       </div>
@@ -1540,7 +1546,12 @@
           ejecutarBusquedaAuditoria(document.getElementById("busc-auditoria-input").value);
         }
         if (modoImpresoraHP && payload.eventType === 'INSERT' && !payload.new.impresa && !ordenesImpresionLocal.has(payload.new.id)) {
-          imprimirOrdenRemota(payload.new.id);
+          // Esperar a que el flujo local termine de registrar detalles y marque la orden.
+          setTimeout(async () => {
+            if (ordenesImpresionLocal.has(payload.new.id)) return;
+            const { data: estadoActual } = await db.from("ordenes").select("impresa").eq("id", payload.new.id).maybeSingle();
+            if (estadoActual && !estadoActual.impresa && !ordenesImpresionLocal.has(payload.new.id)) imprimirOrdenRemota(payload.new.id);
+          }, 1800);
         }
       })
       .subscribe();
@@ -1599,8 +1610,12 @@
   }
 
   function restaurarModoImpresoraHP() {
-    try { modoImpresoraHP = localStorage.getItem(CLAVE_MODO_IMPRESORA) === "1"; }
-    catch (e) { modoImpresoraHP = false; }
+    const esDesktop = !!(window.electronAPI && typeof window.electronAPI.getAppInfo === "function");
+    try {
+      const guardado = localStorage.getItem(CLAVE_MODO_IMPRESORA);
+      modoImpresoraHP = esDesktop ? guardado !== "0" : guardado === "1";
+      if (esDesktop && guardado === null) localStorage.setItem(CLAVE_MODO_IMPRESORA, "1");
+    } catch (e) { modoImpresoraHP = esDesktop; }
     actualizarBotonModoImpresora();
   }
 
@@ -1648,9 +1663,9 @@
       if (!o) return;
       poblarPlantillaImpresion(o.consecutivo_ticket, new Date(o.created_at).toLocaleString("es-CO"), o.clientes?.nombre_o_razon || "Particular", o.clientes?.telefono || "-", o.codigo_rastreo, o.orden_items || [], o.observaciones_estado_prendas, o.total_neto, o.abono_inicial || 0, o.saldo_pendiente, o.loyalty_beneficio_aplicado ? "⭐ Beneficio Lavaarte Loyalty aplicado: 1 unidad, máximo $8.000 COP." : "");
       ordenesImpresionLocal.add(ordenId);
-      window.print();
-      await db.from("ordenes").update({ impresa: true }).eq("id", ordenId);
-      setTimeout(() => ordenesImpresionLocal.delete(ordenId), 10000);
+      const resultadoImpresion = await imprimirPlantilla({ orderId: String(ordenId) });
+      if (resultadoImpresion?.ok) await db.from("ordenes").update({ impresa: true }).eq("id", ordenId);
+      setTimeout(() => ordenesImpresionLocal.delete(ordenId), 30000);
     } catch (e) { console.error("Error imprimiendo:", e); }
   }
 
@@ -2256,6 +2271,8 @@
       const ordRes = await db.from("ordenes").insert(objetoOrden).select("id, consecutivo_ticket").single();
       if (ordRes.error) throw ordRes.error;
       const ord = ordRes.data;
+      // Evitar que el evento Realtime remoto imprima también la orden creada en esta ventana.
+      ordenesImpresionLocal.add(ord.id);
 
       const items = ticket.map(t => ({ orden_id: ord.id, prenda_codigo: t.cod, descripcion_prenda: t.nom, cantidad: t.cant, precio_unitario: t.pre, subtotal: Math.round(t.pre * t.cant) }));
       const itemsRes = await db.from("orden_items").insert(items);
@@ -2305,11 +2322,13 @@
       poblarPlantillaImpresion(ord.consecutivo_ticket, new Date().toLocaleString("es-CO"), nombreWA, tel || "-", codigoRastreo, items, obs, total, abono, saldo, textoLoyalty);
 
       if (modoImpresoraHP) {
-        ordenesImpresionLocal.add(ord.id);
-        await db.from("ordenes").update({ impresa: true }).eq("id", ord.id);
-        window.print();
-        setTimeout(() => ordenesImpresionLocal.delete(ord.id), 10000);
+        const resultadoImpresion = await imprimirPlantilla({ orderId: String(ord.id) });
+        if (resultadoImpresion?.ok) {
+          const { error: marcaError } = await db.from("ordenes").update({ impresa: true }).eq("id", ord.id);
+          if (marcaError) console.warn("Impresión enviada, pero no se pudo marcar impresa:", marcaError);
+        }
       }
+      setTimeout(() => ordenesImpresionLocal.delete(ord.id), 30000);
 
       ticket = [];
       document.getElementById("pos-cli-nom").value = "";
@@ -2320,7 +2339,7 @@
       document.getElementById("pos-kilo-detalle").value = "";
       document.getElementById("badge-loyalty").style.display = "none";
       clienteVisitasHistorial = 0; loyaltyBeneficioPendiente = false; loyaltyBeneficioAplicado = false; loyaltyBeneficioMonto = 0;
-      if (document.getElementById("pos-autoriza-datos")) document.getElementById("pos-autoriza-datos").checked = false;
+      if (document.getElementById("pos-autoriza-datos")) document.getElementById("pos-autoriza-datos").checked = true;
       renderTicket();
       precargarClientes();
       chequearCentinela60h();
@@ -2755,7 +2774,7 @@
       }
 
       if (res.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="12" style="text-align: center; color: var(--text-muted); padding: 25px;">No se encontraron órdenes con ese criterio.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="13" style="text-align: center; color: var(--text-muted); padding: 25px;">No se encontraron órdenes con ese criterio.</td></tr>';
         return;
       }
 
@@ -2782,13 +2801,46 @@
             <td>${o.metodo_pago_saldo || '-'}</td>
             <td>${escaparHTML(o.responsable_entrega || '-')}</td>
             <td style="font-size: 11px;">${fEntrega}</td>
+            <td><button class="nav-btn" style="padding:6px 8px;font-size:11px;white-space:nowrap;" onclick="reimprimirCopiaAcopladora('${o.id}')">🖨️ Copia acopladora</button></td>
           </tr>
         `;
       }).join("");
     } catch (e) {
       console.error(e);
-      tbody.innerHTML = `<tr><td colspan="12" style="color: var(--danger); text-align: center;">Error consultando auditoría: ${e.message}</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="13" style="color: var(--danger); text-align: center;">Error consultando auditoría: ${e.message}</td></tr>`;
     }
+  }
+
+  async function reimprimirCopiaAcopladora(ordenId) {
+    try {
+      const { data: o, error } = await db.from("ordenes").select("*, clientes(*), orden_items(*)").eq("id", ordenId).single();
+      if (error || !o) throw error || new Error("No se encontró la orden.");
+      poblarPlantillaImpresion(o.consecutivo_ticket, new Date(o.created_at).toLocaleString("es-CO"), o.clientes?.nombre_o_razon || "Particular", o.clientes?.telefono || "-", o.codigo_rastreo, o.orden_items || [], o.observaciones_estado_prendas, o.total_neto, o.abono_inicial || 0, o.saldo_pendiente, o.loyalty_beneficio_aplicado ? "⭐ Beneficio Lavaarte Loyalty aplicado: 1 unidad, máximo $8.000 COP." : "");
+      await imprimirPlantilla({ orderId: `reprint-acople-${o.id}-${Date.now()}`, acopladora: true, force: true });
+    } catch (e) { console.error("Error reimprimiendo copia acopladora:", e); alert("No se pudo reimprimir la copia: " + (e.message || e)); }
+  }
+
+  async function imprimirBorradorActual() {
+    if (!ticket.length) { alert("Agrega prendas antes de imprimir."); return; }
+    alert("La impresión de una orden requiere generar primero el número de ticket. Usa F12 para guardar y generar la orden.");
+  }
+
+  async function imprimirPlantilla(opciones = {}) {
+    const contenedor = document.getElementById("ticket-termico-print");
+    if (!contenedor) throw new Error("No se encontró la plantilla térmica.");
+    const copias = Array.from(contenedor.querySelectorAll(".ticket-copia"));
+    const originalDisplay = copias.map(el => el.style.display);
+    try {
+      if (opciones.acopladora && copias.length > 1) { copias[0].style.display = "none"; copias[1].style.display = "block"; }
+      else copias.forEach(el => el.style.display = "block");
+      if (window.electronAPI && typeof window.electronAPI.printTicket === "function") {
+        const result = await window.electronAPI.printTicket({ orderId: opciones.orderId || null, force: !!opciones.force });
+        if (!result || result.ok === false) throw new Error(result?.error || "La impresora no confirmó el trabajo.");
+        return result;
+      }
+      window.print();
+      return { ok: true, browser: true };
+    } finally { copias.forEach((el, i) => { el.style.display = originalDisplay[i]; }); }
   }
 
   async function descargarHistoricoOrdenesExcel() {
@@ -3805,7 +3857,7 @@
 </footer>
 
 <script>
-// LAVAARTE OS v1.3.2: correcciones de anulación, teclado y borradores de ingreso.
+// LAVAARTE OS v1.4.0: correcciones de anulación, teclado y borradores de ingreso.
 (function () {
   const versionNode = document.getElementById('lavaarte-version');
   if (versionNode && window.electronAPI && typeof window.electronAPI.getAppInfo === 'function') {
@@ -3855,6 +3907,29 @@
     }
     if (isDesktop) {
       document.body.classList.add('lavaarte-desktop');
+      const printerButton = document.getElementById('btn-modo-impresora');
+      if (printerButton && !document.getElementById('lavaarte-printer-inline')) {
+        const status = document.createElement('div');
+        status.id = 'lavaarte-printer-inline';
+        status.style.cssText = 'display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:11px;color:var(--text-muted);margin:6px 0 0 8px;';
+        status.innerHTML = '<span>Impresora:</span><select id="lavaarte-printer-select" aria-label="Seleccionar impresora" style="max-width:240px;padding:5px 8px;border-radius:6px;border:1px solid var(--border);background:var(--bg-input);color:var(--text);font-size:11px;"><option>Cargando impresoras…</option></select><button type="button" class="nav-btn" style="padding:5px 8px;font-size:11px;" id="lavaarte-printer-change">⚙ Configuración</button><span id="lavaarte-printer-save-status" aria-live="polite"></span>';
+        printerButton.insertAdjacentElement('afterend', status);
+        status.querySelector('#lavaarte-printer-change').addEventListener('click', () => window.electronAPI.openPrinterSettings());
+        const select = status.querySelector('#lavaarte-printer-select');
+        window.electronAPI.getPrinterStatus().then(st => {
+          select.innerHTML = '';
+          const printers = st.printers || [];
+          if (!printers.length) { const o=document.createElement('option'); o.value=''; o.textContent='No hay impresoras detectadas'; select.appendChild(o); return; }
+          printers.forEach(p => { const o=document.createElement('option'); o.value=p.name; o.textContent=(p.isDefault?'⭐ ':'')+(p.displayName||p.name); o.selected=p.name===st.selected; select.appendChild(o); });
+          if (!st.selected) select.value=(printers.find(p=>p.isDefault)||printers[0]).name;
+        }).catch(() => { select.innerHTML='<option value="">Error al cargar impresoras</option>'; });
+        select.addEventListener('change', async () => {
+          const result = await window.electronAPI.savePrinter(select.value);
+          const statusText = document.getElementById('lavaarte-printer-save-status');
+          if (statusText) statusText.textContent = result.ok ? '✓ Guardada' : 'Error al guardar';
+          if (!result.ok) alert(result.error || 'No se pudo guardar la impresora.');
+        });
+      }
       document.querySelectorAll('[onclick="mostrarVista(\'vista-portal-hoteles\')"], [onclick="mostrarVista(\'vista-portal-cliente\')"]').forEach(el => el.style.display='none');
       document.querySelectorAll('.portal-card').forEach(el => {
         const click = el.getAttribute('onclick') || '';
