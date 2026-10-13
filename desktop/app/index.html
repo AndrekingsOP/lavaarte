@@ -1432,6 +1432,9 @@
   let quickBarIndiceActivo = -1;
   let ordenGuardando = false;
   let ordenAnularPendiente = null;
+  let clienteIndiceActivo = -1;
+  let modalZIndexCounter = 500;
+  const modalFocusStack = [];
 
   window.onload = async () => {
     actualizarReloj();
@@ -1456,7 +1459,7 @@
     ["pos-cli-nom","pos-cli-tel","busc-cliente","pos-obs-prendas","pos-kilo-detalle","quick-bar-search","quick-bar-price","filtro-prenda"].forEach(id => { const el=document.getElementById(id); if(el) el.value=""; });
     const cant=document.getElementById("quick-bar-cant"); if(cant) cant.value="1";
     const abono=document.getElementById("pos-abono"); if(abono) abono.value="0";
-    const autoriza=document.getElementById("pos-autoriza-datos"); if(autoriza) autoriza.checked=false;
+    const autoriza=document.getElementById("pos-autoriza-datos"); if(autoriza) autoriza.checked=true;
     const drop=document.getElementById("drop-quick-prendas"); if(drop) {drop.innerHTML="";drop.style.display="none";}
     const clientes=document.getElementById("drop-clientes"); if(clientes) {clientes.innerHTML="";clientes.style.display="none";}
     const badge=document.getElementById("badge-loyalty"); if(badge) {badge.style.display="none";badge.innerHTML="";}
@@ -1478,8 +1481,39 @@
     if (vistaId === "vista-inventario") cargarHistorialInventario();
   }
 
-  function cerrarModal(id) { document.getElementById(id).style.display = "none"; }
-  function abrirModal(id) { document.getElementById(id).style.display = "flex"; }
+  function cerrarModal(id) {
+    const modal = document.getElementById(id);
+    if (!modal) return;
+    modal.style.display = "none";
+    modal.removeAttribute('data-lavaarte-open-order');
+    // Recuperar el foco de forma segura al cerrar una ventana superpuesta.
+    const previous = modalFocusStack.pop();
+    if (previous && previous.isConnected && typeof previous.focus === 'function') {
+      setTimeout(() => { try { previous.focus({ preventScroll: true }); } catch (_) { try { previous.focus(); } catch (_) {} } }, 0);
+    }
+    // Un PIN o petición anterior nunca debe dejar bloqueadas las siguientes.
+    if (id === 'modal-admin-auth') pinValidando = false;
+  }
+  function abrirModal(id) {
+    const modal = document.getElementById(id);
+    if (!modal) return;
+    const active = document.activeElement;
+    if (active && active !== document.body && !modal.contains(active)) modalFocusStack.push(active);
+    modalZIndexCounter = Math.max(modalZIndexCounter + 2, 500);
+    modal.style.zIndex = String(modalZIndexCounter);
+    modal.style.display = "flex";
+    modal.setAttribute('data-lavaarte-open-order', String(modalZIndexCounter));
+    // Poner siempre la ventana activa encima de overlays anteriores.
+    setTimeout(() => {
+      if (modal.style.display === 'none') return;
+      const target = modal.id === 'modal-admin-auth'
+        ? modal.querySelector('#admin-pin')
+        : modal.querySelector('input:not([type="hidden"]):not([disabled]), select:not([disabled]), textarea:not([disabled]), button:not([disabled])');
+      if (target && typeof target.focus === 'function') {
+        try { target.focus({ preventScroll: true }); } catch (_) { target.focus(); }
+      }
+    }, 30);
+  }
 
   async function sincronizarCatalogoSupabase() {
     try {
@@ -1883,6 +1917,7 @@
   function filtrarCliente(val) {
     const box = document.getElementById("drop-clientes");
     const q = normalizarBusquedaCliente(val);
+    clienteIndiceActivo = -1;
     if (!q) { box.style.display = "none"; return; }
 
     const matches = listaClientes.filter(c => {
@@ -1901,6 +1936,39 @@
     box.innerHTML = html;
     box.style.display = "block";
   }
+
+  function manejarTecladoClientes(event) {
+    const box = document.getElementById('drop-clientes');
+    const input = document.getElementById('busc-cliente');
+    if (!box || !input || document.activeElement !== input || box.style.display === 'none') return;
+    const opciones = Array.from(box.querySelectorAll('.autocomplete-item'));
+    if (!opciones.length) return;
+    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+      event.preventDefault();
+      clienteIndiceActivo = event.key === 'ArrowDown'
+        ? (clienteIndiceActivo + 1) % opciones.length
+        : (clienteIndiceActivo <= 0 ? opciones.length - 1 : clienteIndiceActivo - 1);
+      opciones.forEach((el, i) => {
+        el.style.outline = i === clienteIndiceActivo ? '2px solid var(--accent)' : '';
+        el.style.background = i === clienteIndiceActivo ? 'rgba(2,132,199,.22)' : '';
+      });
+      opciones[clienteIndiceActivo]?.scrollIntoView({ block: 'nearest' });
+    } else if (event.key === 'Enter') {
+      if (clienteIndiceActivo >= 0 && opciones[clienteIndiceActivo]) {
+        event.preventDefault();
+        event.stopPropagation();
+        opciones[clienteIndiceActivo].click();
+      } else if (opciones.length === 1) {
+        event.preventDefault();
+        event.stopPropagation();
+        opciones[0].click();
+      }
+    } else if (event.key === 'Escape') {
+      box.style.display = 'none';
+      clienteIndiceActivo = -1;
+    }
+  }
+  document.addEventListener('keydown', manejarTecladoClientes, true);
 
   function abrirModalCrearCliente(nombreSugerido) {
     document.getElementById("drop-clientes").style.display = "none";
@@ -2837,23 +2905,25 @@
   // ==================== SEGURIDAD JERÁRQUICA ====================
   let pinValidando = false;
   function solicitarAccesoEmpleados(destino) {
+    pinValidando = false;
     destinoPinAdmin = destino;
     document.getElementById("auth-modal-title").textContent = "🔒 Acceso Colaboradores Lavaarte";
     document.getElementById("auth-modal-desc").textContent = "Ingresa tu PIN de colaborador para continuar:";
     document.getElementById("admin-pin").value = "";
     document.getElementById("pin-feedback").textContent = "";
     abrirModal("modal-admin-auth");
-    setTimeout(() => document.getElementById('admin-pin').focus(), 60);
+    setTimeout(() => { const pin = document.getElementById('admin-pin'); if (pin) { pin.focus(); pin.select(); } }, 30);
   }
 
   function pedirClaveSegura(destinoModal) {
+    pinValidando = false;
     destinoPinAdmin = destinoModal;
     document.getElementById("auth-modal-title").textContent = "🛡️ Control Administrativo";
     document.getElementById("auth-modal-desc").textContent = "Acceso restringido. Ingresa el PIN de Administrador:";
     document.getElementById("admin-pin").value = "";
     document.getElementById("pin-feedback").textContent = "";
     abrirModal("modal-admin-auth");
-    setTimeout(() => document.getElementById('admin-pin').focus(), 60);
+    setTimeout(() => { const pin = document.getElementById('admin-pin'); if (pin) { pin.focus(); pin.select(); } }, 30);
   }
 
   function validarPinSeguro() {
@@ -2900,6 +2970,24 @@
       pin.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); validarPinSeguro(); } });
     }
   });
+
+  // Enter activa Buscar/Aceptar en paneles de consulta sin interferir con selects, PIN ni textos largos.
+  document.addEventListener('keydown', function(event) {
+    if (event.key !== 'Enter' || event.defaultPrevented || event.isComposing) return;
+    const el = event.target;
+    if (!(el instanceof HTMLElement) || el.id === 'admin-pin' || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT') return;
+    if (!['INPUT'].includes(el.tagName)) return;
+    const modal = el.closest('.modal');
+    if (!modal || getComputedStyle(modal).display === 'none') return;
+    if (el.type === 'checkbox' || el.type === 'radio' || el.type === 'button' || el.type === 'submit') return;
+    const buttons = Array.from(modal.querySelectorAll('button:not([disabled])'));
+    const action = buttons.find(b => /^\s*(🔍\s*)?(buscar|aceptar)\b/i.test((b.innerText || b.textContent || '').trim()));
+    if (action) {
+      event.preventDefault();
+      event.stopPropagation();
+      action.click();
+    }
+  }, true);
 
   // Anulación en Tiempo Real
   async function adminCargarTicket() {
@@ -3717,12 +3805,12 @@
 </footer>
 
 <script>
-// LAVAARTE OS v1.3.1: correcciones de anulación, teclado y borradores de ingreso.
+// LAVAARTE OS v1.3.2: correcciones de anulación, teclado y borradores de ingreso.
 (function () {
   const versionNode = document.getElementById('lavaarte-version');
   if (versionNode && window.electronAPI && typeof window.electronAPI.getAppInfo === 'function') {
     window.electronAPI.getAppInfo().then(info => {
-      if (info && info.version) versionNode.textContent = 'Desktop v' + info.version + ' · Web UI v1.3.1';
+      if (info && info.version) versionNode.textContent = 'Desktop v' + info.version + ' · Web UI v1.3.2';
     }).catch(() => {});
   }
 
@@ -3743,7 +3831,7 @@
       return style.display !== 'none' && style.visibility !== 'hidden' && style.opacity !== '0';
     });
     if (!visibleModals.length) return;
-    const topModal = visibleModals[visibleModals.length - 1];
+    const topModal = visibleModals.sort((a, b) => (parseInt(window.getComputedStyle(a).zIndex, 10) || 0) - (parseInt(window.getComputedStyle(b).zIndex, 10) || 0)).pop();
     if (topModal.id && typeof window.cerrarModal === 'function') {
       event.preventDefault();
       event.stopPropagation();
