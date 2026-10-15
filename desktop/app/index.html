@@ -1524,15 +1524,25 @@
   async function sincronizarCatalogoSupabase() {
     try {
       const { data, error } = await db.from("catalogo_prendas").select("*").order("codigo", { ascending: true });
-      if (!error && data && data.length > 0) {
-        CATALOGO_CENTRAL = data;
+      if (error) throw error;
+      if (Array.isArray(data) && data.length > 0) {
+        CATALOGO_CENTRAL = data.map((p) => ({
+          ...p,
+          codigo: Number(p.codigo ?? p.codigo_referencia ?? 0),
+          nombre: String(p.nombre || p.nombre_prenda || "").trim(),
+          precio: Number(p.precio ?? p.precio_base ?? 0)
+        })).filter(p => p.nombre && Number.isFinite(p.codigo));
       } else {
-        CATALOGO_CENTRAL = CATALOGO_DEFAULT;
-        await db.from("catalogo_prendas").upsert(CATALOGO_DEFAULT);
+        CATALOGO_CENTRAL = CATALOGO_DEFAULT.map(p => ({...p}));
+        const { error: seedError } = await db.from("catalogo_prendas").upsert(
+          CATALOGO_DEFAULT.map(p => ({...p, nombre_prenda: p.nombre, precio_base: p.precio, codigo_referencia: String(p.codigo).padStart(2, "0")})),
+          { onConflict: "codigo", ignoreDuplicates: true }
+        );
+        if (seedError) console.warn("No se pudo inicializar el catálogo en Supabase:", seedError.message);
       }
     } catch (e) {
-      console.warn("Fallback catálogo:", e);
-      CATALOGO_CENTRAL = CATALOGO_DEFAULT;
+      console.warn("Error sincronizando catálogo Supabase:", e);
+      CATALOGO_CENTRAL = CATALOGO_DEFAULT.map(p => ({...p}));
     }
     renderCatalogo("");
   }
@@ -1579,13 +1589,11 @@
 
     db.channel('catalogo-live')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'catalogo_prendas' }, async () => {
-        const { data } = await db.from("catalogo_prendas").select("*").order("codigo", { ascending: true });
-        if (data) {
-          CATALOGO_CENTRAL = data;
-          renderCatalogo("");
-          if (document.getElementById("modal-admin-master").style.display === "flex") {
-            poblarSelectPrendasMaster();
-          }
+        // Normaliza campos históricos (nombre_prenda/nombre y precio_base/precio)
+        // para que las actualizaciones remotas no vuelvan a mostrar códigos como nombres.
+        await sincronizarCatalogoSupabase();
+        if (document.getElementById("modal-admin-master").style.display === "flex") {
+          poblarSelectPrendasMaster();
         }
       })
       .subscribe();
@@ -3155,7 +3163,7 @@
     if (isNaN(nuevoPre) || nuevoPre <= 0) return alert("Ingresa un nuevo precio válido.");
 
     try {
-      const { error } = await db.from("catalogo_prendas").update({ precio: nuevoPre, updated_at: new Date().toISOString() }).eq("codigo", cod);
+      const { error } = await db.from("catalogo_prendas").update({ precio: nuevoPre, precio_base: nuevoPre, updated_at: new Date().toISOString() }).eq("codigo", cod);
       if (error) throw error;
 
       await sincronizarCatalogoSupabase();
