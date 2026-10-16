@@ -104,7 +104,8 @@
   .data-table td { padding: 10px; border-bottom: 1px solid var(--border); }
 
   .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.75); display: none; align-items: center; justify-content: center; z-index: 100; }
-  #modal-editar-cliente { z-index: 300 !important; }
+  /* El editor usa el z-index dinámico de abrirModal() para quedar sobre el Panel Maestro. */
+  #modal-editar-cliente { z-index: auto; }
 #modal-anular-orden { z-index: 400 !important; }
 .modal-content { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; width: 650px; max-width: 92vw; padding: 20px; display: flex; flex-direction: column; gap: 14px; max-height: 85vh; overflow-y: auto; }
   .centinela-box { background: rgba(239, 68, 68, 0.12); border: 1px solid var(--danger); border-radius: 8px; padding: 12px; }
@@ -1212,7 +1213,7 @@
       NIT: 901.344.335<br>
       Diagonal 47 No.77C-80 Bogotá<br>
       Tels: 314-263-6787 / 315-333-0502<br>
-      <strong>lavarte-software.onrender.com</strong>
+      <strong>lavaarte-software.onrender.com</strong>
     </div>
 
     <!-- Rectángulo con número de ticket exacto a la foto -->
@@ -1262,7 +1263,7 @@
 
     <div class="p-footer">
       🔍 Rastree el avance de su ropa con su <strong>número de ticket</strong> en:<br>
-      <strong>lavarte-software.onrender.com</strong><br>
+      <strong>lavaarte-software.onrender.com</strong><br>
       ¡Gracias por escogernos!
     </div>
   </div>
@@ -1338,7 +1339,7 @@
 </div>
 <script>
   const BOT_WHATSAPP_URL = "https://bot-lavaarte-whatsapp.onrender.com";
-  const APP_WEB_URL = "https://lavarte-software.onrender.com";
+  const APP_WEB_URL = "https://lavaarte-software.onrender.com";
 
   const SUPABASE_URL = "https://biumkyjjavpfgfishvzp.supabase.co";
   const SUPABASE_KEY = "sb_publishable_vUntLk7lDbQ3DXROxTDCLg_NjgC6IIT";
@@ -3177,12 +3178,34 @@
     }
   }
 
-  async function adminCargarOrdenesBD() {
-    try {
-      const { data } = await db.from("ordenes").select("id, consecutivo_ticket, estado, saldo_pendiente, total_neto, clientes(nombre_o_razon)").order("consecutivo_ticket", { ascending: false }).limit(40);
-      ordenesMasterCache = data || [];
+  let adminOrdenesCargaEnCurso = null;
+  let adminOrdenesUltimaCarga = 0;
+  async function adminCargarOrdenesBD(forzar = false) {
+    // Reutiliza una consulta en curso y evita disparar varias consultas idénticas
+    // cuando se abre/cierra el panel repetidamente en poco tiempo.
+    if (adminOrdenesCargaEnCurso) return adminOrdenesCargaEnCurso;
+    if (!forzar && ordenesMasterCache.length && Date.now() - adminOrdenesUltimaCarga < 2500) {
       adminRenderOrdenesBD(ordenesMasterCache);
-    } catch (e) { console.error(e); }
+      return ordenesMasterCache;
+    }
+    adminOrdenesCargaEnCurso = (async () => {
+      try {
+        const { data, error } = await db.from("ordenes").select("id, consecutivo_ticket, estado, saldo_pendiente, total_neto, clientes(nombre_o_razon)").order("consecutivo_ticket", { ascending: false }).limit(40);
+        if (error) throw error;
+        ordenesMasterCache = data || [];
+        adminOrdenesUltimaCarga = Date.now();
+        if (document.getElementById("modal-admin-master")?.style.display === "flex") {
+          adminRenderOrdenesBD(ordenesMasterCache);
+        }
+        return ordenesMasterCache;
+      } catch (e) {
+        console.error('[LAVAARTE] No se pudieron cargar las órdenes del panel:', e);
+        return ordenesMasterCache;
+      } finally {
+        adminOrdenesCargaEnCurso = null;
+      }
+    })();
+    return adminOrdenesCargaEnCurso;
   }
 
   function adminRenderOrdenesBD(lista) {
@@ -3867,7 +3890,7 @@
 </footer>
 
 <script>
-// LAVAARTE OS v1.4.0: correcciones de anulación, teclado y borradores de ingreso.
+// LAVAARTE OS v1.4.2: estabilidad de ventanas, rendimiento de escritorio y corrección de dominio.
 (function () {
   const versionNode = document.getElementById('lavaarte-version');
   if (versionNode && window.electronAPI && typeof window.electronAPI.getAppInfo === 'function') {
