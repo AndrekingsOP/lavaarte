@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>LAVAARTE OS 1.5.0 - El Arte de Lavar</title>
+<title>LAVAARTE OS 1.5.5 - El Arte de Lavar</title>
 <meta name="theme-color" content="#0284c7">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -323,6 +323,31 @@
   .theme-toggle { display:inline-flex; align-items:center; justify-content:center; gap:7px; white-space:nowrap; }
   @media (max-width:600px) { .theme-toggle { padding:8px 10px; } .theme-toggle .theme-label { display:none; } }
 
+
+  /* Notificaciones no bloqueantes: permanecen visibles sin detener la interfaz. */
+  #lavaarte-notification-stack {
+    position: fixed; top: 14px; right: 14px; z-index: 100000;
+    width: min(440px, calc(100vw - 28px)); display: grid; gap: 9px;
+    pointer-events: none; font-family: inherit;
+  }
+  .lavaarte-notification {
+    display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: start;
+    pointer-events: auto; padding: 13px 14px; border: 1px solid var(--border, #334155);
+    border-left: 5px solid var(--success, #10b981); border-radius: 10px;
+    background: var(--bg-card, #111827); color: var(--text, #f8fafc);
+    box-shadow: 0 12px 36px rgba(0,0,0,.28); animation: lavaarte-toast-in .16s ease-out;
+  }
+  .lavaarte-notification.is-error { border-left-color: var(--danger, #ef4444); }
+  .lavaarte-notification.is-warning { border-left-color: var(--warning, #f59e0b); }
+  .lavaarte-notification-message { white-space: pre-line; overflow-wrap: anywhere; font-size: 13px; line-height: 1.45; }
+  .lavaarte-notification-close {
+    border: 0; background: transparent; color: inherit; cursor: pointer; opacity: .75;
+    font-size: 19px; line-height: 1; padding: 0 2px; min-width: 24px; min-height: 24px;
+  }
+  .lavaarte-notification-close:hover { opacity: 1; }
+  @keyframes lavaarte-toast-in { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
+  @media (prefers-reduced-motion: reduce) { .lavaarte-notification { animation: none; } }
+
 </style>
 </head>
 <body>
@@ -330,7 +355,7 @@
 <div class="topbar">
   <div class="brand" onclick="mostrarVista('vista-home')">
     🧺 Lavaarte <span>| Sistema Integral</span>
-    <span id="lavaarte-version" title="Versión de LAVAARTE OS" style="display:inline-flex;align-items:center;margin-left:8px;padding:3px 7px;border:1px solid var(--border);border-radius:6px;font-size:10px;font-weight:600;color:var(--text-muted);vertical-align:middle;">Web v1.4.0</span>
+    <span id="lavaarte-version" title="Versión de LAVAARTE OS" style="display:inline-flex;align-items:center;margin-left:8px;padding:3px 7px;border:1px solid var(--border);border-radius:6px;font-size:10px;font-weight:600;color:var(--text-muted);vertical-align:middle;">OS v1.5.6</span>
   </div>
   <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
     <button class="nav-btn theme-toggle" id="btn-theme-toggle" type="button" onclick="toggleTemaLavaarte()" aria-label="Cambiar tema">☀️ <span class="theme-label">Modo claro</span></button>
@@ -1015,7 +1040,7 @@
     <div id="arqueo-comparativas" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:14px 0;"><div class="dash-card" style="padding:12px"><strong>Comparación diaria</strong><div id="arqueo-grafica-dia" style="margin-top:8px;font-size:12px;color:var(--text-muted)">Cargando comparación…</div></div><div class="dash-card" style="padding:12px"><strong>Comparación mensual</strong><div id="arqueo-grafica-mes" style="margin-top:8px;font-size:12px;color:var(--text-muted)">Cargando comparación…</div></div></div>
 
     <h4 style="font-size: 14px; color: var(--accent); margin-top: 10px;">📋 Detalle de Órdenes y Entradas por Forma de Pago</h4>
-    <div style="max-height: 180px; overflow-y: auto; border: 1px solid var(--border); border-radius: 8px;">
+    <div id="arqueo-detalle-ordenes-scroll" class="arqueo-scroll-panel" style="max-height: 180px; overflow-y: auto; border: 1px solid var(--border); border-radius: 8px;">
       <table class="data-table">
         <thead>
           <tr>
@@ -1032,7 +1057,7 @@
     </div>
 
     <h4 style="font-size: 14px; color: var(--danger); margin-top: 10px;">💸 Desglose de Gastos de Caja Menor</h4>
-    <div style="max-height: 120px; overflow-y: auto; border: 1px solid var(--border); border-radius: 8px;">
+    <div id="arqueo-desglose-gastos-scroll" class="arqueo-scroll-panel" style="max-height: 120px; overflow-y: auto; border: 1px solid var(--border); border-radius: 8px;">
       <table class="data-table">
         <thead>
           <tr>
@@ -1736,11 +1761,11 @@
   // Barra Rápida Teclado
   function quickBarFiltrarPrenda(val) {
     const box = document.getElementById("drop-quick-prendas");
-    const q = val.toLowerCase().trim();
+    const q = normalizarTextoBusqueda(val);
     quickBarIndiceActivo = -1;
     if (!q) { box.style.display = "none"; box.innerHTML = ""; return; }
 
-    const matches = CATALOGO_CENTRAL.filter(p => p.nombre.toLowerCase().includes(q) || String(p.codigo).includes(q)).slice(0, 10);
+    const matches = CATALOGO_CENTRAL.filter(p => coincideTextoBusqueda(p.nombre, val) || String(p.codigo).includes(q.replace(/\s/g, ""))).slice(0, 10);
     if (matches.length === 0) {
       const safeName = val.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/\"/g,"&quot;");
       box.innerHTML = `<div class="autocomplete-item" data-quick-index="0" onclick='quickBarSeleccionarPrenda({codigo:99,nombre:${JSON.stringify(val)},precio:0})'>➕ Personalizado: "<strong>${safeName}</strong>"</div>`;
@@ -1844,8 +1869,8 @@
   function renderCatalogo(filtro) {
     const grid = document.getElementById("grid-catalogo");
     grid.innerHTML = "";
-    const f = filtro.toLowerCase();
-    CATALOGO_CENTRAL.filter(p => p.nombre.toLowerCase().includes(f) || String(p.codigo).includes(f)).forEach(p => {
+    const f = normalizarTextoBusqueda(filtro || "");
+    CATALOGO_CENTRAL.filter(p => coincideTextoBusqueda(p.nombre, f) || String(p.codigo).includes(f.replace(/\s/g, ""))).forEach(p => {
       const btn = document.createElement("div");
       btn.className = "prenda-btn";
       btn.onclick = () => agregarAlTicket({ cod: p.codigo, nom: p.nombre, pre: Number(p.precio) });
@@ -1959,40 +1984,103 @@
 
   // Clientes
   function normalizarBusquedaCliente(txt) {
+    // Esta función se conserva para las reglas de identidad/duplicados ya existentes.
     return String(txt || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, "");
+  }
+
+  // Normalización dedicada a búsquedas: ignora mayúsculas, tildes y puntuación,
+  // pero conserva los espacios para que búsquedas con varios nombres funcionen.
+  function normalizarTextoBusqueda(txt) {
+    return String(txt || "").toLowerCase().normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]+/g, " ").trim().replace(/\s+/g, " ");
+  }
+
+  function coincideTextoBusqueda(texto, consulta) {
+    const q = normalizarTextoBusqueda(consulta);
+    if (!q) return true;
+    const objetivo = normalizarTextoBusqueda(texto);
+    return q.split(" ").filter(Boolean).every(palabra => objetivo.includes(palabra));
   }
 
   function normalizarTelefonoCliente(txt) {
     return String(txt || "").replace(/\D/g, "");
   }
 
+  let clientesCargaEnCurso = null;
   async function precargarClientes() {
+    if (clientesCargaEnCurso) return clientesCargaEnCurso;
+    clientesCargaEnCurso = (async () => {
+      const todos = [];
+      const tamPagina = 500;
+      let desde = 0;
+      while (true) {
+        const { data, error } = await db.from("clientes")
+          .select("id, nombre_o_razon, telefono, direccion, loyalty_beneficio_pendiente")
+          .order("nombre_o_razon", { ascending: true })
+          .order("id", { ascending: true })
+          .range(desde, desde + tamPagina - 1);
+        if (error) throw error;
+        const pagina = data || [];
+        todos.push(...pagina);
+        if (pagina.length < tamPagina) break;
+        desde += tamPagina;
+      }
+      listaClientes = todos;
+      return listaClientes;
+    })();
     try {
-      const { data } = await db.from("clientes").select("id, nombre_o_razon, telefono, direccion, loyalty_beneficio_pendiente").order("nombre_o_razon", { ascending: true });
-      listaClientes = data || [];
-    } catch (e) { console.error(e); }
+      return await clientesCargaEnCurso;
+    } catch (e) {
+      console.error("[LAVAARTE] No se pudo cargar la base completa de clientes:", e);
+      return listaClientes;
+    } finally {
+      clientesCargaEnCurso = null;
+    }
   }
 
   function filtrarCliente(val) {
     const box = document.getElementById("drop-clientes");
-    const q = normalizarBusquedaCliente(val);
+    if (!box) return;
+    const q = normalizarTextoBusqueda(val);
+    const qTel = normalizarTelefonoCliente(val);
     clienteIndiceActivo = -1;
-    if (!q) { box.style.display = "none"; return; }
+    // No mostrar todos los clientes cuando se escribe texto que no contiene dígitos.
+    if (!q && !qTel) { box.style.display = "none"; box.textContent = ""; return; }
 
-    const matches = listaClientes.filter(c => {
-      const nom = normalizarBusquedaCliente(c.nombre_o_razon);
-      const tel = normalizarTelefonoCliente(c.telefono);
-      return nom.includes(q) || tel.includes(normalizarTelefonoCliente(val));
-    });
+    const matches = listaClientes.filter(c =>
+      coincideTextoBusqueda(c.nombre_o_razon, val) ||
+      (!!qTel && normalizarTelefonoCliente(c.telefono).includes(qTel))
+    );
 
-    let html = `<div class="autocomplete-item" style="color: var(--accent); font-weight: bold; background: #0f172a;" onclick="abrirModalCrearCliente('${String(val).replace(/'/g, "") }')">➕ REGISTRAR NUEVO CLIENTE: "${String(val).replace(/</g,'&lt;').replace(/>/g,'&gt;')}"</div>`;
+    box.textContent = "";
+    const nuevo = document.createElement("div");
+    nuevo.className = "autocomplete-item";
+    nuevo.style.color = "var(--accent)";
+    nuevo.style.fontWeight = "bold";
+    nuevo.style.background = "#0f172a";
+    nuevo.textContent = `➕ REGISTRAR NUEVO CLIENTE: "${String(val)}"`;
+    nuevo.addEventListener("click", () => abrirModalCrearCliente(String(val)));
+    box.appendChild(nuevo);
+
     if (matches.length > 0) {
-      html += matches.map(c => {
-        const payload = JSON.stringify({id:c.id,nombre:c.nombre_o_razon,telefono:c.telefono,direccion:c.direccion||""}).replace(/'/g,"&#39;");
-        return `<div class="autocomplete-item" onclick='cargarClienteDesdeObjeto(${payload})'>👤 ${String(c.nombre_o_razon).replace(/</g,'&lt;')} | 📞 ${String(c.telefono).replace(/</g,'&lt;')} ${c.direccion ? '(' + String(c.direccion).replace(/</g,'&lt;') + ')' : ''}</div>`;
-      }).join("");
+      matches.forEach(c => {
+        const item = document.createElement("div");
+        item.className = "autocomplete-item";
+        item.textContent = `👤 ${c.nombre_o_razon || "Sin nombre"} | 📞 ${c.telefono || "Sin teléfono"}${c.direccion ? " (" + c.direccion + ")" : ""}`;
+        item.addEventListener("click", () => cargarClienteDesdeObjeto({
+          id: c.id, nombre: c.nombre_o_razon, telefono: c.telefono, direccion: c.direccion || ""
+        }));
+        box.appendChild(item);
+      });
+    } else {
+      const sinResultados = document.createElement("div");
+      sinResultados.className = "autocomplete-item";
+      sinResultados.style.cursor = "default";
+      sinResultados.style.color = "var(--text-muted)";
+      sinResultados.textContent = `No hay clientes que coincidan con “${String(val)}”.`;
+      box.appendChild(sinResultados);
     }
-    box.innerHTML = html;
     box.style.display = "block";
   }
 
@@ -2149,10 +2237,10 @@
 
   function hotelFiltrarPrivado(val) {
     const box = document.getElementById("drop-hoteles");
-    const q = val.toLowerCase().trim();
-    if (!q || q.length < 2) { box.style.display = "none"; return; }
+    const q = normalizarTextoBusqueda(val);
+    if (!q) { box.style.display = "none"; box.innerHTML = ""; return; }
 
-    const matches = listaHotelesBD.filter(h => h.nombre.toLowerCase().includes(q));
+    const matches = listaHotelesBD.filter(h => coincideTextoBusqueda(h.nombre, val));
 
     let html = "";
     html += `<div class="autocomplete-item" style="color: var(--accent); font-weight: bold; background: #0f172a;" onclick="abrirModalCrearHotel('${val.replace(/'/g, "")}')">
@@ -2520,8 +2608,9 @@
       let res = data || [];
 
       if (q && !/^\d+$/.test(q)) {
-        const qLow = q.toLowerCase();
-        res = res.filter(o => (o.clientes?.nombre_o_razon || "").toLowerCase().includes(qLow) || (o.clientes?.telefono || "").includes(q));
+        const qTel = normalizarTelefonoCliente(q);
+        res = res.filter(o => coincideTextoBusqueda(o.clientes?.nombre_o_razon || "", q) ||
+          (!!qTel && normalizarTelefonoCliente(o.clientes?.telefono || "").includes(qTel)));
       }
 
       if (res.length === 0) {
@@ -2874,8 +2963,9 @@
 
       let res = data || [];
       if (q && !/^\d+$/.test(q)) {
-        const qLow = q.toLowerCase().trim();
-        res = res.filter(o => (o.clientes?.nombre_o_razon || "").toLowerCase().includes(qLow) || (o.clientes?.telefono || "").includes(q));
+        const qTel = normalizarTelefonoCliente(q);
+        res = res.filter(o => coincideTextoBusqueda(o.clientes?.nombre_o_razon || "", q) ||
+          (!!qTel && normalizarTelefonoCliente(o.clientes?.telefono || "").includes(qTel)));
       }
 
       if (res.length === 0) {
@@ -3324,9 +3414,13 @@
   }
 
   function adminFiltrarOrdenesBD(val) {
-    const q = val.toLowerCase().trim();
+    const q = normalizarTextoBusqueda(val);
     if (!q) return adminRenderOrdenesBD(ordenesMasterCache);
-    const filtradas = ordenesMasterCache.filter(o => String(o.consecutivo_ticket).includes(q) || (o.clientes?.nombre_o_razon || "").toLowerCase().includes(q) || o.estado.toLowerCase().includes(q));
+    const filtradas = ordenesMasterCache.filter(o =>
+      String(o.consecutivo_ticket).includes(q.replace(/\s/g, "")) ||
+      coincideTextoBusqueda(o.clientes?.nombre_o_razon || "", val) ||
+      coincideTextoBusqueda(o.estado || "", val)
+    );
     adminRenderOrdenesBD(filtradas);
   }
 
@@ -3409,7 +3503,7 @@
       return;
     }
     tbody.replaceChildren();
-    lista.slice(0, 100).forEach(c => {
+    lista.slice(0, 500).forEach(c => {
       const tr = document.createElement('tr');
       [c.nombre_o_razon, c.telefono, c.direccion || '-'].forEach(v => {
         const td = document.createElement('td'); td.textContent = String(v ?? ''); tr.appendChild(td);
@@ -3421,10 +3515,11 @@
   }
 
   function adminFiltrarClientesBD(val) {
-    const q = normalizarBusquedaCliente(val);
+    const q = normalizarTextoBusqueda(val);
     const qTel = normalizarTelefonoCliente(val);
     if (!q && !qTel) return adminRenderClientesBD(listaClientes);
-    const filtrados = listaClientes.filter(c => normalizarBusquedaCliente(c.nombre_o_razon).includes(q) || (qTel && normalizarTelefonoCliente(c.telefono).includes(qTel)));
+    const filtrados = listaClientes.filter(c => coincideTextoBusqueda(c.nombre_o_razon, val) ||
+      (!!qTel && normalizarTelefonoCliente(c.telefono).includes(qTel)));
     adminRenderClientesBD(filtrados);
   }
 
@@ -4171,6 +4266,183 @@ button:hover{filter:brightness(1.04)}
   document.addEventListener('DOMContentLoaded',function(){applyTheme(root.getAttribute('data-theme')||initial);});
 })();
 </script>
+
+
+<script>
+(function () {
+  'use strict';
+  const STYLE_READY = true;
+  let nextId = 0;
+
+  function mostrarNotificacionLavaarte(mensaje) {
+    const texto = String(mensaje == null ? '' : mensaje);
+    let stack = document.getElementById('lavaarte-notification-stack');
+    if (!stack) {
+      stack = document.createElement('div');
+      stack.id = 'lavaarte-notification-stack';
+      stack.setAttribute('role', 'region');
+      stack.setAttribute('aria-label', 'Notificaciones de LAVAARTE');
+      document.body.appendChild(stack);
+    }
+
+    const esError = /error|no se pudo|no fue posible|no pude|inválid|incorrect|falló|fallo|no se encontraron|no hay datos/i.test(texto);
+    const esAviso = !esError && /⚠️|obligatori|debes |debe |selecciona|por favor/i.test(texto);
+    const toast = document.createElement('div');
+    toast.className = 'lavaarte-notification' + (esError ? ' is-error' : esAviso ? ' is-warning' : '');
+    toast.id = 'lavaarte-notification-' + (++nextId);
+    toast.setAttribute('role', esError ? 'alert' : 'status');
+    const message = document.createElement('div');
+    message.className = 'lavaarte-notification-message';
+    message.textContent = texto;
+    const close = document.createElement('button');
+    close.type = 'button';
+    close.className = 'lavaarte-notification-close';
+    close.setAttribute('aria-label', 'Cerrar notificación');
+    close.title = 'Cerrar';
+    close.textContent = '×';
+    let timer = null;
+    const remove = function () {
+      if (timer) clearTimeout(timer);
+      if (toast.parentNode) toast.parentNode.removeChild(toast);
+    };
+    close.addEventListener('click', remove);
+    toast.appendChild(message);
+    toast.appendChild(close);
+    stack.appendChild(toast);
+
+    // Limita la pila en caso de varios avisos seguidos; cada mensaje puede cerrarse a mano.
+    while (stack.children.length > 4) stack.removeChild(stack.firstElementChild);
+    const duracion = texto.length > 180 ? 9000 : 6000;
+    timer = setTimeout(remove, duracion);
+  }
+
+  window.mostrarNotificacionLavaarte = mostrarNotificacionLavaarte;
+  // Los alert() nativos detienen temporalmente el hilo de la interfaz. Se conserva el
+  // mensaje, pero se presenta como aviso visible y no bloqueante para evitar congelar el flujo.
+  window.alert = function (mensaje) { mostrarNotificacionLavaarte(mensaje); };
+})();
+</script>
+
+<style id="lavaarte-156-arqueo-layout">
+/* LAVAARTE OS 1.5.6 — áreas amplias y desplazables para el arqueo.
+   Reglas de presentación únicamente: se conserva la lógica funcional de 1.5.5. */
+#modal-arqueo .modal-content {
+  width: min(1120px, 96vw) !important;
+  max-width: 96vw !important;
+  max-height: 94dvh !important;
+  min-height: 82vh;
+  padding: 22px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+#modal-arqueo .arqueo-scroll-panel {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  overflow: auto !important;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg-card);
+}
+#modal-arqueo #arqueo-detalle-ordenes-scroll {
+  height: clamp(280px, 36vh, 430px);
+  max-height: clamp(280px, 36vh, 430px) !important;
+}
+#modal-arqueo #arqueo-desglose-gastos-scroll {
+  height: clamp(210px, 27vh, 320px);
+  max-height: clamp(210px, 27vh, 320px) !important;
+}
+#modal-arqueo #arqueo-centinela-bloque {
+  height: clamp(180px, 23vh, 280px);
+  max-height: clamp(180px, 23vh, 280px) !important;
+  overflow: auto !important;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  font-size: 13px !important;
+  line-height: 1.55;
+}
+#modal-arqueo #arqueo-detalle-ordenes-scroll .data-table {
+  min-width: 820px;
+  width: 100%;
+}
+#modal-arqueo #arqueo-desglose-gastos-scroll .data-table {
+  min-width: 560px;
+  width: 100%;
+}
+#modal-arqueo #arqueo-detalle-ordenes-scroll .data-table th,
+#modal-arqueo #arqueo-detalle-ordenes-scroll .data-table td,
+#modal-arqueo #arqueo-desglose-gastos-scroll .data-table th,
+#modal-arqueo #arqueo-desglose-gastos-scroll .data-table td {
+  padding: 11px 12px;
+  vertical-align: top;
+}
+#modal-arqueo #arqueo-centinela-list {
+  overflow-wrap: anywhere;
+  line-height: 1.65;
+}
+@media (max-width: 760px) {
+  #modal-arqueo .modal-content {
+    width: 96vw !important;
+    max-width: 96vw !important;
+    max-height: 96dvh !important;
+    min-height: 90dvh;
+    padding: 12px;
+    gap: 11px;
+  }
+  #modal-arqueo #arqueo-comparativas {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+  #modal-arqueo #arqueo-detalle-ordenes-scroll {
+    height: 31dvh;
+    min-height: 175px;
+    max-height: 31dvh !important;
+  }
+  #modal-arqueo #arqueo-desglose-gastos-scroll {
+    height: 24dvh;
+    min-height: 145px;
+    max-height: 24dvh !important;
+  }
+  #modal-arqueo #arqueo-centinela-bloque {
+    height: 23dvh;
+    min-height: 135px;
+    max-height: 23dvh !important;
+    padding: 12px !important;
+  }
+  #modal-arqueo #arqueo-detalle-ordenes-scroll .data-table {
+    min-width: 760px;
+  }
+  #modal-arqueo #arqueo-desglose-gastos-scroll .data-table {
+    min-width: 510px;
+  }
+  #modal-arqueo .modal-content > div {
+    max-height: none;
+  }
+}
+@media (min-width: 761px) and (max-height: 760px) {
+  #modal-arqueo .modal-content {
+    max-height: 96dvh !important;
+    min-height: 0;
+    padding: 16px;
+    gap: 10px;
+  }
+  #modal-arqueo #arqueo-detalle-ordenes-scroll {
+    height: 30vh;
+    max-height: 30vh !important;
+  }
+  #modal-arqueo #arqueo-desglose-gastos-scroll {
+    height: 22vh;
+    max-height: 22vh !important;
+  }
+  #modal-arqueo #arqueo-centinela-bloque {
+    height: 20vh;
+    max-height: 20vh !important;
+  }
+}
+</style>
 
 </body>
 </html>
