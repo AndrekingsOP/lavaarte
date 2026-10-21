@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Lavaarte - El Arte de Lavar</title>
+<title>LAVAARTE OS 1.5.0 - El Arte de Lavar</title>
 <meta name="theme-color" content="#0284c7">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -298,6 +298,31 @@
     .catalog-grid { grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); }
     .quick-bar-inputs { grid-template-columns: 1fr; }
   }
+
+  /* LAVAARTE OS 1.5.0: tema claro pastel opcional; oscuro conserva la apariencia original. */
+  :root[data-theme="light"] {
+    --bg-main:#f5f7fb; --bg-card:#ffffff; --bg-input:#eef2f8; --border:#dce3ee;
+    --primary:#6488c7; --primary-hover:#4f73b4; --accent:#6f8fc9;
+    --success:#2f9b79; --danger:#d96f7b; --warning:#c28a42;
+    --text:#273449; --text-muted:#718096;
+    color-scheme:light;
+  }
+  :root[data-theme="dark"] { color-scheme:dark; }
+  :root[data-theme="light"] body { background:var(--bg-main); color:var(--text); }
+  :root[data-theme="light"] .home-title,
+  :root[data-theme="light"] .portal-title { color:#273449; }
+  :root[data-theme="light"] .home-slogan { color:#c87583; }
+  :root[data-theme="light"] .input-text,
+  :root[data-theme="light"] .btn-payment { color:var(--text); }
+  :root[data-theme="light"] .quick-bar-card { background:#e9eef8; }
+  :root[data-theme="light"] .prenda-btn:hover { background:#e2eafa; }
+  :root[data-theme="light"] .btn-qty { background:#dce5f4; color:#273449; }
+  :root[data-theme="light"] .data-table tr:hover td { background:#f2f6fc; }
+  :root[data-theme="light"] .modal { background:rgba(37,48,67,.38); }
+  :root[data-theme="light"] .nav-btn { box-shadow:0 1px 2px rgba(38,55,83,.05); }
+  .theme-toggle { display:inline-flex; align-items:center; justify-content:center; gap:7px; white-space:nowrap; }
+  @media (max-width:600px) { .theme-toggle { padding:8px 10px; } .theme-toggle .theme-label { display:none; } }
+
 </style>
 </head>
 <body>
@@ -308,6 +333,7 @@
     <span id="lavaarte-version" title="Versión de LAVAARTE OS" style="display:inline-flex;align-items:center;margin-left:8px;padding:3px 7px;border:1px solid var(--border);border-radius:6px;font-size:10px;font-weight:600;color:var(--text-muted);vertical-align:middle;">Web v1.4.0</span>
   </div>
   <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+    <button class="nav-btn theme-toggle" id="btn-theme-toggle" type="button" onclick="toggleTemaLavaarte()" aria-label="Cambiar tema">☀️ <span class="theme-label">Modo claro</span></button>
     <button class="nav-btn" id="btn-modo-impresora" style="display:none" onclick="toggleModoImpresoraHP()">🖨️ Modo Impresora HP: OFF</button>
     <button class="nav-btn" onclick="mostrarVista('vista-portal-hoteles')">🏨 Servicios Hoteles</button>
     <button class="nav-btn" onclick="mostrarVista('vista-portal-cliente')">🌐 Servicios Clientes</button>
@@ -557,10 +583,16 @@
     <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; max-width: 600px; margin: 0 auto; width: 100%;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
         <span style="font-size: 13px; color: var(--text-muted);">Escribe el ticket o pulsa dictar:</span>
-        <button id="btn-voz-alistar" class="btn-voice" onclick="iniciarVozAlistar()">🎙️ "Orden [Número] lista"</button>
+        <button id="btn-voz-alistar" class="btn-voice" onclick="iniciarVozAlistar()">🎙️ Dictar órdenes listas</button>
       </div>
 
       <input type="number" id="alistar-ticket-input" class="input-text" style="font-size: 20px; text-align: center;" placeholder="Ticket #" oninput="buscarTicketAlistar(this.value)">
+      <div style="margin-top:12px;padding:12px;border:1px solid var(--border);border-radius:10px;background:var(--bg-card);">
+        <label for="alistar-multiples-input" class="label-sm">Alistar varias órdenes de una vez</label>
+        <textarea id="alistar-multiples-input" class="input-text" rows="2" style="margin-top:6px;min-height:64px;resize:vertical;" placeholder="Ej.: 104, 105 y 108 listas / Orden 104 lista y 105 lista"></textarea>
+        <button class="btn-success" style="width:100%;margin-top:8px;" onclick="marcarMultiplesOrdenesListas()">✅ Marcar todas como listas</button>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:5px;">Acepta números con o sin la palabra “orden”. Verifica los tickets detectados antes de confirmar.</div>
+      </div>
 
       <div id="alistar-ticket-resumen" style="margin-top: 16px; font-size: 13px; display: none;">
         <div style="background: var(--bg-input); padding: 14px; border-radius: 8px; line-height: 1.6;">
@@ -980,6 +1012,7 @@
   <div class="modal-content" style="width: 820px; max-height:94vh; min-height:75vh;">
     <h3 style="color: var(--accent);">📊 Arqueo y Cierre Diario Desglosado</h3>
     <div id="caja-resumen" style="font-size: 13px; line-height: 1.8; background: var(--bg-input); padding: 14px; border-radius: 8px;"></div>
+    <div id="arqueo-comparativas" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:14px 0;"><div class="dash-card" style="padding:12px"><strong>Comparación diaria</strong><div id="arqueo-grafica-dia" style="margin-top:8px;font-size:12px;color:var(--text-muted)">Cargando comparación…</div></div><div class="dash-card" style="padding:12px"><strong>Comparación mensual</strong><div id="arqueo-grafica-mes" style="margin-top:8px;font-size:12px;color:var(--text-muted)">Cargando comparación…</div></div></div>
 
     <h4 style="font-size: 14px; color: var(--accent); margin-top: 10px;">📋 Detalle de Órdenes y Entradas por Forma de Pago</h4>
     <div style="max-height: 180px; overflow-y: auto; border: 1px solid var(--border); border-radius: 8px;">
@@ -2414,6 +2447,38 @@
     } catch (e) { alert("Error: " + e.message); }
   }
 
+  async function marcarMultiplesOrdenesListas() {
+    const campo = document.getElementById("alistar-multiples-input");
+    const texto = (campo?.value || "").trim();
+    if (!texto) return alert("Escribe o dicta los números de las órdenes, por ejemplo: 104, 105 y 108 listas.");
+    // Extrae números asociados al texto de alistamiento; evita interpretar números arbitrarios pequeños como cantidades.
+    const numeros = [...new Set((texto.match(/\d+/g) || []).map(Number).filter(n => Number.isInteger(n) && n > 0))];
+    if (!numeros.length) return alert("No pude identificar números de órdenes. Intenta con: 104, 105 y 108 listas.");
+    if (!confirm(`Se marcarán como LISTO_ENTREGA las órdenes: ${numeros.map(n => "#"+n).join(", ")}. ¿Continuar?`)) return;
+    try {
+      const { data, error } = await db.from("ordenes").select("id, consecutivo_ticket, estado, saldo_pendiente, clientes(nombre_o_razon, telefono)").in("consecutivo_ticket", numeros);
+      if (error) throw error;
+      const encontradas = data || [];
+      const encontradasNums = new Set(encontradas.map(o => Number(o.consecutivo_ticket)));
+      const faltantes = numeros.filter(n => !encontradasNums.has(n));
+      const validas = encontradas.filter(o => o.estado !== "ANULADO" && o.estado !== "ENTREGADO");
+      if (!validas.length) return alert("No se encontraron órdenes pendientes para marcar como listas." + (faltantes.length ? " No encontradas: " + faltantes.join(", ") : ""));
+      const ids = validas.map(o => o.id);
+      const { error: updateError } = await db.from("ordenes").update({ estado: "LISTO_ENTREGA" }).in("id", ids);
+      if (updateError) throw updateError;
+      await chequearCentinela60h();
+      const yaFinalizadas = encontradas.filter(o => o.estado === "ANULADO" || o.estado === "ENTREGADO").map(o => `#${o.consecutivo_ticket} (${o.estado})`);
+      let mensaje = `Listas para entregar: ${validas.map(o => "#"+o.consecutivo_ticket).join(", ")}.`;
+      if (faltantes.length) mensaje += `\nNo encontradas: ${faltantes.map(n=>"#"+n).join(", ")}.`;
+      if (yaFinalizadas.length) mensaje += `\nSin cambios por estado actual: ${yaFinalizadas.join(", ")}.`;
+      alert(mensaje);
+      campo.value = "";
+      if (document.getElementById("alistar-ticket-input")) document.getElementById("alistar-ticket-input").value = "";
+      const resumen = document.getElementById("alistar-ticket-resumen"); if (resumen) resumen.style.display = "none";
+      ordenAlistarActiva = null;
+    } catch (e) { alert("No se pudieron actualizar las órdenes: " + (e.message || e)); }
+  }
+
   // Centinela 60 Horas
   let ordenesRetrasadas60h = [];
 
@@ -2715,8 +2780,32 @@
             return `• Ticket #${o.consecutivo_ticket} (${o.clientes?.nombre_o_razon || 'Particular'}) - Retraso: ${h}h`;
           }).join("<br>");
 
+      await renderizarComparativasArqueo(hoy, efectivoTotal + transferenciasTotal);
       abrirModal("modal-arqueo");
     } catch (e) { alert(e.message); }
+  }
+
+  async function renderizarComparativasArqueo(hoy, ventasHoy) {
+    const diaEl = document.getElementById("arqueo-grafica-dia");
+    const mesEl = document.getElementById("arqueo-grafica-mes");
+    if (!diaEl || !mesEl) return;
+    try {
+      const ayer = new Date(hoy); ayer.setDate(ayer.getDate()-1);
+      const inicioMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
+      const inicioMesAnterior = new Date(hoy.getFullYear(), hoy.getMonth()-1, 1);
+      const finMesAnterior = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
+      const [{data:ayerData},{data:mesData},{data:mesAnteriorData}] = await Promise.all([
+        db.from("ordenes").select("total_neto, abono_inicial, entregado_at, estado, created_at").gte("created_at",ayer.toISOString()).lt("created_at",hoy.toISOString()),
+        db.from("ordenes").select("total_neto, abono_inicial, entregado_at, estado, created_at").gte("created_at",inicioMes.toISOString()).lt("created_at",new Date(hoy.getTime()+86400000).toISOString()),
+        db.from("ordenes").select("total_neto, abono_inicial, entregado_at, estado, created_at").gte("created_at",inicioMesAnterior.toISOString()).lt("created_at",finMesAnterior.toISOString())
+      ]);
+      const suma = arr => (arr||[]).reduce((n,o)=>n+Number(o.abono_inicial||0)+((o.estado==='ENTREGADO')?Math.max(0,Number(o.total_neto||0)-Number(o.abono_inicial||0)):0),0);
+      const ventasAyer=suma(ayerData), ventasMes=suma(mesData), ventasMesAnterior=suma(mesAnteriorData);
+      const barra=(label,val,max)=>`<div style="display:grid;grid-template-columns:72px 1fr auto;gap:6px;align-items:center;margin:7px 0"><span>${label}</span><div style="height:10px;background:#e7edf5;border-radius:8px;overflow:hidden"><div style="height:100%;width:${max?Math.max(2,Math.min(100,val/max*100)):0}%;background:#1769aa;border-radius:8px"></div></div><strong>$${Math.round(val).toLocaleString('es-CO')}</strong></div>`;
+      diaEl.innerHTML=barra('Hoy',ventasHoy,Math.max(ventasHoy,ventasAyer))+barra('Ayer',ventasAyer,Math.max(ventasHoy,ventasAyer));
+      mesEl.innerHTML=barra('Este mes',ventasMes,Math.max(ventasMes,ventasMesAnterior))+barra('Mes anterior',ventasMesAnterior,Math.max(ventasMes,ventasMesAnterior));
+      reporteArqueoActual.comparativas={ventasHoy,ventasAyer,ventasMes,ventasMesAnterior};
+    } catch(e) { diaEl.textContent='No fue posible cargar la comparación diaria.'; mesEl.textContent='No fue posible cargar la comparación mensual.'; console.error(e); }
   }
 
   function exportarExcelArqueo() {
@@ -2754,6 +2843,11 @@
     reporteArqueoActual.egresos.forEach(e => ws2Data.push([new Date(e.created_at).toLocaleTimeString("es-CO"), e.monto, e.concepto, e.responsable]));
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(ws2Data), "Egresos_Caja");
 
+    if (reporteArqueoActual.comparativas) {
+      const c = reporteArqueoActual.comparativas;
+      const comp = XLSX.utils.aoa_to_sheet([["COMPARATIVA DE VENTAS"],["Periodo","Valor COP"],["Hoy",c.ventasHoy],["Ayer",c.ventasAyer],["Este mes",c.ventasMes],["Mes anterior",c.ventasMesAnterior],["Nota","La comparación usa abonos iniciales y saldos de órdenes entregadas."]]);
+      XLSX.utils.book_append_sheet(wb, comp, "Comparativas");
+    }
     XLSX.writeFile(wb, `Lavaarte_Cierre_Corporativo_${reporteArqueoActual.fecha.replace(/\//g,'-')}.xlsx`);
   }
 
@@ -3237,19 +3331,32 @@
   }
 
   async function adminEditarSaldoOrdenBD(id, saldoActual) {
-    const nuevo = prompt("Modificar saldo pendiente ($COP):", saldoActual);
-    if (nuevo === null || isNaN(nuevo)) return;
-    await db.from("ordenes").update({ saldo_pendiente: Number(nuevo) }).eq("id", id);
-    await adminCargarOrdenesBD();
+    const entrada = prompt("Modificar saldo pendiente de esta orden ($COP):", saldoActual);
+    if (entrada === null) return;
+    const limpio = String(entrada).replace(/[.$\s]/g, "").replace(/,/g, "");
+    const nuevo = Number(limpio);
+    if (!Number.isFinite(nuevo) || nuevo < 0) return alert("Ingresa un saldo válido, igual o mayor que cero.");
+    try {
+      const { error } = await db.from("ordenes").update({ saldo_pendiente: nuevo }).eq("id", id).select("id").single();
+      if (error) throw error;
+      await adminCargarOrdenesBD(true);
+      alert("Saldo actualizado correctamente.");
+    } catch (e) { alert("No se pudo actualizar el saldo: " + (e.message || e)); }
   }
 
   async function adminEditarEstadoOrdenBD(id, estActual) {
     const opciones = ["INGRESADO", "LISTO_ENTREGA", "ENTREGADO", "ANULADO"];
-    const sig = prompt(`Cambiar estado (${estActual}).\nOpciones: INGRESADO, LISTO_ENTREGA, ENTREGADO o ANULADO:`, estActual);
-    if (!sig || !opciones.includes(sig.toUpperCase().trim())) return;
-    await db.from("ordenes").update({ estado: sig.toUpperCase().trim() }).eq("id", id);
-    await adminCargarOrdenesBD();
-    chequearCentinela60h();
+    const sig = prompt(`Cambiar estado (${estActual}).\nEscribe una opción: INGRESADO, LISTO_ENTREGA, ENTREGADO o ANULADO.`, estActual);
+    if (!sig) return;
+    const estado = sig.toUpperCase().trim().replace(/\s+/g, "_");
+    if (!opciones.includes(estado)) return alert("Estado no válido. Usa INGRESADO, LISTO_ENTREGA, ENTREGADO o ANULADO.");
+    try {
+      const { error } = await db.from("ordenes").update({ estado }).eq("id", id).select("id").single();
+      if (error) throw error;
+      await adminCargarOrdenesBD(true);
+      await chequearCentinela60h();
+      alert("Estado actualizado correctamente a " + estado + ".");
+    } catch (e) { alert("No se pudo actualizar el estado: " + (e.message || e)); }
   }
 
   async function adminEliminarOrdenPorId(id, numTicket) {
@@ -3860,22 +3967,25 @@
     recognition.onresult = async (e) => {
       const texto = e.results[0][0].transcript.toLowerCase();
       btn.classList.remove("recording");
-      btn.textContent = "🎙️ 'Orden [Número] lista'";
-
-      const match = texto.match(/(\d+)/);
-      if (match) {
-        const numTicket = match[1];
+      btn.textContent = "🎙️ Dictar órdenes listas";
+      const numeros = [...new Set((texto.match(/\d+/g) || []).map(Number).filter(n => n > 0))];
+      if (!numeros.length) { alert(`No reconocí números de órdenes en: "${texto}"`); return; }
+      // Un número conserva el flujo original. Varios números se procesan juntos.
+      if (numeros.length === 1) {
+        const numTicket = String(numeros[0]);
         document.getElementById("alistar-ticket-input").value = numTicket;
         await buscarTicketAlistar(numTicket);
         if (ordenAlistarActiva) marcarTicketComoListo();
       } else {
-        alert(`No reconocí el número en: "${texto}"`);
+        const campo = document.getElementById("alistar-multiples-input");
+        if (campo) campo.value = numeros.join(", ") + " listas";
+        await marcarMultiplesOrdenesListas();
       }
     };
 
     recognition.onerror = () => {
       btn.classList.remove("recording");
-      btn.textContent = "🎙️ 'Orden [Número] lista'";
+      btn.textContent = "🎙️ Dictar órdenes listas";
     };
 
     recognition.start();
@@ -3890,12 +4000,12 @@
 </footer>
 
 <script>
-// LAVAARTE OS v1.4.2: estabilidad de ventanas, rendimiento de escritorio y corrección de dominio.
+// LAVAARTE OS v1.5.0: estabilidad de ventanas, rendimiento de escritorio y corrección de dominio.
 (function () {
   const versionNode = document.getElementById('lavaarte-version');
   if (versionNode && window.electronAPI && typeof window.electronAPI.getAppInfo === 'function') {
     window.electronAPI.getAppInfo().then(info => {
-      if (info && info.version) versionNode.textContent = 'Desktop v' + info.version + ' · Web UI v1.3.2';
+      if (info && info.version) versionNode.textContent = 'Desktop v' + info.version + ' · Web UI v1.5.0';
     }).catch(() => {});
   }
 
@@ -3982,6 +4092,85 @@
   #admin-pin { font-size:30px !important; min-height:58px; letter-spacing:10px !important; }
 }
 </style>
+
+
+<style>
+/* LAVAARTE OS 1.5.0 — refinamiento visual transversal web, escritorio y móvil.
+   Importante: la paleta clara solo se aplica en modo claro; oscuro conserva el azul original y texto blanco. */
+:root[data-theme="light"]{--bg-main:#f3f6fb;--bg-card:#ffffff;--bg-input:#f8fafc;--border:#dce4ef;--primary:#123b66;--primary-hover:#0d2d50;--accent:#1769aa;--success:#16845b;--danger:#c83b48;--warning:#a66a09;--text:#172b45;--text-muted:#64748b;color-scheme:light}
+:root[data-theme="dark"]{--bg-main:#0b0f19;--bg-card:#111827;--bg-input:#1e293b;--border:#334155;--primary:#0284c7;--primary-hover:#0369a1;--accent:#38bdf8;--success:#10b981;--danger:#ef4444;--warning:#f59e0b;--text:#f8fafc;--text-muted:#94a3b8;color-scheme:dark}
+body{background:var(--bg-main);color:var(--text);letter-spacing:.005em}
+.dash-card,.modal-content,.pos-sidebar,.pos-main,.quick-bar-card{box-shadow:0 8px 24px rgba(22,45,77,.07);border-color:var(--border)!important}
+.dash-card{transition:transform .16s ease,box-shadow .16s ease;border-radius:14px!important;background:var(--bg-card)!important}
+.dash-card:hover{transform:translateY(-2px);box-shadow:0 12px 28px rgba(22,45,77,.12)}
+button,.nav-btn,.btn-success,.btn-voice{transition:filter .15s ease,transform .15s ease;border-radius:9px}
+button:hover{filter:brightness(1.04)}
+.input-text,select,textarea{border-radius:9px!important;border-color:var(--border)!important}
+.data-table{border-collapse:separate;border-spacing:0;overflow:hidden;border-radius:10px}
+:root[data-theme="light"] .data-table th{background:#eaf0f7;color:#203b5b}
+:root[data-theme="dark"] .data-table th{background:#1e293b;color:#f8fafc}
+:root[data-theme="dark"] .dash-card:hover{box-shadow:0 12px 28px rgba(0,0,0,.28)}
+:root[data-theme="light"] .dash-card,.modal-content,.pos-sidebar,.pos-main,.quick-bar-card{box-shadow:0 8px 24px rgba(22,45,77,.07)}
+@media(max-width:700px){body{font-size:14px}.dash-grid{grid-template-columns:repeat(1,minmax(0,1fr))!important;gap:12px}.dash-card{padding:16px!important}.view-section{padding:10px!important}.modal-content{width:96vw!important;max-width:96vw!important;padding:14px!important;max-height:94dvh!important;overflow:auto}.data-table{min-width:680px}.view-section>div:first-child{gap:10px;flex-wrap:wrap}.pos-layout{grid-template-columns:minmax(0,1fr)!important}.input-text,button{max-width:100%}}
+@media(min-width:701px) and (max-width:1050px){.dash-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
+</style>
+<script>
+/* LAVAARTE OS 1.5.0: atajos de panel sin interferir con escritura, diálogos ni F12 de impresión. */
+(function(){
+ const shortcutViews={F1:'vista-pos',F2:'vista-alistar',F3:'vista-entrega',F4:'vista-egresos',F5:'modal-arqueo',F6:'modal-admin-panel',F7:'vista-inventario',F8:'vista-busquedas',F9:'vista-domicilios-admin',F10:'vista-dashboard'};
+ function openShortcut(target){
+  const el=document.getElementById(target);
+  if(!el){return false;}
+  if(el.classList.contains('modal')){
+   if(typeof window.pedirClaveSegura==='function') window.pedirClaveSegura(target); else if(typeof window.abrirModal==='function') window.abrirModal(target); else return false;
+  }else if(typeof window.mostrarVista==='function'){window.mostrarVista(target)}else{return false}
+  return true;
+ }
+ document.addEventListener('keydown',function(e){
+  if(e.defaultPrevented||e.isComposing||e.ctrlKey||e.altKey||e.metaKey)return;
+  if(!/^F([1-9]|10)$/.test(e.key))return;
+  // Mantiene F12 intacto; no secuestra atajos al escribir o editar datos.
+  const t=e.target;const tag=(t&&t.tagName||'').toLowerCase();
+  if(t&&((tag==='input'&& !['button','submit','checkbox','radio'].includes((t.type||'').toLowerCase()))||tag==='textarea'||tag==='select'||t.isContentEditable))return;
+  const target=shortcutViews[e.key];if(!target)return;
+  if(openShortcut(target)){e.preventDefault();e.stopPropagation();}
+ },true);
+})();
+</script>
+
+
+<script>
+(function(){
+  'use strict';
+  const KEY='lavaarte_os_theme_v150';
+  const root=document.documentElement;
+  function applyTheme(theme){
+    const next=theme==='light'?'light':'dark';
+    root.setAttribute('data-theme',next);
+    root.style.colorScheme=next;
+    try{localStorage.setItem(KEY,next);}catch(e){}
+    const btn=document.getElementById('btn-theme-toggle');
+    if(btn){
+      const isLight=next==='light';
+      btn.setAttribute('aria-pressed',String(isLight));
+      btn.innerHTML=isLight?'🌙 <span class="theme-label">Modo oscuro</span>':'☀️ <span class="theme-label">Modo claro</span>';
+      btn.title=isLight?'Cambiar a modo oscuro':'Cambiar a modo claro';
+    }
+    const meta=document.querySelector('meta[name="theme-color"]');
+    if(meta)meta.content=next==='light'?'#f3f6fb':'#0b0f19';
+    return next;
+  }
+  let initial='dark';
+  try{const saved=localStorage.getItem(KEY);if(saved==='light'||saved==='dark')initial=saved;}catch(e){}
+  // Aplicar en cuanto se evalúa el script, antes de mostrar la interfaz.
+  applyTheme(initial);
+  window.toggleTemaLavaarte=function(){
+    const current=root.getAttribute('data-theme')||'dark';
+    applyTheme(current==='dark'?'light':'dark');
+  };
+  document.addEventListener('DOMContentLoaded',function(){applyTheme(root.getAttribute('data-theme')||initial);});
+})();
+</script>
 
 </body>
 </html>
