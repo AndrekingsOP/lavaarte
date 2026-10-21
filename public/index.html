@@ -324,7 +324,20 @@
   @media (max-width:600px) { .theme-toggle { padding:8px 10px; } .theme-toggle .theme-label { display:none; } }
 
 </style>
-</head>
+<style>
+    /* Notificación no bloqueante: evita diálogos nativos tras actualizar precios */
+    #lavaarte-toast {
+      position: fixed; top: 18px; right: 20px; z-index: 2147483000;
+      max-width: min(440px, calc(100vw - 32px)); padding: 14px 18px;
+      border-radius: 12px; box-shadow: 0 12px 34px rgba(0,0,0,.24);
+      font: 600 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif;
+      opacity: 0; transform: translateY(-8px); pointer-events: none;
+      transition: opacity .18s ease, transform .18s ease;
+      background: #123b31; color: #f0fdf4; border: 1px solid #2c755f;
+    }
+    #lavaarte-toast.visible { opacity: 1; transform: translateY(0); }
+    #lavaarte-toast.error { background: #4a1f24; color: #fff1f2; border-color: #9f3542; }
+</style>\n</head>
 <body>
 
 <div class="topbar">
@@ -3254,7 +3267,27 @@
     }
   }
 
-  async function adminGuardarPrecioCatalogo() {
+
+  // Mensaje no bloqueante: mantiene el foco y la interacción del renderer de Electron.
+  let lavaarteToastTimer = null;
+  function mostrarNotificacionLavaarte(mensaje, tipo = "success") {
+    let toast = document.getElementById("lavaarte-toast");
+    if (!toast) {
+      toast = document.createElement("div");
+      toast.id = "lavaarte-toast";
+      toast.setAttribute("role", "status");
+      toast.setAttribute("aria-live", "polite");
+      document.body.appendChild(toast);
+    }
+    toast.textContent = String(mensaje || "");
+    toast.classList.toggle("error", tipo === "error");
+    toast.classList.add("visible");
+    if (lavaarteToastTimer) clearTimeout(lavaarteToastTimer);
+    lavaarteToastTimer = setTimeout(() => {
+      toast.classList.remove("visible");
+    }, 3200);
+  }
+\n  async function adminGuardarPrecioCatalogo() {
     const cod = Number(document.getElementById("adm-edit-prenda-sel").value);
     const nuevoPre = Number(document.getElementById("adm-edit-prenda-nuevo-precio").value);
     if (isNaN(nuevoPre) || nuevoPre <= 0) return alert("Ingresa un nuevo precio válido.");
@@ -3266,7 +3299,7 @@
       await sincronizarCatalogoSupabase();
       poblarSelectPrendasMaster();
       document.getElementById("adm-edit-prenda-nuevo-precio").value = "";
-      alert(`✅ Precio actualizado a $${nuevoPre.toLocaleString("es-CO")} en todos los dispositivos.`);
+      mostrarNotificacionLavaarte(`✅ Precio actualizado a $${nuevoPre.toLocaleString("es-CO")} en todos los dispositivos.`);
     } catch (e) {
       alert("Error actualizando precio: " + e.message);
     }
