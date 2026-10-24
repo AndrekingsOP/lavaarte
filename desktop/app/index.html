@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>LAVAARTE OS 1.5.5 - El Arte de Lavar</title>
+<title>LAVAARTE OS 1.6.0 - El Arte de Lavar</title>
 <meta name="theme-color" content="#0284c7">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -355,7 +355,7 @@
 <div class="topbar">
   <div class="brand" onclick="mostrarVista('vista-home')">
     🧺 Lavaarte <span>| Sistema Integral</span>
-    <span id="lavaarte-version" title="Versión de LAVAARTE OS" style="display:inline-flex;align-items:center;margin-left:8px;padding:3px 7px;border:1px solid var(--border);border-radius:6px;font-size:10px;font-weight:600;color:var(--text-muted);vertical-align:middle;">OS v1.5.6</span>
+    <span id="lavaarte-version" title="Versión de LAVAARTE OS" style="display:inline-flex;align-items:center;margin-left:8px;padding:3px 7px;border:1px solid var(--border);border-radius:6px;font-size:10px;font-weight:600;color:var(--text-muted);vertical-align:middle;">OS v1.6.0</span>
   </div>
   <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
     <button class="nav-btn theme-toggle" id="btn-theme-toggle" type="button" onclick="toggleTemaLavaarte()" aria-label="Cambiar tema">☀️ <span class="theme-label">Modo claro</span></button>
@@ -569,7 +569,7 @@
           <div class="quick-bar-inputs">
             <div class="input-group">
               <label class="label-sm">Cantidad</label>
-              <input type="number" id="quick-bar-cant" class="input-text" style="text-align: center; font-weight: bold;" value="1" min="0.1" step="any">
+              <input type="number" id="quick-bar-cant" class="input-text" style="text-align: center; font-weight: bold;" value="1" min="0.1" step="any" onkeydown="quickBarManejarTeclaCantidad(event)">
             </div>
 
             <div class="input-group">
@@ -1083,6 +1083,20 @@
   </div>
 </div>
 
+<!-- Modal: editar precio unitario desde el carrito -->
+<div class="modal" id="modal-editar-precio-ticket" aria-labelledby="modal-editar-precio-ticket-titulo">
+  <div class="modal-content" style="width:min(440px,94vw);">
+    <h3 id="modal-editar-precio-ticket-titulo" style="color:var(--accent);">✏️ Editar precio de la prenda</h3>
+    <p id="ticket-precio-editar-nombre" style="font-size:13px;color:var(--text-muted);"></p>
+    <label class="label-sm" for="ticket-precio-editar-valor">Nuevo precio unitario ($COP)</label>
+    <input type="number" id="ticket-precio-editar-valor" class="input-text" min="0" step="1" inputmode="numeric" autocomplete="off">
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px;">
+      <button type="button" class="nav-btn" onclick="cerrarModal('modal-editar-precio-ticket')">Cancelar</button>
+      <button type="button" class="btn-success" onclick="guardarPrecioTicketEditado()">Guardar precio · Enter</button>
+    </div>
+  </div>
+</div>
+
 <!-- Modal: Ítem Otros -->
 <div class="modal" id="modal-otros">
   <div class="modal-content">
@@ -1426,7 +1440,7 @@
     terminos: { titulo: "Términos y Condiciones", html: `
       <p>El uso de LAVAARTE implica la aceptación de estas condiciones en lo aplicable al servicio solicitado.</p>
       <h4>1. Servicio y órdenes</h4><p>El cliente entrega prendas para los servicios seleccionados y debe informar características relevantes que puedan afectar el tratamiento de la prenda. Los precios son los mostrados o acordados en el sistema al momento de la orden.</p>
-      <h4>2. Lavaarte Loyalty</h4><p>En el ciclo correspondiente a la quinta visita puede existir un beneficio. Su aplicación es <strong>opcional</strong> y requiere decisión en el momento de liquidar la orden. Solo puede aplicarse a <strong>una unidad</strong> de una prenda elegible cuyo precio unitario sea de hasta <strong>$8.000 COP</strong>. No se multiplica por cantidad, no se acumula, no se convierte en efectivo y no se divide entre varias prendas.</p>
+      <h4>2. Lavaarte Loyalty</h4><p>Cuando se cumple el requisito de visitas, el sistema aplica automáticamente el beneficio a <strong>una sola unidad</strong> de la primera prenda elegible con precio unitario exacto de <strong>$8.000 COP</strong>. Si se agregan varias unidades de esa prenda, solo una queda gratis y las demás conservan su precio. El beneficio no se multiplica por cantidad, no se acumula, no se convierte en efectivo y no se divide entre varias prendas. Al canjearse, comienza un nuevo ciclo de cinco visitas.</p>
       <h4>3. Domicilios y comunicaciones</h4><p>Las solicitudes de recogida o entrega están sujetas a cobertura, horarios y disponibilidad. Cuando se suministra un celular, puede utilizarse WhatsApp para comunicaciones operativas relacionadas con la orden.</p>
       <h4>4. Proveedores tecnológicos</h4><p>El funcionamiento puede depender de Supabase, infraestructura de alojamiento, WhatsApp y otras APIs o librerías. Una interrupción de un proveedor puede afectar temporalmente funciones digitales sin alterar los registros que ya hayan sido guardados correctamente.</p>
       <h4>5. Inteligencia artificial</h4><p>Algunas herramientas internas pueden utilizar IA para apoyo en voz o automatización. Las decisiones comerciales y operativas finales corresponden a LAVAARTE y al personal autorizado.</p>
@@ -1482,6 +1496,7 @@
 
   let CATALOGO_CENTRAL = [];
   let ticket = [];
+  let ticketPrecioEditarIndice = -1;
   let listaClientes = [];
   let listaHotelesBD = [];
   let ordenesMasterCache = [];
@@ -1544,6 +1559,15 @@
     if (vistaId === "vista-entrega") buscarOrdenesEntrega("");
     if (vistaId === "vista-domicilios-admin") cargarDomiciliosAdmin();
     if (vistaId === "vista-inventario") cargarHistorialInventario();
+    if (vistaId === "vista-pos") {
+      setTimeout(() => {
+        const buscador = document.getElementById('busc-cliente');
+        if (buscador && document.getElementById('vista-pos')?.classList.contains('view-active')) {
+          buscador.focus();
+          buscador.select();
+        }
+      }, 50);
+    }
   }
 
   function cerrarModal(id) {
@@ -1730,7 +1754,7 @@
     try {
       const { data: o } = await db.from("ordenes").select("*, clientes(*), orden_items(*)").eq("id", ordenId).single();
       if (!o) return;
-      poblarPlantillaImpresion(o.consecutivo_ticket, new Date(o.created_at).toLocaleString("es-CO"), o.clientes?.nombre_o_razon || "Particular", o.clientes?.telefono || "-", o.codigo_rastreo, o.orden_items || [], o.observaciones_estado_prendas, o.total_neto, o.abono_inicial || 0, o.saldo_pendiente, o.loyalty_beneficio_aplicado ? "⭐ Beneficio Lavaarte Loyalty aplicado: 1 unidad, máximo $8.000 COP." : "");
+      poblarPlantillaImpresion(o.consecutivo_ticket, new Date(o.created_at).toLocaleString("es-CO"), o.clientes?.nombre_o_razon || "Particular", o.clientes?.telefono || "-", o.codigo_rastreo, o.orden_items || [], o.observaciones_estado_prendas, o.total_neto, o.abono_inicial || 0, o.saldo_pendiente, o.loyalty_beneficio_aplicado ? "⭐ Beneficio Lavaarte Loyalty aplicado: 1 unidad de $8.000 COP con precio $0." : "");
       ordenesImpresionLocal.add(ordenId);
       const resultadoImpresion = await imprimirPlantilla({ orderId: String(ordenId) });
       if (resultadoImpresion?.ok) await db.from("ordenes").update({ impresa: true }).eq("id", ordenId);
@@ -1739,22 +1763,62 @@
   }
 
   async function despacharWhatsApp(telefono, mensajeTexto) {
-    let enviadoServidor = false;
-    try {
-      const resp = await fetch(`${BOT_WHATSAPP_URL}/api/enviar-recibo`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ telefono: telefono, mensaje: mensajeTexto })
-      });
-      const resJson = await resp.json();
-      if (resJson && resJson.ok) enviadoServidor = true;
-    } catch (err) {
-      console.warn("Bot WhatsApp offline temporalmente...");
+    const digits = String(telefono || '').replace(/\D/g, '');
+    const numeroLocal = digits.startsWith('57') && digits.length >= 12 ? digits.slice(-10) : digits;
+    if (numeroLocal.length !== 10) {
+      return { sent: false, automatic: false, error: 'El celular debe contener 10 dígitos válidos.' };
     }
 
-    if (!enviadoServidor) {
-      const urlDirecta = `https://api.whatsapp.com/send?phone=57${telefono.replace(/\D/g, '')}&text=${encodeURIComponent(mensajeTexto)}`;
-      window.open(urlDirecta, "_blank");
+    const fetchConTiempo = async (url, options, timeoutMs) => {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), timeoutMs);
+      try { return await fetch(url, { ...options, signal: controller.signal }); }
+      finally { clearTimeout(timer); }
+    };
+
+    let healthKnown = false;
+    let botConnected = false;
+    let lastError = '';
+    // Render puede tardar en despertar o restablecer la sesión; se consulta su salud
+    // brevemente sin abrir WhatsApp Web ni lanzar una pestaña que exija envío manual.
+    for (let intento = 0; intento < 5; intento++) {
+      try {
+        const healthResp = await fetchConTiempo(`${BOT_WHATSAPP_URL}/api/health`, { method: 'GET', cache: 'no-store' }, intento === 0 ? 50000 : 7000);
+        if (healthResp.status === 404) { healthKnown = false; break; } // compatibilidad con el bot anterior
+        const salud = await healthResp.json().catch(() => ({}));
+        if (healthResp.ok) {
+          healthKnown = true;
+          botConnected = salud?.connected === true;
+          if (botConnected) break;
+          lastError = salud?.status || 'El bot todavía no está conectado a WhatsApp.';
+        } else {
+          lastError = salud?.error || `Estado HTTP ${healthResp.status}`;
+        }
+      } catch (err) {
+        lastError = err?.name === 'AbortError' ? 'Tiempo de espera agotado al conectar con el bot.' : (err?.message || String(err));
+        // Si la salud no está publicada o el servicio está despertando, probar el endpoint real una vez.
+        if (intento === 0) break;
+      }
+      if (intento < 4) await new Promise(resolve => setTimeout(resolve, 1800));
+    }
+
+    // Si el endpoint de salud existe y confirmó que está desconectado, no fingir ni abrir
+    // WhatsApp manualmente. Si el bot antiguo no tiene /api/health, se prueba el envío real.
+    if (healthKnown && !botConnected) {
+      return { sent: false, automatic: false, error: lastError || 'El bot no está conectado a WhatsApp.' };
+    }
+
+    try {
+      const resp = await fetchConTiempo(`${BOT_WHATSAPP_URL}/api/enviar-recibo`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ telefono: numeroLocal, mensaje: mensajeTexto })
+      }, 30000);
+      const resultado = await resp.json().catch(() => ({}));
+      if (resp.ok && resultado?.ok) return { sent: true, automatic: true, messageId: resultado.messageId || null };
+      return { sent: false, automatic: false, error: resultado?.error || `El bot respondió HTTP ${resp.status}.` };
+    } catch (err) {
+      return { sent: false, automatic: false, error: err?.message || 'No se pudo conectar con el bot WhatsApp.' };
     }
   }
 
@@ -1788,6 +1852,15 @@
       el.style.color = i === quickBarIndiceActivo ? "var(--accent)" : "";
       if (i === quickBarIndiceActivo) el.scrollIntoView({block:"nearest"});
     });
+  }
+
+  function quickBarManejarTeclaCantidad(event) {
+    if (event.key !== 'Enter') return;
+    event.preventDefault();
+    const cantidad = document.getElementById('quick-bar-cant');
+    const busqueda = document.getElementById('quick-bar-search');
+    if (cantidad && (!Number.isFinite(Number(cantidad.value)) || Number(cantidad.value) <= 0)) cantidad.value = '1';
+    if (busqueda) { busqueda.focus(); busqueda.select(); }
   }
 
   function quickBarManejarTeclaBusqueda(event) {
@@ -1863,7 +1936,8 @@
     searchInput.value = "";
     priceInput.value = "";
     cantInput.value = "1";
-    searchInput.focus();
+    cantInput.focus();
+    cantInput.select();
   }
 
   function renderCatalogo(filtro) {
@@ -1899,6 +1973,31 @@
     renderTicket();
   }
 
+  function eliminarPrendaTicket(idx) {
+    const item = ticket[idx];
+    if (!item) return;
+    const grupo = item.loyaltyRewardGroup;
+    if (grupo && item.loyaltyFree) {
+      const hermanoPagado = ticket.some((t, i) => i !== idx && t.loyaltyRewardGroup === grupo && !t.loyaltyFree);
+      if (hermanoPagado) {
+        return alert("Esta unidad gratuita Rewards está vinculada a una unidad pagada. Elimina la fila pagada para retirar ambas unidades del carrito.");
+      }
+      ticket.splice(idx, 1);
+      loyaltyBeneficioAplicado = false;
+      loyaltyBeneficioPendiente = true;
+      loyaltyBeneficioMonto = 0;
+    } else if (grupo) {
+      // Si se retira la línea pagada de una cantidad dividida, se retira también la unidad gratis asociada.
+      ticket = ticket.filter(t => t.loyaltyRewardGroup !== grupo);
+      loyaltyBeneficioAplicado = false;
+      loyaltyBeneficioPendiente = true;
+      loyaltyBeneficioMonto = 0;
+    } else {
+      ticket.splice(idx, 1);
+    }
+    renderTicket();
+  }
+
   function cambiarCantidad(idx, delta) {
     ticket[idx].cant = Math.round((ticket[idx].cant + delta) * 100) / 100;
     if (ticket[idx].cant <= 0) ticket.splice(idx, 1);
@@ -1914,14 +2013,47 @@
   }
 
   function editarPrecioTicket(idx) {
-    const nuevo = prompt("Modificar precio unitario ($COP) antes de liquidar para " + ticket[idx].nom + ":", ticket[idx].pre);
-    if (nuevo !== null && !isNaN(nuevo) && Number(nuevo) >= 0) {
-      ticket[idx].pre = Number(nuevo);
-      renderTicket();
+    const item = ticket[idx];
+    if (!item) return;
+    if (item.loyaltyFree || /\s\(Loyalty\)$/i.test(String(item.nom || ''))) {
+      return alert("La unidad cubierta por Lavaarte Rewards conserva precio $0 y no se puede editar. Puedes editar el precio de las unidades pagadas.");
     }
+    ticketPrecioEditarIndice = idx;
+    document.getElementById('ticket-precio-editar-nombre').textContent = `${item.nom} · Cantidad: ${item.cant}`;
+    const input = document.getElementById('ticket-precio-editar-valor');
+    input.value = String(item.pre);
+    abrirModal('modal-editar-precio-ticket');
+    setTimeout(() => { input.focus(); input.select(); }, 40);
   }
 
+  function guardarPrecioTicketEditado() {
+    const idx = ticketPrecioEditarIndice;
+    const input = document.getElementById('ticket-precio-editar-valor');
+    const valor = Number(input?.value);
+    if (idx < 0 || !ticket[idx]) return cerrarModal('modal-editar-precio-ticket');
+    if (!Number.isFinite(valor) || valor < 0) return alert('Ingresa un precio válido, igual o superior a $0.');
+    if (ticket[idx].loyaltyFree || /\s\(Loyalty\)$/i.test(String(ticket[idx].nom || ''))) {
+      ticket[idx].pre = 0;
+      return cerrarModal('modal-editar-precio-ticket');
+    }
+    ticket[idx].pre = Math.round(valor);
+    ticketPrecioEditarIndice = -1;
+    cerrarModal('modal-editar-precio-ticket');
+    renderTicket();
+  }
+
+  document.addEventListener('keydown', function(event) {
+    if (event.key === 'Enter' && document.activeElement?.id === 'ticket-precio-editar-valor') {
+      event.preventDefault();
+      guardarPrecioTicketEditado();
+    }
+  }, true);
+
   function renderTicket() {
+    // La aplicación automática se hace al primer render posterior a agregar una prenda elegible.
+    if (typeof loyaltyBeneficioPendiente !== 'undefined' && loyaltyBeneficioPendiente && !loyaltyBeneficioAplicado) {
+      aplicarBeneficioLoyaltyOpcional();
+    }
     const cont = document.getElementById("ticket-items");
     document.getElementById("group-detalle-kilos").style.display = ticket.some(t => t.cod === 71) ? "flex" : "none";
 
@@ -1943,7 +2075,7 @@
           <strong>${it.nom}</strong>
           <div style="font-size: 11px; color: var(--text-muted);">
             <span style="cursor: pointer; text-decoration: underline;" onclick="editarCantidadDirecta(${idx})">${it.cant} uds/kg</span> x 
-            <span style="cursor: pointer; text-decoration: underline;" onclick="editarPrecioTicket(${idx})">$${it.pre.toLocaleString("es-CO")} (✏️ editar)</span>
+            <button type="button" class="ticket-edit-price" onclick="editarPrecioTicket(${idx})" style="cursor:pointer;text-decoration:underline;border:0;background:transparent;color:var(--accent);padding:0;font:inherit;" ${it.loyaltyFree || /\s\(Loyalty\)$/i.test(String(it.nom || '')) ? 'disabled title="Unidad Rewards gratis: precio protegido"' : ''}>$${it.pre.toLocaleString("es-CO")} (✏️ editar)</button>
           </div>
         </div>
         <div style="display: flex; align-items: center; gap: 4px;">
@@ -1951,7 +2083,7 @@
           <span style="font-weight: bold; min-width: 25px; text-align: center;">${it.cant}</span>
           <button class="btn-qty" onclick="cambiarCantidad(${idx}, 1)">+</button>
           <strong style="color: var(--accent); margin-left: 6px;">$${Math.round(tPre).toLocaleString("es-CO")}</strong>
-          <button class="btn-del" onclick="ticket.splice(${idx}, 1); renderTicket();">×</button>
+          <button class="btn-del" title="Eliminar prenda" onclick="eliminarPrendaTicket(${idx})">×</button>
         </div>
       `;
       cont.appendChild(row);
@@ -2087,7 +2219,16 @@
   function manejarTecladoClientes(event) {
     const box = document.getElementById('drop-clientes');
     const input = document.getElementById('busc-cliente');
-    if (!box || !input || document.activeElement !== input || box.style.display === 'none') return;
+    if (!box || !input || document.activeElement !== input) return;
+    // Cliente es opcional: Intro con el campo vacío permite continuar solo con teclado.
+    if (event.key === 'Enter' && (!input.value.trim() || box.style.display === 'none')) {
+      event.preventDefault();
+      event.stopPropagation();
+      const cantidad = document.getElementById('quick-bar-cant');
+      if (cantidad) { cantidad.focus(); cantidad.select(); }
+      return;
+    }
+    if (box.style.display === 'none') return;
     const opciones = Array.from(box.querySelectorAll('.autocomplete-item'));
     if (!opciones.length) return;
     if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
@@ -2173,6 +2314,14 @@
     document.getElementById("busc-cliente").value = (nom || "") + (tel ? " (" + normalizarTelefonoCliente(tel) + ")" : "");
     document.getElementById("drop-clientes").style.display = "none";
     await verificarFidelizacionCliente(cliId);
+    // Tras seleccionar cliente con Intro/Enter, el siguiente paso es la cantidad.
+    setTimeout(() => {
+      const cantidad = document.getElementById("quick-bar-cant");
+      if (document.getElementById("vista-pos")?.classList.contains("view-active") && cantidad) {
+        cantidad.focus();
+        cantidad.select();
+      }
+    }, 0);
   }
 
   let loyaltyBeneficioAplicado = false;
@@ -2186,16 +2335,19 @@
     const badge = document.getElementById("badge-loyalty");
     if (!cliId) { badge.style.display = "none"; return; }
     try {
-      const { data: cliente, error: cErr } = await db.from("clientes").select("loyalty_beneficio_pendiente").eq("id", cliId).maybeSingle();
+      const { data: cliente, error: cErr } = await db.from("clientes").select("loyalty_beneficio_pendiente, loyalty_beneficio_aplicado_at").eq("id", cliId).maybeSingle();
       if (cErr) throw cErr;
-      const { count, error } = await db.from("ordenes").select("id", { count: 'exact', head: true }).eq("cliente_id", cliId).neq("estado", "ANULADO");
+      let queryVisitas = db.from("ordenes").select("id", { count: 'exact', head: true }).eq("cliente_id", cliId).neq("estado", "ANULADO");
+      // Al canjear Rewards se reinicia el ciclo del cliente; cuentan solo las visitas posteriores al canje.
+      if (cliente?.loyalty_beneficio_aplicado_at) queryVisitas = queryVisitas.gt("created_at", cliente.loyalty_beneficio_aplicado_at);
+      const { count, error } = await queryVisitas;
       if (error) throw error;
       clienteVisitasHistorial = count || 0;
       loyaltyBeneficioPendiente = !!cliente?.loyalty_beneficio_pendiente || (clienteVisitasHistorial % 5 === 4);
       const visitasCiclo = (clienteVisitasHistorial % 5) + 1;
 
       if (loyaltyBeneficioPendiente) {
-        badge.innerHTML = `⭐ <strong>LAVAARTE LOYALTY:</strong> beneficio disponible. Es opcional y cubre <strong>1 sola unidad</strong> de una prenda elegible de hasta <strong>$8.000 COP</strong>.`;
+        badge.innerHTML = `⭐ <strong>LAVAARTE LOYALTY:</strong> beneficio disponible. Se aplica automáticamente a <strong>1 sola unidad</strong> de la primera prenda elegible con precio unitario de <strong>$8.000 COP</strong>.`;
       } else {
         badge.innerHTML = `🎖️ <strong>Lavaarte Loyalty:</strong> Visita #${visitasCiclo} de 5.`;
       }
@@ -2204,26 +2356,41 @@
   }
 
   function aplicarBeneficioLoyaltyOpcional() {
+    // En la versión 1.6.0 el beneficio se aplica sin diálogo en la primera unidad
+    // con precio unitario exacto de $8.000. Nunca pone gratis toda una cantidad.
     if (!loyaltyBeneficioPendiente || loyaltyBeneficioAplicado || ticket.length === 0) return false;
-    const elegibles = ticket.filter(t => Number(t.pre) > 0 && Number(t.pre) <= 8000 && Number(t.cant) >= 1 && ![67,68,69,71,99].includes(Number(t.cod)));
-    if (elegibles.length === 0) return false;
-    const lista = elegibles.map((t,i) => `${i+1}. ${t.nom} — $${Number(t.pre).toLocaleString("es-CO")}`).join("\n");
-    const respuesta = prompt(`⭐ BENEFICIO LAVAARTE LOYALTY\n\nEs opcional. Puedes aplicar GRATIS una sola unidad de una prenda de hasta $8.000 COP.\n\n${lista}\n\nEscribe el número de la prenda o CANCELA para no usarlo:`);
-    if (respuesta === null || String(respuesta).trim().toLowerCase() === "cancela") return false;
-    const idx = parseInt(respuesta, 10) - 1;
-    if (isNaN(idx) || !elegibles[idx]) return alert("Selección no válida.");
-    const elegida = elegibles[idx];
-    const ticketIdx = ticket.indexOf(elegida);
-    if (elegida.cant > 1) {
-      elegida.cant -= 1;
-      ticket.splice(ticketIdx + 1, 0, { cod:elegida.cod, nom:elegida.nom + " (Loyalty)", pre:0, cant:1 });
+    const excluidos = [67, 68, 69, 71, 99];
+    const idx = ticket.findIndex(t =>
+      Number(t.pre) === 8000 && Number(t.cant) >= 1 &&
+      !excluidos.includes(Number(t.cod)) && !t.loyaltyFree &&
+      !/\s\(Loyalty\)$/i.test(String(t.nom || ''))
+    );
+    if (idx < 0) return false;
+
+    const elegida = ticket[idx];
+    const nombreOriginal = String(elegida.nom || '').replace(/\s\(Loyalty\)$/i, '');
+    // Guardar el valor del beneficio antes de poner a cero la unidad gratis.
+    loyaltyBeneficioMonto = 8000;
+    const grupoRewards = `reward-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    elegida.loyaltyRewardGroup = grupoRewards;
+    if (Number(elegida.cant) > 1) {
+      elegida.cant = Number(elegida.cant) - 1;
+      ticket.splice(idx + 1, 0, {
+        cod: elegida.cod,
+        nom: nombreOriginal + ' (Loyalty)',
+        pre: 0,
+        cant: 1,
+        loyaltyFree: true,
+        loyaltyRewardGroup: grupoRewards
+      });
     } else {
+      elegida.nom = nombreOriginal + ' (Loyalty)';
       elegida.pre = 0;
-      elegida.nom = elegida.nom.replace(/ \(Loyalty\)$/i, "") + " (Loyalty)";
+      elegida.cant = 1;
+      elegida.loyaltyFree = true;
     }
     loyaltyBeneficioAplicado = true;
-    loyaltyBeneficioMonto = Number(elegida.pre) || 0;
-    renderTicket();
+    loyaltyBeneficioPendiente = false;
     return true;
   }
 
@@ -2397,10 +2564,10 @@
       if (loyaltyBeneficioAplicado) {
         objetoOrden.loyalty_beneficio_aplicado = true;
         objetoOrden.loyalty_beneficio_monto = Math.min(8000, loyaltyBeneficioMonto);
-        objetoOrden.loyalty_beneficio_detalle = "1 unidad de prenda elegible, máximo $8.000 COP";
+        objetoOrden.loyalty_beneficio_detalle = "Una unidad de la primera prenda elegible de $8.000 COP; solo una unidad gratuita";
       }
 
-      const ordRes = await db.from("ordenes").insert(objetoOrden).select("id, consecutivo_ticket").single();
+      const ordRes = await db.from("ordenes").insert(objetoOrden).select("id, consecutivo_ticket, created_at").single();
       if (ordRes.error) throw ordRes.error;
       const ord = ordRes.data;
       // Evitar que el evento Realtime remoto imprima también la orden creada en esta ventana.
@@ -2414,7 +2581,7 @@
         const cambiosLoyalty = {};
         if (loyaltyBeneficioAplicado) {
           cambiosLoyalty.loyalty_beneficio_pendiente = false;
-          cambiosLoyalty.loyalty_beneficio_aplicado_at = new Date().toISOString();
+          cambiosLoyalty.loyalty_beneficio_aplicado_at = ord.created_at || new Date().toISOString();
         } else if (loyaltyBeneficioPendiente) {
           // Si en la quinta visita no lo usa, queda pendiente para una visita posterior.
           cambiosLoyalty.loyalty_beneficio_pendiente = true;
@@ -2427,7 +2594,7 @@
       }
 
       const textoLoyalty = loyaltyBeneficioAplicado
-        ? "⭐ Beneficio Lavaarte Loyalty aplicado: 1 unidad, máximo $8.000 COP."
+        ? "⭐ Beneficio Lavaarte Loyalty aplicado: 1 unidad de $8.000 COP con precio $0."
         : (loyaltyBeneficioPendiente ? "⭐ Beneficio Lavaarte Loyalty disponible (no aplicado)." : `🎖️ Lavaarte Loyalty: visita ${((clienteVisitasHistorial || 0) % 5) + 1} de 5.`);
 
       const detallePrendasWA = items.map(i => `• ${i.cantidad}x ${i.descripcion_prenda} ($${Number(i.subtotal).toLocaleString("es-CO")})`).join("\n");
@@ -2449,7 +2616,8 @@
         `🔍 Rastreo: ${APP_WEB_URL}\n` +
         `¡Gracias por escogernos!`;
 
-      if (tel) await despacharWhatsApp(tel, mensajeTexto);
+      let estadoWhatsApp = null;
+      if (tel) estadoWhatsApp = await despacharWhatsApp(tel, mensajeTexto);
 
       poblarPlantillaImpresion(ord.consecutivo_ticket, new Date().toLocaleString("es-CO"), nombreWA, tel || "-", codigoRastreo, items, obs, total, abono, saldo, textoLoyalty);
 
@@ -2475,7 +2643,16 @@
       renderTicket();
       precargarClientes();
       chequearCentinela60h();
-      alert(`✅ Orden #${ord.consecutivo_ticket} guardada correctamente.${modoImpresoraHP ? " Impresión enviada al equipo activo." : ""}${tel ? " WhatsApp enviado." : " Sin WhatsApp: no se registró celular."}`);
+      const notaEnvioWA = !tel
+        ? " Sin WhatsApp: no se registró celular."
+        : estadoWhatsApp?.sent && estadoWhatsApp?.automatic
+          ? " Comprobante enviado automáticamente por WhatsApp."
+          : ` No se pudo enviar automáticamente por WhatsApp: ${estadoWhatsApp?.error || "revisa que el bot esté conectado"}.`;
+      alert(`✅ Orden #${ord.consecutivo_ticket} guardada correctamente.${modoImpresoraHP ? " Impresión enviada al equipo activo." : ""}${notaEnvioWA}`);
+      setTimeout(() => {
+        const buscador = document.getElementById('busc-cliente');
+        if (document.getElementById('vista-pos')?.classList.contains('view-active') && buscador) buscador.focus();
+      }, 0);
     } catch (e) {
       alert("Error guardando orden: " + e.message);
     } finally {
@@ -3010,7 +3187,7 @@
     try {
       const { data: o, error } = await db.from("ordenes").select("*, clientes(*), orden_items(*)").eq("id", ordenId).single();
       if (error || !o) throw error || new Error("No se encontró la orden.");
-      poblarPlantillaImpresion(o.consecutivo_ticket, new Date(o.created_at).toLocaleString("es-CO"), o.clientes?.nombre_o_razon || "Particular", o.clientes?.telefono || "-", o.codigo_rastreo, o.orden_items || [], o.observaciones_estado_prendas, o.total_neto, o.abono_inicial || 0, o.saldo_pendiente, o.loyalty_beneficio_aplicado ? "⭐ Beneficio Lavaarte Loyalty aplicado: 1 unidad, máximo $8.000 COP." : "");
+      poblarPlantillaImpresion(o.consecutivo_ticket, new Date(o.created_at).toLocaleString("es-CO"), o.clientes?.nombre_o_razon || "Particular", o.clientes?.telefono || "-", o.codigo_rastreo, o.orden_items || [], o.observaciones_estado_prendas, o.total_neto, o.abono_inicial || 0, o.saldo_pendiente, o.loyalty_beneficio_aplicado ? "⭐ Beneficio Lavaarte Loyalty aplicado: 1 unidad de $8.000 COP con precio $0." : "");
       await imprimirPlantilla({ orderId: `reprint-acople-${o.id}-${Date.now()}`, acopladora: true, force: true });
     } catch (e) { console.error("Error reimprimiendo copia acopladora:", e); alert("No se pudo reimprimir la copia: " + (e.message || e)); }
   }
@@ -4100,7 +4277,7 @@
   const versionNode = document.getElementById('lavaarte-version');
   if (versionNode && window.electronAPI && typeof window.electronAPI.getAppInfo === 'function') {
     window.electronAPI.getAppInfo().then(info => {
-      if (info && info.version) versionNode.textContent = 'Desktop v' + info.version + ' · Web UI v1.5.0';
+      if (info && info.version) versionNode.textContent = 'Desktop v' + info.version + ' · Web UI v1.6.0';
     }).catch(() => {});
   }
 
@@ -4190,7 +4367,7 @@
 
 
 <style>
-/* LAVAARTE OS 1.5.0 — refinamiento visual transversal web, escritorio y móvil.
+/* LAVAARTE OS 1.6.0 — refinamiento visual transversal web, escritorio y móvil.
    Importante: la paleta clara solo se aplica en modo claro; oscuro conserva el azul original y texto blanco. */
 :root[data-theme="light"]{--bg-main:#f3f6fb;--bg-card:#ffffff;--bg-input:#f8fafc;--border:#dce4ef;--primary:#123b66;--primary-hover:#0d2d50;--accent:#1769aa;--success:#16845b;--danger:#c83b48;--warning:#a66a09;--text:#172b45;--text-muted:#64748b;color-scheme:light}
 :root[data-theme="dark"]{--bg-main:#0b0f19;--bg-card:#111827;--bg-input:#1e293b;--border:#334155;--primary:#0284c7;--primary-hover:#0369a1;--accent:#38bdf8;--success:#10b981;--danger:#ef4444;--warning:#f59e0b;--text:#f8fafc;--text-muted:#94a3b8;color-scheme:dark}
@@ -4324,7 +4501,7 @@ button:hover{filter:brightness(1.04)}
 </script>
 
 <style id="lavaarte-156-arqueo-layout">
-/* LAVAARTE OS 1.5.6 — áreas amplias y desplazables para el arqueo.
+/* LAVAARTE OS 1.6.0 — áreas amplias y desplazables para el arqueo.
    Reglas de presentación únicamente: se conserva la lógica funcional de 1.5.5. */
 #modal-arqueo .modal-content {
   width: min(1120px, 96vw) !important;
@@ -4441,6 +4618,67 @@ button:hover{filter:brightness(1.04)}
     height: 20vh;
     max-height: 20vh !important;
   }
+}
+</style>
+
+
+<style id="lavaarte-160-final-ui">
+/* LAVAARTE OS 1.6.0: paneles financieros y de auditoría amplios, desplazables y responsivos. */
+#modal-arqueo .modal-content {
+  width: min(1240px, 97vw) !important;
+  max-width: 97vw !important;
+  height: min(94dvh, 1080px);
+  min-height: 88dvh;
+  max-height: 96dvh !important;
+  overflow-y: auto !important;
+  overscroll-behavior: contain;
+}
+#modal-arqueo .arqueo-scroll-panel {
+  overflow: auto !important;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+#modal-arqueo #arqueo-detalle-ordenes-scroll {
+  height: clamp(380px, 48vh, 600px) !important;
+  min-height: 380px;
+  max-height: 62vh !important;
+}
+#modal-arqueo #arqueo-desglose-gastos-scroll {
+  height: clamp(300px, 40vh, 470px) !important;
+  min-height: 300px;
+  max-height: 52vh !important;
+}
+#modal-arqueo #arqueo-centinela-bloque {
+  height: clamp(280px, 36vh, 430px) !important;
+  min-height: 280px;
+  max-height: 46vh !important;
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  font-size: 14px !important;
+  line-height: 1.65;
+}
+#modal-arqueo #arqueo-detalle-ordenes-scroll .data-table { min-width: 920px; }
+#modal-arqueo #arqueo-desglose-gastos-scroll .data-table { min-width: 620px; }
+#modal-arqueo .arqueo-scroll-panel .data-table th,
+#modal-arqueo .arqueo-scroll-panel .data-table td { padding: 12px 14px; }
+#ticket-precio-editar-valor { font-size: 22px; min-height: 52px; font-weight: 700; }
+.ticket-edit-price:disabled { opacity: .65; cursor: not-allowed !important; text-decoration: none !important; }
+@media(max-width:760px) {
+  #modal-arqueo .modal-content { width: 97vw !important; max-width:97vw !important; height:94dvh; min-height:90dvh; max-height:96dvh !important; padding:12px !important; }
+  #modal-arqueo #arqueo-detalle-ordenes-scroll { height:42dvh !important; min-height:260px; max-height:48dvh !important; }
+  #modal-arqueo #arqueo-desglose-gastos-scroll { height:34dvh !important; min-height:220px; max-height:40dvh !important; }
+  #modal-arqueo #arqueo-centinela-bloque { height:32dvh !important; min-height:200px; max-height:38dvh !important; }
+  #modal-arqueo #arqueo-detalle-ordenes-scroll .data-table { min-width:850px; }
+  #modal-arqueo #arqueo-desglose-gastos-scroll .data-table { min-width:560px; }
+  #modal-editar-precio-ticket .modal-content { width:94vw !important; }
+}
+@media (min-width:761px) and (max-height:760px) {
+  #modal-arqueo .modal-content { height:95dvh; min-height:0; }
+  #modal-arqueo #arqueo-detalle-ordenes-scroll { height:42vh !important; min-height:280px; }
+  #modal-arqueo #arqueo-desglose-gastos-scroll { height:34vh !important; min-height:220px; }
+  #modal-arqueo #arqueo-centinela-bloque { height:30vh !important; min-height:180px; }
 }
 </style>
 
