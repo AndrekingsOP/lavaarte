@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>LAVAARTE OS 1.6.0 - El Arte de Lavar</title>
+<title>LAVAARTE OS 1.6.5 - El Arte de Lavar</title>
 <meta name="theme-color" content="#0284c7">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -28,6 +28,8 @@
 
   .topbar { background: var(--bg-card); padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); flex-wrap: wrap; gap: 8px; }
   .brand { font-size: 18px; font-weight: 800; color: var(--accent); display: flex; align-items: center; gap: 8px; cursor: pointer; }
+  .cys-brand-logo { width: 104px; height: 45px; object-fit: contain; flex: 0 0 auto; border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,.18); }
+  @media (max-width: 1180px) { .cys-brand-logo { width: 88px; height: 38px; } }
   .nav-btn { background: var(--bg-input); border: 1px solid var(--border); color: var(--text); padding: 8px 14px; border-radius: 6px; font-size: 13px; font-weight: bold; cursor: pointer; }
   .nav-btn:hover { border-color: var(--accent); }
 
@@ -354,8 +356,9 @@
 
 <div class="topbar">
   <div class="brand" onclick="mostrarVista('vista-home')">
+    <img class="cys-brand-logo" src="assets/cys-soluciones.jpg" alt="CyS Soluciones" title="CyS Soluciones · Ecosistema LAVAARTE">
     🧺 Lavaarte <span>| Sistema Integral</span>
-    <span id="lavaarte-version" title="Versión de LAVAARTE OS" style="display:inline-flex;align-items:center;margin-left:8px;padding:3px 7px;border:1px solid var(--border);border-radius:6px;font-size:10px;font-weight:600;color:var(--text-muted);vertical-align:middle;">OS v1.6.0</span>
+    <span id="lavaarte-version" title="Versión de LAVAARTE OS" style="display:inline-flex;align-items:center;margin-left:8px;padding:3px 7px;border:1px solid var(--border);border-radius:6px;font-size:10px;font-weight:600;color:var(--text-muted);vertical-align:middle;">OS v1.6.5</span>
   </div>
   <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
     <button class="nav-btn theme-toggle" id="btn-theme-toggle" type="button" onclick="toggleTemaLavaarte()" aria-label="Cambiar tema">☀️ <span class="theme-label">Modo claro</span></button>
@@ -1410,7 +1413,7 @@
   </div>
 </div>
 <script>
-  const BOT_WHATSAPP_URL = "https://bot-lavaarte-whatsapp.onrender.com";
+  const BOT_WHATSAPP_URL = "https://bot-lavaarte-whatsapp-3s8p.onrender.com";
   const APP_WEB_URL = "https://lavaarte-software.onrender.com";
 
   const SUPABASE_URL = "https://biumkyjjavpfgfishvzp.supabase.co";
@@ -2517,6 +2520,7 @@
     if (ordenGuardando) return;
     if (ticket.length === 0) return alert("El ticket está vacío.");
     ordenGuardando = true;
+    mostrarNotificacionLavaarte("Registrando la orden… la impresión se iniciará en cuanto termine el guardado.");
     const botonGenerar = document.getElementById("btn-generar-orden");
     if (botonGenerar) { botonGenerar.disabled = true; botonGenerar.textContent = "GENERANDO…"; }
     const nom = document.getElementById("pos-cli-nom").value.trim().replace(/\s+/g, " ");
@@ -2616,9 +2620,6 @@
         `🔍 Rastreo: ${APP_WEB_URL}\n` +
         `¡Gracias por escogernos!`;
 
-      let estadoWhatsApp = null;
-      if (tel) estadoWhatsApp = await despacharWhatsApp(tel, mensajeTexto);
-
       poblarPlantillaImpresion(ord.consecutivo_ticket, new Date().toLocaleString("es-CO"), nombreWA, tel || "-", codigoRastreo, items, obs, total, abono, saldo, textoLoyalty);
 
       if (modoImpresoraHP) {
@@ -2645,10 +2646,21 @@
       chequearCentinela60h();
       const notaEnvioWA = !tel
         ? " Sin WhatsApp: no se registró celular."
-        : estadoWhatsApp?.sent && estadoWhatsApp?.automatic
-          ? " Comprobante enviado automáticamente por WhatsApp."
-          : ` No se pudo enviar automáticamente por WhatsApp: ${estadoWhatsApp?.error || "revisa que el bot esté conectado"}.`;
+        : " El comprobante de WhatsApp se enviará en segundo plano.";
       alert(`✅ Orden #${ord.consecutivo_ticket} guardada correctamente.${modoImpresoraHP ? " Impresión enviada al equipo activo." : ""}${notaEnvioWA}`);
+      if (tel) {
+        // El envío empieza después de la impresión; una espera de Render o del bot no
+        // debe hacer que el usuario dude de F12 ni retrasar la salida del recibo.
+        Promise.resolve().then(() => despacharWhatsApp(tel, mensajeTexto)).then(estadoWhatsApp => {
+          if (estadoWhatsApp?.sent && estadoWhatsApp?.automatic) {
+            mostrarNotificacionLavaarte(`✅ Comprobante de la orden #${ord.consecutivo_ticket} enviado automáticamente por WhatsApp.`);
+          } else {
+            mostrarNotificacionLavaarte(`⚠️ Orden #${ord.consecutivo_ticket} guardada, pero WhatsApp no pudo enviar el comprobante: ${estadoWhatsApp?.error || "revisa que el bot esté conectado"}.`);
+          }
+        }).catch(error => {
+          mostrarNotificacionLavaarte(`⚠️ Orden #${ord.consecutivo_ticket} guardada, pero no se pudo confirmar WhatsApp: ${error?.message || "error de conexión"}.`);
+        });
+      }
       setTimeout(() => {
         const buscador = document.getElementById('busc-cliente');
         if (document.getElementById('vista-pos')?.classList.contains('view-active') && buscador) buscador.focus();
@@ -4277,7 +4289,7 @@
   const versionNode = document.getElementById('lavaarte-version');
   if (versionNode && window.electronAPI && typeof window.electronAPI.getAppInfo === 'function') {
     window.electronAPI.getAppInfo().then(info => {
-      if (info && info.version) versionNode.textContent = 'Desktop v' + info.version + ' · Web UI v1.6.0';
+      if (info && info.version) versionNode.textContent = 'Desktop v' + info.version + ' · Web UI v1.6.5';
     }).catch(() => {});
   }
 
