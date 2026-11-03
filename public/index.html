@@ -1146,8 +1146,8 @@
 <div class="modal" id="modal-admin-auth">
   <div class="modal-content" style="width: 380px; text-align: center;">
     <h3 id="auth-modal-title" style="color: var(--warning);">🔒 Acceso Protegido</h3>
-    <p id="auth-modal-desc" style="font-size: 13px; color: var(--text-muted);">Ingresa tu PIN de seguridad:</p>
-    <input type="password" id="admin-pin" class="input-text" style="font-size: 24px; text-align: center; letter-spacing: 6px;" maxlength="32" inputmode="numeric" pattern="[0-9]*" autocomplete="off" aria-label="Código numérico de ingreso" placeholder="Código de ingreso"><div id="pin-feedback" role="status" aria-live="polite" style="min-height:18px;font-size:12px;color:var(--danger);"></div>
+    <p id="auth-modal-desc" style="font-size: 13px; color: var(--text-muted);">Ingresa tu código personal y presiona Enter.</p>
+    <input type="password" id="admin-pin" class="input-text" style="font-size: 24px; text-align: center; letter-spacing: 6px;" maxlength="32" inputmode="numeric" pattern="[0-9]*" autocomplete="off" aria-label="Código numérico de ingreso" placeholder=""><div id="pin-feedback" role="status" aria-live="polite" style="min-height:18px;font-size:12px;color:var(--danger);"></div>
     <button class="btn-primary" onclick="validarPinSeguro()">Entrar</button>
     <button class="nav-btn" onclick="cerrarModal('modal-admin-auth')">Cancelar</button>
   </div>
@@ -3482,12 +3482,12 @@
     destinoPinAdmin = destino;
     const campo = document.getElementById('admin-pin');
     document.getElementById('auth-modal-title').textContent = '🔐 Ingreso a LAVAARTE';
-    document.getElementById('auth-modal-desc').textContent = 'Ingresa tu código personal y pulsa Enter. Puede tener la cantidad de dígitos que te asignó el administrador.';
+    document.getElementById('auth-modal-desc').textContent = 'Ingresa tu código personal y presiona Enter.';
     campo.value = '';
     campo.maxLength = 32;
     campo.dataset.authMode = 'login';
     campo.setAttribute('aria-label','Código numérico de ingreso');
-    campo.placeholder = 'Código de ingreso';
+    campo.placeholder = '';
     document.getElementById('pin-feedback').textContent = '';
     abrirModal('modal-admin-auth');
     setTimeout(() => { if (campo) { campo.focus(); campo.select(); } }, 30);
@@ -3676,16 +3676,33 @@
     const perfil = adminPerfilesIngresoCache.find(p => String(p.id) === String(id));
     if (!perfil) return;
     const nuevoEstado = perfil.estado === 'habilitado' ? 'inhabilitado' : 'habilitado';
-    const mensaje = nuevoEstado === 'inhabilitado'
-      ? `¿Inhabilitar el código de ${perfil.nombre}? El empleado no podrá volver a ingresar y las sesiones abiertas se cerrarán al revalidarse.`
-      : `¿Habilitar nuevamente el código de ${perfil.nombre}? Podrá ingresar desde los dispositivos conectados.`;
-    if (!confirm(mensaje)) return;
-    const { error } = await db.rpc('lavaarte_actualizar_perfil_ingreso', {
-      p_admin_pin: pinAdminActual, p_id: perfil.id, p_nombre: perfil.nombre, p_estado: nuevoEstado, p_codigo: null
-    });
-    if (error) return mensajePerfilesIngreso('No se pudo cambiar el estado: ' + error.message, true);
-    await adminCargarPerfilesIngreso();
-    mensajePerfilesIngreso(`Perfil ${nuevoEstado}. La actualización ya está guardada en Supabase.`);
+    const boton = Array.from(document.querySelectorAll('[data-toggle-profile]'))
+      .find(el => String(el.dataset.toggleProfile) === String(id));
+    const textoOriginal = boton ? boton.textContent : '';
+    if (boton) { boton.disabled = true; boton.textContent = 'Actualizando…'; }
+
+    try {
+      // El cambio es inmediato: no se utiliza confirm() nativo porque bloquea toda la interfaz.
+      const { error } = await db.rpc('lavaarte_actualizar_perfil_ingreso', {
+        p_admin_pin: pinAdminActual, p_id: perfil.id, p_nombre: perfil.nombre, p_estado: nuevoEstado, p_codigo: null
+      });
+      if (error) throw error;
+      await adminCargarPerfilesIngreso();
+      if (typeof window.mostrarNotificacionLavaarte === 'function') {
+        window.mostrarNotificacionLavaarte(
+          nuevoEstado === 'inhabilitado'
+            ? `✅ ${perfil.nombre} quedó inhabilitado. Ya no podrá iniciar nuevas sesiones.`
+            : `✅ ${perfil.nombre} quedó habilitado y puede ingresar desde los dispositivos conectados.`
+        );
+      }
+    } catch (error) {
+      if (boton) { boton.disabled = false; boton.textContent = textoOriginal; }
+      if (typeof window.mostrarNotificacionLavaarte === 'function') {
+        window.mostrarNotificacionLavaarte(`No se pudo cambiar el estado de ${perfil.nombre}: ${error.message || error}`);
+      } else {
+        mensajePerfilesIngreso('No se pudo cambiar el estado: ' + (error.message || error), true);
+      }
+    }
   }
 
   // Enter activa Buscar/Aceptar en paneles de consulta sin interferir con selects, PIN ni textos largos.
