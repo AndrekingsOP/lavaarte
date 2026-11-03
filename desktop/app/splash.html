@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; media-src 'self' file:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline';">
+  <title>LAVAARTE OS</title>
+  <style>
+    * { box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; background: #05080e; }
+    body { display: grid; place-items: center; }
+    video { display: block; width: 100%; height: 100%; object-fit: contain; background: #05080e; }
+    .fallback { position: absolute; inset: 0; display: none; place-items: center; align-content: center; gap: 18px; color: #f8fafc; font-family: Segoe UI, Arial, sans-serif; font-size: 18px; letter-spacing: .08em; text-align: center; background: radial-gradient(circle at center, #151b27 0%, #05080e 70%); }
+    .fallback img { display:block; width:min(260px,52vw); max-height:150px; object-fit:contain; filter:drop-shadow(0 10px 24px rgba(0,0,0,.6)); }
+    .fallback .fallback-title { font-size:clamp(24px,4vw,42px); font-weight:850; letter-spacing:.1em; }
+    .fallback .fallback-title span { color:#38bdf8; }
+    .fallback .fallback-slogan { font-size:clamp(12px,1.6vw,17px); color:#cbd5e1; letter-spacing:.18em; }
+  </style>
+</head>
+<body>
+  <video id="intro" autoplay muted playsinline preload="auto">
+    <source src="assets/lavaarte-intro.mp4" type="video/mp4">
+  </video>
+  <div class="fallback" id="intro-fallback" aria-live="polite">
+    <img src="assets/cys-soluciones.jpg" alt="CyS Soluciones">
+    <div class="fallback-title">LAVA<span>ARTE</span> OS</div>
+    <div class="fallback-slogan">EL ARTE DE LAVAR</div>
+  </div>
+  <script>
+    const intro = document.getElementById('intro');
+    const fallback = document.getElementById('intro-fallback');
+    let completed = false;
+    let fallbackTimer = null;
+    let fallbackShown = false;
+    function finishIntro() {
+      if (completed) return;
+      completed = true;
+      if (fallbackTimer) clearTimeout(fallbackTimer);
+      try { window.electronAPI?.finishSplash?.(); } catch (_) {}
+    }
+    function showFallback() {
+      if (completed || fallbackShown) return;
+      fallbackShown = true;
+      intro.style.display = 'none';
+      fallback.style.display = 'grid';
+      // Si el decodificador de vídeo falla, mantener la bienvenida estática visible unos segundos.
+      fallbackTimer = setTimeout(finishIntro, 3200);
+    }
+    intro.addEventListener('ended', finishIntro, { once: true });
+    intro.addEventListener('error', showFallback, { once: true });
+    const playback = intro.play();
+    if (playback && typeof playback.catch === 'function') playback.catch(showFallback);
+    // Fallback final si ni ended ni error ocurren por un problema del códec.
+    setTimeout(() => { if (!completed && intro.readyState < 2) showFallback(); }, 1200);
+    window.addEventListener('keydown', event => { if (event.key === 'Escape') finishIntro(); });
+  </script>
+</body>
+</html>
