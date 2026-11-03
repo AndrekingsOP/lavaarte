@@ -3,14 +3,42 @@ const path = require('node:path');
 const fs = require('node:fs');
 const { autoUpdater } = require('electron-updater');
 
+// Permite la reproducción automática del vídeo local de bienvenida (está silenciado).
+app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required');
+
 const APP_NAME = 'LAVAARTE OS';
 const MAIN_FILE = path.join(__dirname, 'app', 'index.html');
 const PRINTER_FILE = path.join(__dirname, 'printer-settings.html');
+const SPLASH_FILE = path.join(__dirname, 'app', 'splash.html');
 const CONFIG_FILE = path.join(app.getPath('userData'), 'config.json');
 
 let mainWindow = null;
 let printerWindow = null;
+let splashWindow = null;
+let mainWindowReady = false;
+let splashFinished = false;
+let splashFallbackTimer = null;
+let shouldOpenPrinterSettingsOnStart = false;
+let printerSettingsStartupScheduled = false;
 let printQueue = Promise.resolve();
+
+// LAVAARTE OS 1.6.0: una sola instancia por usuario/equipo.
+const singleInstanceLock = app.requestSingleInstanceLock();
+if (!singleInstanceLock) {
+  app.quit();
+} else {
+  app.on('second-instance', () => {
+    const target = splashWindow && !splashWindow.isDestroyed()
+      ? splashWindow
+      : (printerWindow && !printerWindow.isDestroyed() ? printerWindow : mainWindow);
+    if (!target || target.isDestroyed()) return;
+    if (target.isMinimized()) target.restore();
+    target.show();
+    target.focus();
+    target.moveTop();
+  });
+}
+
 
 function defaultConfig() {
   return { selectedPrinter: '', autostart: true, version: 1 };
@@ -72,6 +100,63 @@ function buildPrinterStatus() {
   }));
 }
 
+function revealMainWindowIfReady() {
+  if (!mainWindowReady || !splashFinished || !mainWindow || mainWindow.isDestroyed()) return;
+  if (mainWindow.isMinimized()) mainWindow.restore();
+  if (!mainWindow.isVisible()) mainWindow.show();
+  mainWindow.focus();
+
+  if (shouldOpenPrinterSettingsOnStart && !printerSettingsStartupScheduled) {
+    printerSettingsStartupScheduled = true;
+    setTimeout(() => {
+      if (mainWindow && !mainWindow.isDestroyed() && !printerWindow) openPrinterSettings();
+    }, 700);
+  }
+}
+
+function finishSplash() {
+  if (splashFinished) return;
+  splashFinished = true;
+  if (splashFallbackTimer) { clearTimeout(splashFallbackTimer); splashFallbackTimer = null; }
+  if (splashWindow && !splashWindow.isDestroyed()) splashWindow.close();
+  splashWindow = null;
+  revealMainWindowIfReady();
+}
+
+ipcMain.on('finish-splash', finishSplash);
+
+function createSplashWindow() {
+  splashWindow = new BrowserWindow({
+    width: 1000,
+    height: 562,
+    resizable: false,
+    maximizable: false,
+    minimizable: false,
+    center: true,
+    frame: false,
+    show: false,
+    skipTaskbar: true,
+    alwaysOnTop: true,
+    backgroundColor: '#05080e',
+    title: 'LAVAARTE OS',
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.js'),
+      contextIsolation: true,
+      nodeIntegration: false,
+      sandbox: false
+    }
+  });
+
+  splashWindow.loadFile(SPLASH_FILE);
+  splashWindow.once('ready-to-show', () => {
+    if (splashWindow && !splashWindow.isDestroyed()) splashWindow.show();
+    // Failsafe in case autoplay or a media decoder fails on this machine.
+    splashFallbackTimer = setTimeout(finishSplash, 6500);
+  });
+  splashWindow.webContents.on('did-fail-load', () => finishSplash());
+  splashWindow.on('closed', () => { splashWindow = null; });
+}
+
 function createMainWindow() {
   mainWindow = new BrowserWindow({
     width: 1440,
@@ -93,8 +178,8 @@ function createMainWindow() {
   mainWindow.loadFile(MAIN_FILE);
 
   mainWindow.once('ready-to-show', () => {
-    mainWindow.show();
-    mainWindow.focus();
+    mainWindowReady = true;
+    revealMainWindowIfReady();
   });
 
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
@@ -189,9 +274,11 @@ function performPrint() {
 }
 
 ipcMain.handle('print-ticket', async () => {
-  printQueue = printQueue.then(() => performPrint());
+  const task = printQueue.catch(() => undefined).then(() => performPrint());
+  // La cola queda recuperable incluso si una impresión falla.
+  printQueue = task.catch(() => undefined);
   try {
-    return await printQueue;
+    return await task;
   } catch (error) {
     console.error('[LAVAARTE] Error de impresión:', error);
     return { ok: false, error: error.message };
@@ -275,15 +362,18 @@ async function checkForUpdates(manual = false) {
 }
 
 app.whenReady().then(() => {
+  if (!singleInstanceLock) return;
   const config = readConfig();
   configureAutostart(config.autostart !== false);
   configureAutoUpdater();
+  createSplashWindow();
   createMainWindow();
   createMenu();
 
   if (!config.selectedPrinter) {
     mainWindow.webContents.once('did-finish-load', () => {
-      setTimeout(openPrinterSettings, 700);
+      shouldOpenPrinterSettingsOnStart = true;
+      revealMainWindowIfReady();
     });
   }
 
