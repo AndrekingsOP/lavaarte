@@ -1,7 +1,7 @@
 {
   "name": "software-lavaarte",
-  "version": "1.0.0",
-  "description": "Lavaarte OS - Sistema Web de Mostrador y Operaciones",
+  "version": "1.7.0",
+  "description": "Lavaarte OS - Sistema operativo de lavandería conectado al control de licencias CyS Soluciones",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
