@@ -3,9 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>LAVAARTE OS 1.6.5 - El Arte de Lavar</title>
+<title>LAVAARTE OS 1.7.0 - El Arte de Lavar</title>
 <meta name="theme-color" content="#0284c7">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="cys-master-config.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
   :root {
@@ -351,6 +352,28 @@
   @media (prefers-reduced-motion: reduce) { .lavaarte-notification { animation: none; } }
 
 </style>
+<style id="cys-master-license-style">
+
+/* CyS Master licensing overlay — 1.7.0 */
+#cys-master-lock-screen { display:none; position:fixed; inset:0; z-index:2147483647; align-items:center; justify-content:center; padding:24px; background:rgba(4,7,12,.97); color:#f8fafc; font-family:Segoe UI,system-ui,sans-serif; text-align:center; user-select:none; }
+#cys-master-lock-screen .cys-lock-card { width:min(460px,100%); padding:34px 26px; border:1px solid #303744; border-radius:20px; background:linear-gradient(145deg,#161920,#0e1117); box-shadow:0 25px 60px rgba(0,0,0,.7); }
+#cys-master-lock-screen .cys-lock-brand { color:#60a5fa; font-size:10px; font-weight:800; letter-spacing:.22em; text-transform:uppercase; margin-bottom:14px; }
+#cys-master-lock-screen .cys-lock-icon { font-size:42px; margin-bottom:10px; }
+#cys-master-lock-screen h2 { color:#f87171; font-size:21px; font-weight:800; margin:0 0 12px; }
+#cys-master-lock-screen p { color:#d1d5db; font-size:14px; line-height:1.65; margin:0 0 24px; }
+#cys-master-lock-screen button { color:white; background:#2563eb; border:0; border-radius:9px; padding:11px 18px; font-size:13px; font-weight:700; cursor:pointer; }
+#cys-master-lock-screen button:hover { background:#1d4ed8; }
+#cys-master-lock-screen .cys-lock-footer { margin-top:20px; padding-top:14px; border-top:1px solid #242a34; color:#788292; font:11px monospace; }
+#cys-license-status { display:inline-flex; align-items:center; white-space:nowrap; padding:3px 7px; border:1px solid var(--border); border-radius:6px; font-size:10px; font-weight:700; color:var(--text-muted); }
+
+</style>
+<style id="lavaarte-employee-session-style">
+.lavaarte-session-badge{position:fixed;right:16px;bottom:14px;z-index:9000;display:flex;align-items:center;gap:10px;max-width:calc(100vw - 24px);padding:9px 12px;border:1px solid var(--border);border-radius:12px;background:var(--bg-card);color:var(--text);box-shadow:0 8px 28px rgba(0,0,0,.24);font-size:12px}
+.lavaarte-session-badge strong{color:var(--accent)}
+.lavaarte-session-badge button{border:0;border-radius:7px;padding:6px 9px;background:var(--primary);color:#fff;font-weight:700;cursor:pointer}
+#modal-admin-master .perfil-action-btn{padding:5px 8px;font-size:11px;white-space:nowrap}
+@media(max-width:600px){.lavaarte-session-badge{right:8px;bottom:8px;font-size:11px;padding:7px 9px}.lavaarte-session-badge button{padding:5px 7px}}
+</style>
 </head>
 <body>
 
@@ -358,7 +381,8 @@
   <div class="brand" onclick="mostrarVista('vista-home')">
     <img class="cys-brand-logo" src="assets/cys-soluciones.jpg" alt="CyS Soluciones" title="CyS Soluciones · Ecosistema LAVAARTE">
     🧺 Lavaarte <span>| Sistema Integral</span>
-    <span id="lavaarte-version" title="Versión de LAVAARTE OS" style="display:inline-flex;align-items:center;margin-left:8px;padding:3px 7px;border:1px solid var(--border);border-radius:6px;font-size:10px;font-weight:600;color:var(--text-muted);vertical-align:middle;">OS v1.6.5</span>
+    <span id="lavaarte-version" title="Versión de LAVAARTE OS" style="display:inline-flex;align-items:center;margin-left:8px;padding:3px 7px;border:1px solid var(--border);border-radius:6px;font-size:10px;font-weight:600;color:var(--text-muted);vertical-align:middle;">OS v1.7.0</span>
+    <span id="cys-license-status" title="Estado de licencia CyS Master" style="display:inline-flex;align-items:center;margin-left:5px;padding:3px 7px;border:1px solid var(--border);border-radius:6px;font-size:10px;font-weight:600;color:var(--text-muted);vertical-align:middle;">CyS · pendiente</span>
   </div>
   <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
     <button class="nav-btn theme-toggle" id="btn-theme-toggle" type="button" onclick="toggleTemaLavaarte()" aria-label="Cambiar tema">☀️ <span class="theme-label">Modo claro</span></button>
@@ -427,61 +451,61 @@
     </div>
 
     <div class="dash-grid">
-      <div class="dash-card" onclick="mostrarVista('vista-pos')">
+      <div class="dash-card" data-panel="1" onclick="mostrarVista('vista-pos')">
         <span style="font-size: 32px;">📥</span>
         <h3>1. Ingreso de Prendas</h3>
         <p>Búsqueda rápida para PC, voz inteligente, kilos y fidelización</p>
       </div>
 
-      <div class="dash-card" onclick="mostrarVista('vista-alistar')">
+      <div class="dash-card" data-panel="2" onclick="mostrarVista('vista-alistar')">
         <span style="font-size: 32px;">🧺</span>
         <h3>2. Alistar Ropa (Planta)</h3>
         <p>Marcar listo manualmente o dictando "Orden [Número] lista"</p>
       </div>
 
-      <div class="dash-card" onclick="mostrarVista('vista-entrega')">
+      <div class="dash-card" data-panel="3" onclick="mostrarVista('vista-entrega')">
         <span style="font-size: 32px;">🤝</span>
         <h3>3. Entregar Prendas</h3>
         <p>Liquidación interactiva (Efectivo, Nequi, Daviplata, Datáfono)</p>
       </div>
 
-      <div class="dash-card" onclick="mostrarVista('vista-egresos')">
+      <div class="dash-card" data-panel="4" onclick="mostrarVista('vista-egresos')">
         <span style="font-size: 32px;">💸</span>
         <h3>4. Salidas de Efectivo</h3>
         <p>Gastos de caja menor (Responsable obligatorio)</p>
       </div>
 
-      <div class="dash-card" onclick="pedirClaveSegura('modal-arqueo')">
+      <div class="dash-card" data-panel="5" onclick="pedirClaveSegura('modal-arqueo')">
         <span style="font-size: 32px;">📊</span>
         <h3>5. Arqueo Diario de Caja 🔒</h3>
         <p>Cierre diario desglosado con diseño profesional</p>
       </div>
 
-      <div class="dash-card" onclick="pedirClaveSegura('modal-admin-panel')">
+      <div class="dash-card" data-panel="6" onclick="pedirClaveSegura('modal-admin-panel')">
         <span style="font-size: 32px;">🔒</span>
         <h3>6. Anulación Rápida 🔒</h3>
         <p>Control administrativo para anular en tiempo real</p>
       </div>
 
-      <div class="dash-card" onclick="mostrarVista('vista-domicilios-admin')">
+      <div class="dash-card" data-panel="7" onclick="mostrarVista('vista-domicilios-admin')">
         <span style="font-size: 32px;">🛵</span>
         <h3>7. Domicilios y Rutas</h3>
         <p>Pedidos en tiempo real de clientes y hoteles</p>
       </div>
 
-      <div class="dash-card" onclick="abrirVistaBusquedas()">
+      <div class="dash-card" data-panel="8" onclick="abrirVistaBusquedas()">
         <span style="font-size: 32px;">🔍</span>
         <h3>8. Búsquedas y Auditoría</h3>
         <p>Consultar órdenes por ticket, teléfono o cliente e historial completo</p>
       </div>
 
-      <div class="dash-card" style="border-color: var(--warning);" onclick="pedirClaveSegura('modal-admin-master')">
+      <div class="dash-card" data-panel="9" style="border-color: var(--warning);" onclick="pedirClaveSegura('modal-admin-master')">
         <span style="font-size: 32px;">⚡</span>
         <h3 style="color: var(--warning);">9. Panel Maestro Administrador 🔒</h3>
         <p>Precios globales en Supabase, Base de Datos y Borrado Físico</p>
       </div>
 
-      <div class="dash-card" style="border-color: var(--success);" onclick="pedirClaveSegura('vista-inventario')">
+      <div class="dash-card" data-panel="10" style="border-color: var(--success);" onclick="pedirClaveSegura('vista-inventario')">
         <span style="font-size: 32px;">📦</span>
         <h3 style="color: var(--success);">10. Control de Inventario 🔒</h3>
         <p>Registro de insumos, compras de jabón/ganchos y exportación</p>
@@ -848,7 +872,7 @@
 
     <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 12px;">
       <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-        <input type="text" id="busc-auditoria-input" class="input-text" style="flex: 1; min-width: 260px;" placeholder="🔍 Buscar por # Ticket (ej: 100), Nombre de cliente o Celular..." oninput="ejecutarBusquedaAuditoria(this.value)">
+        <input type="text" id="busc-auditoria-input" class="input-text" style="flex: 1; min-width: 260px;" placeholder="🔍 Buscar por ticket, cliente, celular o responsable de recepción..." oninput="ejecutarBusquedaAuditoria(this.value)">
       </div>
 
       <div style="overflow-x: auto; max-height: 520px; border: 1px solid var(--border); border-radius: 8px;">
@@ -859,6 +883,7 @@
               <th>Fecha Ingreso</th>
               <th>Cliente</th>
               <th>Celular</th>
+              <th>Responsable recepción</th>
               <th>Prendas Registradas</th>
               <th>Observación / Estado</th>
               <th>Estado</th>
@@ -871,7 +896,7 @@
             </tr>
           </thead>
           <tbody id="tabla-auditoria-body">
-            <tr><td colspan="13" style="text-align: center; color: var(--text-muted); padding: 25px;">Escribe un ticket, teléfono o nombre para consultar órdenes.</td></tr>
+            <tr><td colspan="14" style="text-align: center; color: var(--text-muted); padding: 25px;">Escribe un ticket, teléfono o nombre para consultar órdenes.</td></tr>
           </tbody>
         </table>
       </div>
@@ -1122,7 +1147,7 @@
   <div class="modal-content" style="width: 380px; text-align: center;">
     <h3 id="auth-modal-title" style="color: var(--warning);">🔒 Acceso Protegido</h3>
     <p id="auth-modal-desc" style="font-size: 13px; color: var(--text-muted);">Ingresa tu PIN de seguridad:</p>
-    <input type="password" id="admin-pin" class="input-text" style="font-size: 24px; text-align: center; letter-spacing: 6px;" maxlength="4" inputmode="numeric" pattern="[0-9]{4}" autocomplete="one-time-code" aria-label="PIN de cuatro dígitos" placeholder="••••"><div id="pin-feedback" role="status" aria-live="polite" style="min-height:18px;font-size:12px;color:var(--danger);"></div>
+    <input type="password" id="admin-pin" class="input-text" style="font-size: 24px; text-align: center; letter-spacing: 6px;" maxlength="32" inputmode="numeric" pattern="[0-9]*" autocomplete="off" aria-label="Código numérico de ingreso" placeholder="Código de ingreso"><div id="pin-feedback" role="status" aria-live="polite" style="min-height:18px;font-size:12px;color:var(--danger);"></div>
     <button class="btn-primary" onclick="validarPinSeguro()">Entrar</button>
     <button class="nav-btn" onclick="cerrarModal('modal-admin-auth')">Cancelar</button>
   </div>
@@ -1259,7 +1284,45 @@
       <div id="adm-cuentas-pago-lista" style="margin-top:8px;font-size:12px;"></div>
     </div>
 
+    
+    <!-- Sección 5: Perfiles de ingreso y códigos de empleados -->
+    <div style="background:var(--bg-input);padding:14px;border-radius:8px;border:1px solid var(--border);margin-top:10px;">
+      <h4 style="color:var(--success);margin-bottom:6px;">👥 Perfiles de ingreso y códigos</h4>
+      <p style="font-size:11px;color:var(--text-muted);margin-bottom:10px;">Crea códigos numéricos para cada colaborador. Los cambios se comparten en todos los dispositivos conectados. Los códigos 1510 y 2415 están reservados para administración.</p>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:8px;align-items:center;">
+        <input id="adm-perfil-nombre" class="input-text" maxlength="120" placeholder="Nombre completo del empleado">
+        <input id="adm-perfil-codigo" class="input-text" type="password" inputmode="numeric" maxlength="32" autocomplete="off" placeholder="Código (1–32 dígitos)">
+        <select id="adm-perfil-estado" class="input-text"><option value="habilitado">Habilitado</option><option value="inhabilitado">Inhabilitado</option></select>
+        <button class="btn-success" type="button" onclick="adminCrearPerfilIngreso()">➕ Crear perfil</button>
+      </div>
+      <div style="overflow:auto;max-height:300px;margin-top:12px;border:1px solid var(--border);border-radius:8px;">
+        <table class="data-table" style="min-width:560px;">
+          <thead><tr><th>Empleado</th><th>Código asignado</th><th>Estado</th><th>Acciones</th></tr></thead>
+          <tbody id="adm-perfiles-ingreso-body"><tr><td colspan="4" style="text-align:center;color:var(--text-muted);">Abriendo perfiles…</td></tr></tbody>
+        </table>
+      </div>
+      <div id="adm-perfiles-ingreso-status" role="status" aria-live="polite" style="font-size:11px;margin-top:8px;color:var(--text-muted);"></div>
+    </div>
+
     <button class="nav-btn" onclick="cerrarModal('modal-admin-master')">Cerrar Panel Maestro</button>
+  </div>
+</div>
+
+<!-- Modal para editar nombre, estado o código de empleado -->
+<div class="modal" id="modal-editar-perfil-ingreso">
+  <div class="modal-content" style="width:480px;max-width:94vw;">
+    <h3 style="color:var(--success);">Editar perfil de ingreso</h3>
+    <input type="hidden" id="adm-editar-perfil-id">
+    <label class="label-sm" for="adm-editar-perfil-nombre">Nombre del empleado</label>
+    <input id="adm-editar-perfil-nombre" class="input-text" maxlength="120" autocomplete="off">
+    <label class="label-sm" for="adm-editar-perfil-codigo">Nuevo código (opcional)</label>
+    <input id="adm-editar-perfil-codigo" class="input-text" type="password" inputmode="numeric" maxlength="32" autocomplete="new-password" placeholder="Déjalo vacío para conservar el actual">
+    <label class="label-sm" for="adm-editar-perfil-estado">Estado</label>
+    <select id="adm-editar-perfil-estado" class="input-text"><option value="habilitado">Habilitado</option><option value="inhabilitado">Inhabilitado</option></select>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px;">
+      <button class="nav-btn" onclick="cerrarModal('modal-editar-perfil-ingreso')">Cancelar</button>
+      <button class="btn-success" onclick="adminGuardarEdicionPerfilIngreso()">Guardar cambios</button>
+    </div>
   </div>
 </div>
 
@@ -1364,6 +1427,7 @@
       <div class="p-val-cliente"><span class="pr-cliente">---</span></div>
       <div class="p-val-telefono">Teléfono: <span class="pr-telefono">---</span></div>
       <div style="font-size: 10px; margin-top: 2px;">FECHA: <span class="pr-fecha">--/--/----</span></div>
+      <div class="pr-responsable-recepcion" style="font-size:10px;font-weight:bold;margin-top:4px;border-top:1px dotted #000;padding-top:3px;">RESPONSABLE DE RECEPCIÓN: <span class="pr-recepcion">—</span></div>
     </div>
 
     <table class="p-table">
@@ -1552,6 +1616,19 @@
   }
 
   function mostrarVista(vistaId) {
+    if (vistaId === 'vista-home' && sesionLavaarteActual) { cerrarSesionLavaarte(); return; }
+    const vistasProtegidas = new Set(['vista-dashboard','vista-pos','vista-alistar','vista-entrega','vista-egresos','vista-domicilios-admin','vista-busquedas','vista-inventario']);
+    if (!sesionLavaarteActual && vistasProtegidas.has(vistaId)) {
+      solicitarAccesoEmpleados('vista-dashboard');
+      return;
+    }
+    if (sesionLavaarteActual && sesionLavaarteActual.rol === 'empleado') {
+      const vistasEmpleado = new Set(['vista-dashboard','vista-pos','vista-alistar','vista-entrega','vista-egresos','vista-domicilios-admin','vista-busquedas']);
+      if (!vistasEmpleado.has(vistaId)) {
+        if (typeof window.mostrarNotificacionLavaarte === 'function') window.mostrarNotificacionLavaarte('Tu perfil no tiene permiso para abrir ese panel.');
+        return;
+      }
+    }
     const vistaActual = document.querySelector(".view-section.view-active");
     if (vistaActual && vistaActual.id === "vista-pos" && vistaId !== "vista-pos") {
       // Si se sale sin generar la orden, descartar el borrador para no mezclarlo con la siguiente.
@@ -1722,12 +1799,13 @@
     if (modoImpresoraHP) alert("✅ Impresora lista. Este dispositivo conservará el modo activo después de recargar la página. Debe permanecer abierto y conectado para recibir e imprimir órdenes remotas.");
   }
 
-  function poblarPlantillaImpresion(ticketNum, fechaStr, clienteNom, clienteTel, codigoRastreo, itemsArray, obsTexto, totalNum, abonoNum, saldoNum, textoLoyalty) {
+  function poblarPlantillaImpresion(ticketNum, fechaStr, clienteNom, clienteTel, codigoRastreo, itemsArray, obsTexto, totalNum, abonoNum, saldoNum, textoLoyalty, responsableRecepcion = "—") {
     document.querySelectorAll(".pr-ticket-num").forEach(el => el.textContent = ticketNum);
     document.querySelectorAll(".pr-fecha").forEach(el => el.textContent = fechaStr);
     document.querySelectorAll(".pr-cliente").forEach(el => el.textContent = clienteNom);
     document.querySelectorAll(".pr-telefono").forEach(el => el.textContent = clienteTel);
     document.querySelectorAll(".pr-loyalty-text").forEach(el => el.textContent = textoLoyalty || "");
+    document.querySelectorAll(".pr-recepcion").forEach(el => el.textContent = responsableRecepcion || "—");
 
     const itemsHTML = itemsArray.map(i => `
       <tr>
@@ -1757,7 +1835,7 @@
     try {
       const { data: o } = await db.from("ordenes").select("*, clientes(*), orden_items(*)").eq("id", ordenId).single();
       if (!o) return;
-      poblarPlantillaImpresion(o.consecutivo_ticket, new Date(o.created_at).toLocaleString("es-CO"), o.clientes?.nombre_o_razon || "Particular", o.clientes?.telefono || "-", o.codigo_rastreo, o.orden_items || [], o.observaciones_estado_prendas, o.total_neto, o.abono_inicial || 0, o.saldo_pendiente, o.loyalty_beneficio_aplicado ? "⭐ Beneficio Lavaarte Loyalty aplicado: 1 unidad de $8.000 COP con precio $0." : "");
+      poblarPlantillaImpresion(o.consecutivo_ticket, new Date(o.created_at).toLocaleString("es-CO"), o.clientes?.nombre_o_razon || "Particular", o.clientes?.telefono || "-", o.codigo_rastreo, o.orden_items || [], o.observaciones_estado_prendas, o.total_neto, o.abono_inicial || 0, o.saldo_pendiente, o.loyalty_beneficio_aplicado ? "⭐ Beneficio Lavaarte Loyalty aplicado: 1 unidad de $8.000 COP con precio $0." : "", o.responsable_recepcion || "—");
       ordenesImpresionLocal.add(ordenId);
       const resultadoImpresion = await imprimirPlantilla({ orderId: String(ordenId) });
       if (resultadoImpresion?.ok) await db.from("ordenes").update({ impresa: true }).eq("id", ordenId);
@@ -2561,8 +2639,10 @@
         }
       }
 
+      const sesionRecepcion = sesionLavaarteActual;
+      if (!sesionRecepcion || !sesionRecepcion.nombre) throw new Error("La sesión expiró. Ingresa nuevamente tu código de empleado antes de crear una orden.");
       const codigoRastreo = "LAV-" + Math.random().toString(36).substring(2, 8).toUpperCase();
-      const objetoOrden = { cliente_id: cliId, codigo_rastreo: codigoRastreo, total_bruto: total, total_neto: total, saldo_pendiente: saldo, estado: 'INGRESADO', impresa: false };
+      const objetoOrden = { cliente_id: cliId, codigo_rastreo: codigoRastreo, total_bruto: total, total_neto: total, saldo_pendiente: saldo, estado: 'INGRESADO', impresa: false, responsable_recepcion: sesionRecepcion.nombre, responsable_recepcion_id: sesionRecepcion.id || null };
       if (abono > 0) objetoOrden.abono_inicial = abono;
       if (obs) objetoOrden.observaciones_estado_prendas = obs;
       if (loyaltyBeneficioAplicado) {
@@ -2620,7 +2700,7 @@
         `🔍 Rastreo: ${APP_WEB_URL}\n` +
         `¡Gracias por escogernos!`;
 
-      poblarPlantillaImpresion(ord.consecutivo_ticket, new Date().toLocaleString("es-CO"), nombreWA, tel || "-", codigoRastreo, items, obs, total, abono, saldo, textoLoyalty);
+      poblarPlantillaImpresion(ord.consecutivo_ticket, new Date().toLocaleString("es-CO"), nombreWA, tel || "-", codigoRastreo, items, obs, total, abono, saldo, textoLoyalty, sesionRecepcion.nombre);
 
       if (modoImpresoraHP) {
         const resultadoImpresion = await imprimirPlantilla({ orderId: String(ord.id) });
@@ -2650,7 +2730,7 @@
       alert(`✅ Orden #${ord.consecutivo_ticket} guardada correctamente.${modoImpresoraHP ? " Impresión enviada al equipo activo." : ""}${notaEnvioWA}`);
       if (tel) {
         // El envío empieza después de la impresión; una espera de Render o del bot no
-        // debe hacer que el usuario dude de F12 ni retrasar la salida del recibo.
+        // debe retrasar el recibo ni hacer que el usuario dude de F12.
         Promise.resolve().then(() => despacharWhatsApp(tel, mensajeTexto)).then(estadoWhatsApp => {
           if (estadoWhatsApp?.sent && estadoWhatsApp?.automatic) {
             mostrarNotificacionLavaarte(`✅ Comprobante de la orden #${ord.consecutivo_ticket} enviado automáticamente por WhatsApp.`);
@@ -2799,6 +2879,7 @@
       if (q && !/^\d+$/.test(q)) {
         const qTel = normalizarTelefonoCliente(q);
         res = res.filter(o => coincideTextoBusqueda(o.clientes?.nombre_o_razon || "", q) ||
+          coincideTextoBusqueda(o.responsable_recepcion || "", q) ||
           (!!qTel && normalizarTelefonoCliente(o.clientes?.telefono || "").includes(qTel)));
       }
 
@@ -3139,7 +3220,7 @@
     const tbody = document.getElementById("tabla-auditoria-body");
     try {
       let qBuilder = db.from("ordenes")
-        .select(`id, consecutivo_ticket, codigo_rastreo, estado, total_neto, abono_inicial, saldo_pendiente, metodo_pago_saldo, responsable_entrega, created_at, entregado_at, observaciones_estado_prendas, clientes(nombre_o_razon, telefono), orden_items(cantidad, descripcion_prenda)`)
+        .select(`id, consecutivo_ticket, codigo_rastreo, estado, total_neto, abono_inicial, saldo_pendiente, metodo_pago_saldo, responsable_entrega, responsable_recepcion, created_at, entregado_at, observaciones_estado_prendas, clientes(nombre_o_razon, telefono), orden_items(cantidad, descripcion_prenda)`)
         .order("consecutivo_ticket", { ascending: false })
         .limit(50);
 
@@ -3154,11 +3235,12 @@
       if (q && !/^\d+$/.test(q)) {
         const qTel = normalizarTelefonoCliente(q);
         res = res.filter(o => coincideTextoBusqueda(o.clientes?.nombre_o_razon || "", q) ||
+          coincideTextoBusqueda(o.responsable_recepcion || "", q) ||
           (!!qTel && normalizarTelefonoCliente(o.clientes?.telefono || "").includes(qTel)));
       }
 
       if (res.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="13" style="text-align: center; color: var(--text-muted); padding: 25px;">No se encontraron órdenes con ese criterio.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="14" style="text-align: center; color: var(--text-muted); padding: 25px;">No se encontraron órdenes con ese criterio.</td></tr>';
         return;
       }
 
@@ -3177,6 +3259,7 @@
             <td style="font-size: 11px;">${fIngreso}</td>
             <td><strong>${o.clientes?.nombre_o_razon || 'Particular'}</strong></td>
             <td>${o.clientes?.telefono || '-'}</td>
+            <td>${escaparHTML(o.responsable_recepcion || '—')}</td>
             <td style="font-size: 11.5px; color: var(--text);">${prendasTexto}</td>
             <td style="font-size: 11px; color: var(--warning);">${o.observaciones_estado_prendas || '-'}</td>
             <td><span style="color: ${badgeColor}; font-weight: bold;">[${o.estado}]</span></td>
@@ -3191,7 +3274,7 @@
       }).join("");
     } catch (e) {
       console.error(e);
-      tbody.innerHTML = `<tr><td colspan="13" style="color: var(--danger); text-align: center;">Error consultando auditoría: ${e.message}</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="14" style="color: var(--danger); text-align: center;">Error consultando auditoría: ${e.message}</td></tr>`;
     }
   }
 
@@ -3199,7 +3282,7 @@
     try {
       const { data: o, error } = await db.from("ordenes").select("*, clientes(*), orden_items(*)").eq("id", ordenId).single();
       if (error || !o) throw error || new Error("No se encontró la orden.");
-      poblarPlantillaImpresion(o.consecutivo_ticket, new Date(o.created_at).toLocaleString("es-CO"), o.clientes?.nombre_o_razon || "Particular", o.clientes?.telefono || "-", o.codigo_rastreo, o.orden_items || [], o.observaciones_estado_prendas, o.total_neto, o.abono_inicial || 0, o.saldo_pendiente, o.loyalty_beneficio_aplicado ? "⭐ Beneficio Lavaarte Loyalty aplicado: 1 unidad de $8.000 COP con precio $0." : "");
+      poblarPlantillaImpresion(o.consecutivo_ticket, new Date(o.created_at).toLocaleString("es-CO"), o.clientes?.nombre_o_razon || "Particular", o.clientes?.telefono || "-", o.codigo_rastreo, o.orden_items || [], o.observaciones_estado_prendas, o.total_neto, o.abono_inicial || 0, o.saldo_pendiente, o.loyalty_beneficio_aplicado ? "⭐ Beneficio Lavaarte Loyalty aplicado: 1 unidad de $8.000 COP con precio $0." : "", o.responsable_recepcion || "—");
       await imprimirPlantilla({ orderId: `reprint-acople-${o.id}-${Date.now()}`, acopladora: true, force: true });
     } catch (e) { console.error("Error reimprimiendo copia acopladora:", e); alert("No se pudo reimprimir la copia: " + (e.message || e)); }
   }
@@ -3229,14 +3312,14 @@
 
   async function descargarHistoricoOrdenesExcel() {
     try {
-      const { data, error } = await db.from("ordenes").select(`consecutivo_ticket, codigo_rastreo, estado, total_neto, abono_inicial, saldo_pendiente, metodo_pago_saldo, responsable_entrega, created_at, entregado_at, observaciones_estado_prendas, clientes(nombre_o_razon, telefono), orden_items(cantidad, descripcion_prenda, precio_unitario, subtotal)`).order("consecutivo_ticket", { ascending: false });
+      const { data, error } = await db.from("ordenes").select(`consecutivo_ticket, codigo_rastreo, estado, total_neto, abono_inicial, saldo_pendiente, metodo_pago_saldo, responsable_entrega, responsable_recepcion, created_at, entregado_at, observaciones_estado_prendas, clientes(nombre_o_razon, telefono), orden_items(cantidad, descripcion_prenda, precio_unitario, subtotal)`).order("consecutivo_ticket", { ascending: false });
       if (error) throw error;
       if (!data || data.length === 0) return alert("No hay órdenes registradas.");
 
-      const filasExcel = [["Ticket #", "Código Rastreo", "Fecha Ingreso", "Cliente", "Teléfono", "Prendas", "Observaciones / Kilos", "Total Neto", "Abono Inicial", "Saldo Pendiente", "Estado", "Medio Pago Saldo", "Responsable entrega", "Fecha Entrega"]];
+      const filasExcel = [["Ticket #", "Código Rastreo", "Fecha Ingreso", "Cliente", "Teléfono", "Prendas", "Observaciones / Kilos", "Total Neto", "Abono Inicial", "Saldo Pendiente", "Estado", "Medio Pago Saldo", "Responsable recepción", "Responsable entrega", "Fecha Entrega"]];
       data.forEach(o => {
         const prendasTexto = o.orden_items?.map(i => `${i.cantidad}x ${i.descripcion_prenda}`).join(" | ") || "";
-        filasExcel.push([o.consecutivo_ticket, o.codigo_rastreo || "", new Date(o.created_at).toLocaleString("es-CO"), o.clientes?.nombre_o_razon || "Particular", o.clientes?.telefono || "", prendasTexto, o.observaciones_estado_prendas || "", o.total_neto, o.abono_inicial || 0, o.saldo_pendiente, o.estado, o.metodo_pago_saldo || "", o.responsable_entrega || "", o.entregado_at ? new Date(o.entregado_at).toLocaleString("es-CO") : ""]);
+        filasExcel.push([o.consecutivo_ticket, o.codigo_rastreo || "", new Date(o.created_at).toLocaleString("es-CO"), o.clientes?.nombre_o_razon || "Particular", o.clientes?.telefono || "", prendasTexto, o.observaciones_estado_prendas || "", o.total_neto, o.abono_inicial || 0, o.saldo_pendiente, o.estado, o.metodo_pago_saldo || "", o.responsable_recepcion || "", o.responsable_entrega || "", o.entregado_at ? new Date(o.entregado_at).toLocaleString("es-CO") : ""]);
       });
 
       const wb = XLSX.utils.book_new();
@@ -3338,74 +3421,272 @@
     XLSX.writeFile(wb, `Lavaarte_Inventario_${new Date().toISOString().split("T")[0]}.xlsx`);
   }
 
-  // ==================== SEGURIDAD JERÁRQUICA ====================
+  // ==================== ACCESO POR PERFILES DE EMPLEADO (1.7.0) ====================
   let pinValidando = false;
+  let sesionLavaarteActual = null;
+  let pinAdminActual = '';
+  let vigilanciaEmpleadoTimer = null;
+  let adminPerfilesIngresoCache = [];
+  const PANELES_EMPLEADO_PERMITIDOS = new Set(['1','2','3','4','7','8']);
+
+  function actualizarSesionLavaarteUI() {
+    const badge = document.getElementById('lavaarte-session-badge');
+    const name = document.getElementById('lavaarte-session-name');
+    const esActiva = !!sesionLavaarteActual;
+    if (badge) badge.style.display = esActiva ? 'flex' : 'none';
+    if (name) name.textContent = esActiva ? sesionLavaarteActual.nombre : '—';
+    document.querySelectorAll('#vista-dashboard [data-panel]').forEach(card => {
+      const permitido = !sesionLavaarteActual || sesionLavaarteActual.rol === 'administrador' || PANELES_EMPLEADO_PERMITIDOS.has(card.dataset.panel);
+      card.style.display = permitido ? '' : 'none';
+    });
+  }
+
+  function iniciarVigilanciaEmpleado() {
+    if (vigilanciaEmpleadoTimer) clearInterval(vigilanciaEmpleadoTimer);
+    if (!sesionLavaarteActual || sesionLavaarteActual.rol !== 'empleado') return;
+    vigilanciaEmpleadoTimer = setInterval(validarSesionEmpleadoRemota, 15000);
+  }
+
+  async function validarSesionEmpleadoRemota() {
+    const sesion = sesionLavaarteActual;
+    if (!sesion || sesion.rol !== 'empleado') return;
+    try {
+      const { data, error } = await db.rpc('lavaarte_validar_codigo_ingreso', { p_codigo: sesion.codigo });
+      if (error) throw error;
+      const perfil = Array.isArray(data) ? data[0] : data;
+      if (!perfil || perfil.estado !== 'habilitado' || String(perfil.perfil_id) !== String(sesion.id)) {
+        cerrarSesionLavaarte();
+        if (typeof window.mostrarNotificacionLavaarte === 'function') {
+          window.mostrarNotificacionLavaarte('Este perfil fue inhabilitado o su código cambió. Solicita al administrador que valide tu acceso.');
+        } else alert('Este perfil fue inhabilitado o su código cambió. Solicita al administrador que valide tu acceso.');
+      }
+    } catch (error) {
+      // Un fallo temporal de Internet no expulsa al empleado de una orden en curso.
+      console.warn('[LAVAARTE] No se pudo revalidar el perfil en este momento:', error.message || error);
+    }
+  }
+
+  function cerrarSesionLavaarte() {
+    sesionLavaarteActual = null;
+    pinAdminActual = '';
+    if (vigilanciaEmpleadoTimer) clearInterval(vigilanciaEmpleadoTimer);
+    vigilanciaEmpleadoTimer = null;
+    actualizarSesionLavaarteUI();
+    document.querySelectorAll('.view-section').forEach(el => el.classList.remove('view-active'));
+    const home = document.getElementById('vista-home');
+    if (home) home.classList.add('view-active');
+  }
+
   function solicitarAccesoEmpleados(destino) {
     pinValidando = false;
     destinoPinAdmin = destino;
-    document.getElementById("auth-modal-title").textContent = "🔒 Acceso Colaboradores Lavaarte";
-    document.getElementById("auth-modal-desc").textContent = "Ingresa tu PIN de colaborador para continuar:";
-    document.getElementById("admin-pin").value = "";
-    document.getElementById("pin-feedback").textContent = "";
-    abrirModal("modal-admin-auth");
-    setTimeout(() => { const pin = document.getElementById('admin-pin'); if (pin) { pin.focus(); pin.select(); } }, 30);
+    const campo = document.getElementById('admin-pin');
+    document.getElementById('auth-modal-title').textContent = '🔐 Ingreso a LAVAARTE';
+    document.getElementById('auth-modal-desc').textContent = 'Ingresa tu código personal y pulsa Enter. Puede tener la cantidad de dígitos que te asignó el administrador.';
+    campo.value = '';
+    campo.maxLength = 32;
+    campo.dataset.authMode = 'login';
+    campo.setAttribute('aria-label','Código numérico de ingreso');
+    campo.placeholder = 'Código de ingreso';
+    document.getElementById('pin-feedback').textContent = '';
+    abrirModal('modal-admin-auth');
+    setTimeout(() => { if (campo) { campo.focus(); campo.select(); } }, 30);
   }
 
   function pedirClaveSegura(destinoModal) {
-    pinValidando = false;
-    destinoPinAdmin = destinoModal;
-    document.getElementById("auth-modal-title").textContent = "🛡️ Control Administrativo";
-    document.getElementById("auth-modal-desc").textContent = "Acceso restringido. Ingresa el PIN de Administrador:";
-    document.getElementById("admin-pin").value = "";
-    document.getElementById("pin-feedback").textContent = "";
-    abrirModal("modal-admin-auth");
-    setTimeout(() => { const pin = document.getElementById('admin-pin'); if (pin) { pin.focus(); pin.select(); } }, 30);
-  }
-
-  function validarPinSeguro() {
-    if (pinValidando) return;
-    const campo = document.getElementById("admin-pin");
-    const feedback = document.getElementById('pin-feedback');
-    const pin = campo.value.replace(/\D/g,'').slice(0,4);
-    campo.value = pin;
-    if (pin.length !== 4) return;
-    let correcto = false;
-    let accion = null;
-    if (destinoPinAdmin === "vista-dashboard") {
-      correcto = pin === "1510" || pin === "2415";
-      accion = () => mostrarVista("vista-dashboard");
-    } else if (["modal-admin-master","modal-admin-panel","modal-arqueo","vista-inventario"].includes(destinoPinAdmin)) {
-      correcto = pin === "2415";
-      accion = () => {
-        if (destinoPinAdmin === "modal-admin-master") abrirModalMasterAdmin();
-        else if (destinoPinAdmin === "modal-admin-panel") abrirModal("modal-admin-panel");
-        else if (destinoPinAdmin === "modal-arqueo") abrirArqueoCaja();
-        else if (destinoPinAdmin === "vista-inventario") mostrarVista("vista-inventario");
-      };
-    }
-    if (!correcto) {
-      feedback.textContent = destinoPinAdmin === "vista-dashboard" ? 'PIN de colaborador incorrecto.' : 'PIN administrador incorrecto. Acceso denegado.';
-      campo.value = '';
-      campo.focus();
+    if (!sesionLavaarteActual || sesionLavaarteActual.rol !== 'administrador') {
+      if (typeof window.mostrarNotificacionLavaarte === 'function') window.mostrarNotificacionLavaarte('Este panel está reservado para administración.');
+      else alert('Este panel está reservado para administración.');
       return;
     }
+    pinValidando = false;
+    destinoPinAdmin = destinoModal;
+    const campo = document.getElementById('admin-pin');
+    document.getElementById('auth-modal-title').textContent = '🛡️ Control Administrativo';
+    document.getElementById('auth-modal-desc').textContent = 'Acceso restringido. Ingresa el PIN administrativo:';
+    campo.value = '';
+    campo.maxLength = 4;
+    campo.dataset.authMode = 'admin';
+    campo.setAttribute('aria-label','PIN administrativo de cuatro dígitos');
+    campo.placeholder = '••••';
+    document.getElementById('pin-feedback').textContent = '';
+    abrirModal('modal-admin-auth');
+    setTimeout(() => { if (campo) { campo.focus(); campo.select(); } }, 30);
+  }
+
+  async function validarPinSeguro() {
+    if (pinValidando) return;
+    const campo = document.getElementById('admin-pin');
+    const feedback = document.getElementById('pin-feedback');
+    const modo = campo.dataset.authMode || (destinoPinAdmin === 'vista-dashboard' ? 'login' : 'admin');
+    const pin = String(campo.value || '').replace(/\D/g, '').slice(0, modo === 'login' ? 32 : 4);
+    campo.value = pin;
+    if (!pin.length || (modo === 'admin' && pin.length !== 4)) return;
     pinValidando = true;
-    cerrarModal("modal-admin-auth");
-    try { if (accion) accion(); }
-    finally { setTimeout(() => { pinValidando = false; }, 250); }
+    feedback.textContent = '';
+
+    try {
+      if (destinoPinAdmin === 'vista-dashboard' && modo === 'login') {
+        if (pin === '1510' || pin === '2415') {
+          sesionLavaarteActual = { rol: 'administrador', id: null, nombre: 'Administrador', codigo: pin };
+          pinAdminActual = '';
+        } else {
+          let respuesta;
+          try {
+            respuesta = await db.rpc('lavaarte_validar_codigo_ingreso', { p_codigo: pin });
+          } catch (rpcError) {
+            throw new Error('No se pudo validar el código. Comprueba que ejecutaste MIGRACION_LAVAARTE_1.7.0_PERFILES_INGRESO.sql en el Supabase de LAVAARTE. ' + (rpcError.message || ''));
+          }
+          if (respuesta.error) throw new Error('No se pudo validar el código. Ejecuta primero la migración SQL 1.7.0 en el Supabase de LAVAARTE. ' + respuesta.error.message);
+          const perfil = Array.isArray(respuesta.data) ? respuesta.data[0] : respuesta.data;
+          if (!perfil) throw new Error('Código incorrecto. No existe un perfil asignado a ese código.');
+          if (perfil.estado !== 'habilitado') throw new Error('Este perfil está INHABILITADO. Solicita al administrador que lo habilite.');
+          sesionLavaarteActual = { rol: 'empleado', id: perfil.perfil_id, nombre: perfil.nombre, codigo: pin };
+          pinAdminActual = '';
+        }
+        cerrarModal('modal-admin-auth');
+        actualizarSesionLavaarteUI();
+        iniciarVigilanciaEmpleado();
+        mostrarVista('vista-dashboard');
+        return;
+      }
+
+      if (!sesionLavaarteActual || sesionLavaarteActual.rol !== 'administrador' || pin !== '2415') {
+        throw new Error('PIN administrativo incorrecto o sesión sin privilegios.');
+      }
+      pinAdminActual = pin;
+      const destino = destinoPinAdmin;
+      cerrarModal('modal-admin-auth');
+      if (destino === 'modal-admin-master') abrirModalMasterAdmin();
+      else if (destino === 'modal-admin-panel') abrirModal('modal-admin-panel');
+      else if (destino === 'modal-arqueo') abrirArqueoCaja();
+      else if (destino === 'vista-inventario') mostrarVista('vista-inventario');
+    } catch (error) {
+      feedback.textContent = error.message || 'No se pudo validar el acceso.';
+      campo.value = '';
+      campo.focus();
+    } finally {
+      pinValidando = false;
+    }
   }
 
   document.addEventListener('DOMContentLoaded', () => {
     const pin = document.getElementById('admin-pin');
     if (pin) {
       pin.addEventListener('input', () => {
-        const limpio = pin.value.replace(/\D/g,'').slice(0,4);
+        const modo = pin.dataset.authMode || 'login';
+        const limpio = pin.value.replace(/\D/g, '').slice(0, modo === 'login' ? 32 : 4);
         if (pin.value !== limpio) pin.value = limpio;
-        if (limpio.length === 4) validarPinSeguro();
+        // El código de empleado puede tener longitud variable: el acceso se confirma con Enter.
+        if (modo === 'admin' && limpio.length === 4) validarPinSeguro();
       });
-      pin.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); validarPinSeguro(); } });
+      pin.addEventListener('keydown', e => {
+        if (e.key === 'Enter') { e.preventDefault(); validarPinSeguro(); }
+      });
     }
+    window.addEventListener('focus', () => validarSesionEmpleadoRemota());
   });
+
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) validarSesionEmpleadoRemota();
+  });
+
+  // ==================== ADMINISTRACIÓN DE PERFILES DE INGRESO ====================
+  function mensajePerfilesIngreso(texto, error = false) {
+    const el = document.getElementById('adm-perfiles-ingreso-status');
+    if (el) { el.textContent = texto || ''; el.style.color = error ? 'var(--danger)' : 'var(--text-muted)'; }
+  }
+
+  async function adminCargarPerfilesIngreso() {
+    const tbody = document.getElementById('adm-perfiles-ingreso-body');
+    if (!tbody) return;
+    if (!pinAdminActual) { mensajePerfilesIngreso('Vuelve a validar el PIN administrativo para gestionar perfiles.', true); return; }
+    tbody.innerHTML = '<tr><td colspan="4">Cargando perfiles…</td></tr>';
+    const { data, error } = await db.rpc('lavaarte_listar_perfiles_ingreso', { p_admin_pin: pinAdminActual });
+    if (error) {
+      tbody.innerHTML = '<tr><td colspan="4">No fue posible cargar los perfiles.</td></tr>';
+      mensajePerfilesIngreso('Falta aplicar la migración SQL 1.7.0 o validar el PIN: ' + error.message, true);
+      return;
+    }
+    adminPerfilesIngresoCache = data || [];
+    if (!adminPerfilesIngresoCache.length) {
+      tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text-muted);">Aún no hay empleados registrados.</td></tr>';
+    } else {
+      tbody.innerHTML = adminPerfilesIngresoCache.map(p => `
+        <tr>
+          <td><strong>${escaparHTML(p.nombre)}</strong></td>
+          <td style="font-family:monospace;letter-spacing:1px;">${escaparHTML(p.codigo_mascara || '••••')}</td>
+          <td><span style="font-weight:700;color:${p.estado === 'habilitado' ? 'var(--success)' : 'var(--danger)'};">${p.estado === 'habilitado' ? 'HABILITADO' : 'INHABILITADO'}</span></td>
+          <td style="white-space:nowrap;">
+            <button type="button" class="nav-btn perfil-action-btn" data-edit-profile="${p.id}">✏️ Editar</button>
+            <button type="button" class="${p.estado === 'habilitado' ? 'btn-danger' : 'btn-success'} perfil-action-btn" data-toggle-profile="${p.id}">${p.estado === 'habilitado' ? 'Inhabilitar' : 'Habilitar'}</button>
+          </td>
+        </tr>`).join('');
+      tbody.querySelectorAll('[data-edit-profile]').forEach(btn => btn.addEventListener('click', () => adminAbrirEditarPerfilIngreso(btn.dataset.editProfile)));
+      tbody.querySelectorAll('[data-toggle-profile]').forEach(btn => btn.addEventListener('click', () => adminAlternarEstadoPerfilIngreso(btn.dataset.toggleProfile)));
+    }
+    mensajePerfilesIngreso('Perfiles sincronizados con Supabase. Los cambios se reflejan en los demás dispositivos al validar el código.');
+  }
+
+  async function adminCrearPerfilIngreso() {
+    const nombre = document.getElementById('adm-perfil-nombre').value.trim();
+    const codigo = document.getElementById('adm-perfil-codigo').value.trim();
+    const estado = document.getElementById('adm-perfil-estado').value;
+    if (!nombre || !codigo) return mensajePerfilesIngreso('Escribe el nombre y el código del empleado.', true);
+    if (!/^\d{1,32}$/.test(codigo)) return mensajePerfilesIngreso('El código debe contener entre 1 y 32 dígitos.', true);
+    if (['1510','2415'].includes(codigo)) return mensajePerfilesIngreso('1510 y 2415 están reservados para administración.', true);
+    const { error } = await db.rpc('lavaarte_crear_perfil_ingreso', {
+      p_admin_pin: pinAdminActual, p_nombre: nombre, p_codigo: codigo, p_estado: estado
+    });
+    if (error) return mensajePerfilesIngreso('No se pudo crear el perfil: ' + error.message, true);
+    document.getElementById('adm-perfil-nombre').value = '';
+    document.getElementById('adm-perfil-codigo').value = '';
+    document.getElementById('adm-perfil-estado').value = 'habilitado';
+    await adminCargarPerfilesIngreso();
+    mensajePerfilesIngreso('Perfil creado. El empleado ya puede ingresar con ese código desde cualquier dispositivo conectado.');
+  }
+
+  function adminAbrirEditarPerfilIngreso(id) {
+    const perfil = adminPerfilesIngresoCache.find(p => String(p.id) === String(id));
+    if (!perfil) return;
+    document.getElementById('adm-editar-perfil-id').value = perfil.id;
+    document.getElementById('adm-editar-perfil-nombre').value = perfil.nombre || '';
+    document.getElementById('adm-editar-perfil-codigo').value = '';
+    document.getElementById('adm-editar-perfil-estado').value = perfil.estado || 'habilitado';
+    abrirModal('modal-editar-perfil-ingreso');
+  }
+
+  async function adminGuardarEdicionPerfilIngreso() {
+    const id = document.getElementById('adm-editar-perfil-id').value;
+    const nombre = document.getElementById('adm-editar-perfil-nombre').value.trim();
+    const codigo = document.getElementById('adm-editar-perfil-codigo').value.trim();
+    const estado = document.getElementById('adm-editar-perfil-estado').value;
+    if (!id || !nombre) return alert('Ingresa un nombre válido.');
+    if (codigo && !/^\d{1,32}$/.test(codigo)) return alert('El código debe contener entre 1 y 32 dígitos.');
+    const { error } = await db.rpc('lavaarte_actualizar_perfil_ingreso', {
+      p_admin_pin: pinAdminActual, p_id: id, p_nombre: nombre, p_estado: estado, p_codigo: codigo || null
+    });
+    if (error) return alert('No se pudo actualizar el perfil: ' + error.message);
+    cerrarModal('modal-editar-perfil-ingreso');
+    await adminCargarPerfilesIngreso();
+    mostrarNotificacionLavaarte('Perfil de empleado actualizado.');
+  }
+
+  async function adminAlternarEstadoPerfilIngreso(id) {
+    const perfil = adminPerfilesIngresoCache.find(p => String(p.id) === String(id));
+    if (!perfil) return;
+    const nuevoEstado = perfil.estado === 'habilitado' ? 'inhabilitado' : 'habilitado';
+    const mensaje = nuevoEstado === 'inhabilitado'
+      ? `¿Inhabilitar el código de ${perfil.nombre}? El empleado no podrá volver a ingresar y las sesiones abiertas se cerrarán al revalidarse.`
+      : `¿Habilitar nuevamente el código de ${perfil.nombre}? Podrá ingresar desde los dispositivos conectados.`;
+    if (!confirm(mensaje)) return;
+    const { error } = await db.rpc('lavaarte_actualizar_perfil_ingreso', {
+      p_admin_pin: pinAdminActual, p_id: perfil.id, p_nombre: perfil.nombre, p_estado: nuevoEstado, p_codigo: null
+    });
+    if (error) return mensajePerfilesIngreso('No se pudo cambiar el estado: ' + error.message, true);
+    await adminCargarPerfilesIngreso();
+    mensajePerfilesIngreso(`Perfil ${nuevoEstado}. La actualización ya está guardada en Supabase.`);
+  }
 
   // Enter activa Buscar/Aceptar en paneles de consulta sin interferir con selects, PIN ni textos largos.
   document.addEventListener('keydown', function(event) {
@@ -3499,9 +3780,14 @@
 
   // Panel Maestro (Botón 9)
   async function abrirModalMasterAdmin() {
+    if (!sesionLavaarteActual || sesionLavaarteActual.rol !== 'administrador' || pinAdminActual !== '2415') {
+      alert('Valida el PIN administrativo para abrir el Panel Maestro.');
+      return;
+    }
     abrirModal("modal-admin-master");
     poblarSelectPrendasMaster();
     adminRenderClientesBD(listaClientes);
+    adminCargarPerfilesIngreso().catch(e => mensajePerfilesIngreso(e.message || String(e), true));
     cargarCuentasPago().catch(e => console.warn('[LAVAARTE] Cuentas de pago:', e));
     // No bloquear la apertura del panel esperando una carga histórica pesada.
     setTimeout(() => adminCargarOrdenesBD().catch(e => console.error('[LAVAARTE] Carga de órdenes:', e)), 0);
@@ -4289,7 +4575,7 @@
   const versionNode = document.getElementById('lavaarte-version');
   if (versionNode && window.electronAPI && typeof window.electronAPI.getAppInfo === 'function') {
     window.electronAPI.getAppInfo().then(info => {
-      if (info && info.version) versionNode.textContent = 'Desktop v' + info.version + ' · Web UI v1.6.5';
+      if (info && info.version) versionNode.textContent = 'Desktop v' + info.version + ' · Web UI v1.7.0';
     }).catch(() => {});
   }
 
@@ -4694,5 +4980,11 @@ button:hover{filter:brightness(1.04)}
 }
 </style>
 
+<div id="lavaarte-session-badge" class="lavaarte-session-badge" style="display:none;">
+  <span>Sesión iniciada: <strong id="lavaarte-session-name">—</strong></span>
+  <button type="button" onclick="cerrarSesionLavaarte()" aria-label="Cerrar sesión">Salir</button>
+</div>
+
+<script src="cys-master-agent.js"></script>
 </body>
 </html>
