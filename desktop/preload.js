@@ -8,5 +8,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getAutostart: () => ipcRenderer.invoke('get-autostart'),
   saveAutostart: (enabled) => ipcRenderer.invoke('save-autostart', enabled),
   openPrinterSettings: () => ipcRenderer.invoke('open-printer-settings'),
-  getAppInfo: () => ipcRenderer.invoke('get-app-info')
+  getAppInfo: () => ipcRenderer.invoke('get-app-info'),
+  finishSplash: () => ipcRenderer.send('finish-splash')
 });
