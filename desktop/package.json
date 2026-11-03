@@ -1,8 +1,8 @@
 {
   "name": "lavaarte-os-desktop",
   "productName": "LAVAARTE OS",
-  "version": "1.6.5",
-  "description": "LAVAARTE OS Desktop - Sistema integral de lavandería",
+  "version": "1.7.0",
+  "description": "LAVAARTE OS Desktop - Sistema integral de lavandería conectado a CyS Soluciones",
   "main": "main.js",
   "author": "LAVAARTE S.A.S.",
   "scripts": {
