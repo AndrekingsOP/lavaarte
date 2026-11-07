@@ -1,0 +1,8 @@
+LAVAARTE OS 1.7.5
+
+1. Se amplió la plantilla térmica de 80 mm y se aumentó el tamaño de textos y datos conservando la distribución de dos copias.
+2. Se reemplazó el símbolo SVG simplificado por el logo monocromático de mayor resolución, preparado desde el logo suministrado para impresión térmica.
+3. En Entregar Prendas se agregó la pregunta «¿El cliente trae recibo?» con Sí seleccionado por defecto.
+4. Si se selecciona No, después de guardar la entrega se imprime una constancia independiente con número de orden, cliente titular, fecha y espacios manuscritos para nombre de quien recoge, cédula y firma.
+5. La selección y la constancia no se guardan en Supabase; no se agregaron columnas ni migraciones.
+6. Se mantienen las integraciones, perfiles, permisos de panel, notificaciones, WhatsApp, CyS Master y animación existentes.
