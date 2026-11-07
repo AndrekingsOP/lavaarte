@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>LAVAARTE OS 1.7.0 - El Arte de Lavar</title>
+<title>LAVAARTE OS 1.7.5 - El Arte de Lavar</title>
 <meta name="theme-color" content="#0284c7">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="cys-master-config.js"></script>
@@ -293,6 +293,46 @@
       padding-top: 6px;
       color: #000 !important;
     }
+
+    /* LAVAARTE 1.7.5: escala de impresión ampliada para papel térmico de 80 mm. */
+    #ticket-termico-print {
+      width: 72mm !important;
+      margin-left: 1mm !important;
+      box-sizing: border-box !important;
+      font-size: 13px !important;
+      line-height: 1.38 !important;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    .p-header-box { display:block !important; text-align:center !important; margin:0 0 5px !important; }
+    .p-icon-svg { display:none !important; }
+    .p-logo-recibo { display:block !important; width:68mm !important; max-width:100% !important; height:auto !important; margin:0 auto 2px !important; }
+    .p-subtext { font-size:11.5px !important; line-height:1.35 !important; margin:5px 0 !important; }
+    .p-box-ticket-hero { font-size:40px !important; padding:7px 4px !important; margin:7px 0 !important; }
+    .p-lbl-cliente { font-size:12px !important; }
+    .p-val-cliente { font-size:16px !important; }
+    .p-val-telefono { font-size:13px !important; }
+    .p-meta-cliente { margin:5px 0 7px !important; }
+    .p-table { font-size:13px !important; margin:7px 0 !important; table-layout:fixed !important; }
+    .p-table th { font-size:11.5px !important; padding:4px 0 !important; }
+    .p-table td { font-size:13px !important; padding:4.5px 0 !important; overflow-wrap:anywhere; }
+    .p-totals-box > div { font-size:12.5px !important; }
+    .p-saldo-destacado { font-size:15.5px !important; padding:5px 6px !important; }
+    .p-footer { font-size:11px !important; line-height:1.4 !important; margin-top:9px !important; }
+
+    /* La constancia es una tercera plantilla independiente: nunca se mezcla con las dos copias. */
+    #ticket-termico-print[data-print-constancia="1"] .ticket-copia { display:none !important; }
+    #ticket-termico-print[data-print-constancia="1"] .ticket-constancia { display:block !important; page-break-after:avoid !important; break-after:avoid !important; }
+    #ticket-termico-print:not([data-print-constancia="1"]) .ticket-constancia { display:none !important; }
+    .ticket-constancia { display:none; }
+    .ce-header { text-align:center; margin-bottom:7px; }
+    .ce-title { font-size:17px; font-weight:900; text-align:center; margin:7px 0; }
+    .ce-ticket { font-size:34px; font-weight:900; border:2px solid #000; border-radius:6px; text-align:center; padding:5px; margin:7px 0; }
+    .ce-copy { font-size:13px; line-height:1.45; margin:8px 0; }
+    .ce-line { border-bottom:1px solid #000; height:24px; margin:8px 0 3px; }
+    .ce-label { font-size:11px; font-weight:700; }
+    .ce-signature { height:44px; border-bottom:1px solid #000; margin-top:8px; }
+    .ce-footer { font-size:10px; text-align:center; margin-top:12px; border-top:1px dashed #000; padding-top:6px; }
   }
 
   @media (max-width: 900px) {
@@ -1024,7 +1064,20 @@
   <div class="modal-content">
     <h3 style="color: var(--success);">Finalizar Entrega y Cobro</h3>
     <div id="info-orden-cobro" style="font-size: 13px; line-height: 1.6;"></div>
-    
+
+    <fieldset style="border:1px solid var(--border);border-radius:9px;padding:10px 12px;margin:4px 0 8px;">
+      <legend class="label-sm" style="padding:0 5px;font-weight:800;">¿El cliente trae recibo?</legend>
+      <div style="display:flex;gap:22px;align-items:center;flex-wrap:wrap;">
+        <label style="display:inline-flex;align-items:center;gap:8px;cursor:pointer;font-weight:700;">
+          <input type="radio" name="entrega-trae-recibo" value="si" checked style="width:18px;height:18px;accent-color:var(--success);"> Sí
+        </label>
+        <label style="display:inline-flex;align-items:center;gap:8px;cursor:pointer;font-weight:700;">
+          <input type="radio" name="entrega-trae-recibo" value="no" style="width:18px;height:18px;accent-color:var(--warning);"> No
+        </label>
+      </div>
+      <div style="font-size:11px;color:var(--text-muted);margin-top:5px;">Si seleccionas «No», al finalizar la entrega se imprimirá una constancia para nombre, cédula y firma.</div>
+    </fieldset>
+
     <div class="input-group" style="margin-top: 4px;">
       <label class="label-sm">Ajustar Saldo a Cobrar ($COP) (Opcional):</label>
       <input type="number" id="entrega-saldo-modificable" class="input-text">
@@ -1332,19 +1385,7 @@
   <!-- COPIA 1: ORIGINAL CLIENTE -->
   <div class="ticket-copia">
     <div class="p-header-box">
-      <!-- Logo vectorizado según la foto real de Lavaarte -->
-      <svg class="p-icon-svg" viewBox="0 0 100 100">
-        <path d="M15 50 C15 28 35 15 55 15 C78 15 88 32 88 50 C88 72 70 85 50 85 C30 85 15 72 15 50 Z" fill="#000" />
-        <path d="M25 50 C25 36 38 25 55 25 C70 25 78 35 78 50 C78 65 65 75 50 75 C38 75 25 64 25 50 Z" fill="#fff" />
-        <path d="M35 50 C35 42 42 35 55 35 C64 35 70 42 70 50 C70 58 60 65 50 65 C40 65 35 58 35 50 Z" fill="#000" />
-        <circle cx="58" cy="46" r="4.5" fill="#fff" />
-        <circle cx="64" cy="38" r="3" fill="#fff" />
-        <circle cx="52" cy="38" r="2.5" fill="#fff" />
-      </svg>
-      <div>
-        <div class="p-brand-text">LAVA ARTE</div>
-        <div class="p-brand-slogan">El Arte de Lavar</div>
-      </div>
+      <img class="p-logo-recibo" src="assets/lavaarte-logo-termico.png" alt="LAVAARTE - El Arte de Lavar">
     </div>
 
     <div class="p-subtext">
@@ -1409,13 +1450,8 @@
   <!-- COPIA 2: PLANTA / ACOPLE (Con salto de página para corte automático parcial) -->
   <div class="ticket-copia">
     <div class="p-header-box">
-      <svg class="p-icon-svg" viewBox="0 0 100 100">
-        <path d="M15 50 C15 28 35 15 55 15 C78 15 88 32 88 50 C88 72 70 85 50 85 C30 85 15 72 15 50 Z" fill="#000" />
-      </svg>
-      <div>
-        <div class="p-brand-text">LAVA ARTE</div>
-        <div class="p-brand-slogan">El Arte de Lavar [ACOPLE]</div>
-      </div>
+      <img class="p-logo-recibo" src="assets/lavaarte-logo-termico.png" alt="LAVAARTE - El Arte de Lavar">
+      <div style="font-size:11px;font-weight:900;margin-top:1px;">[COPIA ACOPLE]</div>
     </div>
 
     <div class="p-box-ticket-hero pr-ticket-num" style="border-style: dashed !important;">
@@ -1463,6 +1499,27 @@
     </div>
   </div>
 
+  <!-- CONSTANCIA DE ENTREGA: solo se imprime si el operador marca que NO trae recibo. No se guarda en Supabase. -->
+  <div class="ticket-constancia">
+    <div class="ce-header">
+      <img class="p-logo-recibo" src="assets/lavaarte-logo-termico.png" alt="LAVAARTE - El Arte de Lavar">
+      <div class="ce-title">CONSTANCIA DE ENTREGA</div>
+    </div>
+    <div class="ce-ticket">ORDEN #<span class="ce-ticket-num">---</span></div>
+    <div class="ce-copy">
+      <strong>Cliente titular:</strong> <span class="ce-cliente">---</span><br>
+      <strong>Fecha de entrega:</strong> <span class="ce-fecha">---</span>
+    </div>
+    <div class="ce-copy">Yo, quien firma esta constancia, declaro que recibo las prendas correspondientes a la orden indicada y me hago responsable de su retiro y custodia.
+    </div>
+    <div class="ce-label">NOMBRE DE QUIEN RECOGE</div>
+    <div class="ce-line"></div>
+    <div class="ce-label">NÚMERO DE CÉDULA</div>
+    <div class="ce-line"></div>
+    <div class="ce-label">FIRMA</div>
+    <div class="ce-signature"></div>
+    <div class="ce-footer">LAVAARTE LAVANDERÍA S.A.S. · Conserve esta constancia como soporte de entrega.</div>
+  </div>
 </div>
 
 
@@ -2923,6 +2980,8 @@
     document.getElementById("entrega-saldo-modificable").value = Number(orden.saldo_pendiente);
     document.getElementById('entrega-responsable').value = '';
     document.getElementById('entrega-cuenta-pago').value = '';
+    const opcionReciboSi = document.querySelector('input[name="entrega-trae-recibo"][value="si"]');
+    if (opcionReciboSi) opcionReciboSi.checked = true;
     cargarResponsablesEntrega().catch(e => console.warn(e));
     cargarCuentasPago().catch(e => console.warn(e));
     
@@ -2965,6 +3024,7 @@
     if (!ordenCobroActiva) return;
     const saldoACobrar = Number(document.getElementById("entrega-saldo-modificable").value);
     const ord = ordenCobroActiva;
+    const clienteTraeRecibo = document.querySelector('input[name="entrega-trae-recibo"]:checked')?.value !== 'no';
 
     try {
       const responsableEntrega = document.getElementById('entrega-responsable').value.trim();
@@ -2992,10 +3052,21 @@
 
       despacharWhatsApp(ord.clientes?.telefono, mensajeWA);
 
-      alert("✅ Entrega registrada con éxito.");
       cerrarModal("modal-cobro-entrega");
       buscarOrdenesEntrega("");
       chequearCentinela60h();
+      mostrarNotificacionLavaarte(`✅ Orden #${ord.consecutivo_ticket} entregada correctamente.`);
+
+      // La opción y los datos manuscritos no se guardan en Supabase.
+      if (!clienteTraeRecibo) {
+        try {
+          await imprimirConstanciaEntrega(ord);
+          mostrarNotificacionLavaarte(`🖨️ Constancia de entrega de la orden #${ord.consecutivo_ticket} enviada a la impresora.`);
+        } catch (errorImpresion) {
+          console.error('Error imprimiendo constancia de entrega:', errorImpresion);
+          mostrarNotificacionLavaarte(`⚠️ La orden #${ord.consecutivo_ticket} quedó entregada, pero no se pudo imprimir la constancia: ${errorImpresion.message || errorImpresion}`);
+        }
+      }
     } catch (e) { alert("Error: " + e.message); }
   }
 
@@ -3290,6 +3361,38 @@
   async function imprimirBorradorActual() {
     if (!ticket.length) { alert("Agrega prendas antes de imprimir."); return; }
     alert("La impresión de una orden requiere generar primero el número de ticket. Usa F12 para guardar y generar la orden.");
+  }
+
+  async function imprimirConstanciaEntrega(orden) {
+    const contenedor = document.getElementById('ticket-termico-print');
+    if (!contenedor) throw new Error('No se encontró la plantilla de impresión.');
+    const plantilla = contenedor.querySelector('.ticket-constancia');
+    if (!plantilla) throw new Error('No se encontró la plantilla de constancia.');
+
+    plantilla.querySelector('.ce-ticket-num').textContent = String(orden.consecutivo_ticket ?? '—');
+    plantilla.querySelector('.ce-cliente').textContent = orden.clientes?.nombre_o_razon || 'Cliente particular';
+    plantilla.querySelector('.ce-fecha').textContent = new Date().toLocaleString('es-CO');
+
+    // La bandera existe únicamente durante la impresión; no se persiste ni se envía a la base de datos.
+    contenedor.setAttribute('data-print-constancia', '1');
+    try {
+      const logo = plantilla.querySelector('.p-logo-recibo');
+      if (logo && !logo.complete) {
+        await new Promise((resolve, reject) => {
+          logo.addEventListener('load', resolve, { once: true });
+          logo.addEventListener('error', () => reject(new Error('No se pudo cargar el logo de impresión.')), { once: true });
+        });
+      }
+      if (window.electronAPI && typeof window.electronAPI.printTicket === 'function') {
+        const resultado = await window.electronAPI.printTicket({ force: true, constancia: true });
+        if (!resultado || resultado.ok === false) throw new Error(resultado?.error || 'La impresora no confirmó la constancia.');
+        return resultado;
+      }
+      window.print();
+      return { ok: true, browser: true };
+    } finally {
+      contenedor.removeAttribute('data-print-constancia');
+    }
   }
 
   async function imprimirPlantilla(opciones = {}) {
