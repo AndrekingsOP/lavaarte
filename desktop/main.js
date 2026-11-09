@@ -262,7 +262,10 @@ function performPrint() {
     const options = {
       silent: true,
       printBackground: true,
-      usePrinterDefaultPageSize: true,
+      // Igualar el tamaño de la web/móvil: rollo térmico 80 mm x 297 mm.
+      // Electron recibe las medidas en micrones; sin márgenes adicionales.
+      pageSize: { width: 80000, height: 297000 },
+      margins: { marginType: 'none' },
       ...(deviceName ? { deviceName } : {})
     };
 
