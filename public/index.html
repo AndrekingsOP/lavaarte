@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>LAVAARTE OS 1.7.5 - El Arte de Lavar</title>
+<title>LAVAARTE OS 1.7.8 - El Arte de Lavar</title>
 <meta name="theme-color" content="#0284c7">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="cys-master-config.js"></script>
@@ -146,26 +146,35 @@
   .legal-note { background: rgba(245,158,11,.10); border: 1px solid var(--warning); padding: 10px; border-radius: 8px; }
 
   @media print {
+    /* Formato térmico uniforme: rollo de 80 mm, con zona útil de 70.5 mm.
+       Compatible con XP-80 (72.1 mm imprimibles) y navegadores móviles. */
     @page {
-      size: 80mm auto;
-      margin: 0;
+      size: 80mm 297mm;
+      margin: 0mm;
     }
     html, body {
+      width: 80mm !important;
+      min-width: 80mm !important;
+      max-width: 80mm !important;
       margin: 0 !important;
       padding: 0 !important;
       background: #fff !important;
       color: #000 !important;
       height: auto !important;
+      overflow: visible !important;
     }
     body * { visibility: hidden; }
     #ticket-termico-print, #ticket-termico-print * { visibility: visible; }
     #ticket-termico-print {
       display: block !important;
-      position: absolute;
-      left: 0;
-      top: 0;
-      width: 68mm;
-      margin-left: 2mm;
+      position: absolute !important;
+      left: 0 !important;
+      right: 0 !important;
+      top: 0 !important;
+      width: 70.5mm !important;
+      max-width: 70.5mm !important;
+      margin: 0 auto !important;
+      box-sizing: border-box !important;
       font-family: Arial, Helvetica, sans-serif;
       font-size: 11.5px;
       color: #000 !important;
@@ -294,31 +303,41 @@
       color: #000 !important;
     }
 
-    /* LAVAARTE 1.7.5: escala de impresión ampliada para papel térmico de 80 mm. */
+    /* LAVAARTE 1.7.8: el contenido ocupa prácticamente todo el ancho imprimible
+       de un rollo de 80 mm (70.5 mm útiles), sin escala automática de reducción. */
     #ticket-termico-print {
-      width: 72mm !important;
-      margin-left: 1mm !important;
+      width: 70.5mm !important;
+      max-width: 70.5mm !important;
+      margin: 0 auto !important;
       box-sizing: border-box !important;
-      font-size: 13px !important;
-      line-height: 1.38 !important;
+      font-size: 14px !important;
+      line-height: 1.42 !important;
       -webkit-print-color-adjust: exact;
       print-color-adjust: exact;
     }
-    .p-header-box { display:block !important; text-align:center !important; margin:0 0 5px !important; }
+    .ticket-copia, .ticket-constancia { width:100% !important; max-width:100% !important; box-sizing:border-box !important; }
+    .p-header-box { display:block !important; width:100% !important; text-align:center !important; margin:0 0 6px !important; }
     .p-icon-svg { display:none !important; }
-    .p-logo-recibo { display:block !important; width:68mm !important; max-width:100% !important; height:auto !important; margin:0 auto 2px !important; }
-    .p-subtext { font-size:11.5px !important; line-height:1.35 !important; margin:5px 0 !important; }
-    .p-box-ticket-hero { font-size:40px !important; padding:7px 4px !important; margin:7px 0 !important; }
-    .p-lbl-cliente { font-size:12px !important; }
-    .p-val-cliente { font-size:16px !important; }
-    .p-val-telefono { font-size:13px !important; }
-    .p-meta-cliente { margin:5px 0 7px !important; }
-    .p-table { font-size:13px !important; margin:7px 0 !important; table-layout:fixed !important; }
-    .p-table th { font-size:11.5px !important; padding:4px 0 !important; }
-    .p-table td { font-size:13px !important; padding:4.5px 0 !important; overflow-wrap:anywhere; }
-    .p-totals-box > div { font-size:12.5px !important; }
-    .p-saldo-destacado { font-size:15.5px !important; padding:5px 6px !important; }
-    .p-footer { font-size:11px !important; line-height:1.4 !important; margin-top:9px !important; }
+    .p-logo-recibo { display:block !important; width:69.5mm !important; max-width:100% !important; height:auto !important; margin:0 auto 3px !important; }
+    .p-subtext { font-size:12.5px !important; line-height:1.4 !important; margin:6px 0 !important; }
+    .p-box-ticket-hero { font-size:46px !important; padding:8px 4px !important; margin:8px 0 !important; }
+    .p-lbl-cliente { font-size:13px !important; }
+    .p-val-cliente { font-size:18px !important; }
+    .p-val-telefono { font-size:14px !important; }
+    .p-meta-cliente { margin:6px 0 8px !important; }
+    .p-table { width:100% !important; font-size:14.5px !important; margin:8px 0 !important; table-layout:fixed !important; }
+    .p-table th { font-size:13px !important; padding:5px 1px !important; }
+    .p-table td { font-size:14.5px !important; padding:5.5px 1px !important; overflow-wrap:anywhere; }
+    .p-totals-box > div { font-size:14px !important; }
+    .p-saldo-destacado { font-size:17px !important; padding:6px 7px !important; }
+    .p-footer { font-size:12px !important; line-height:1.45 !important; margin-top:10px !important; }
+    .ce-title { font-size:19px !important; }
+    .ce-ticket { font-size:38px !important; }
+    .ce-copy { font-size:14px !important; }
+    .ce-label { font-size:12.5px !important; }
+    .ce-line { height:27px !important; }
+    .ce-signature { height:50px !important; }
+    .ce-footer { font-size:11px !important; }
 
     /* La constancia es una tercera plantilla independiente: nunca se mezcla con las dos copias. */
     #ticket-termico-print[data-print-constancia="1"] .ticket-copia { display:none !important; }
