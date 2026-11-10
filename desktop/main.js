@@ -262,10 +262,13 @@ function performPrint() {
     const options = {
       silent: true,
       printBackground: true,
-      // Igualar el tamaño de la web/móvil: rollo térmico 80 mm x 297 mm.
-      // Electron recibe las medidas en micrones; sin márgenes adicionales.
-      pageSize: { width: 80000, height: 297000 },
+      // Usar el tamaño continuo configurado para la XP-80. No fijar 297 mm:
+      // eso alargaba cada copia y dejaba grandes tramos de papel en blanco.
+      // La plantilla CSS usa @page 80mm auto y separa solo las dos copias.
+      usePrinterDefaultPageSize: true,
       margins: { marginType: 'none' },
+      copies: 1,
+      pagesPerSheet: 1,
       ...(deviceName ? { deviceName } : {})
     };
 
